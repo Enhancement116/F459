@@ -21,3 +21,7 @@ All website resources use relative paths and support hosting under `/F459/`. Pub
 - Portraits and up to five research videos currently remain placeholders.
 
 Team: Prof. 吳介騫; first cohort 114: 劉予翰; second cohort 114 (latest requested label): 林翔晨、吳佳寰、李佳爵、何若鏡, with 錢思妤 on the second row; third cohort 116: a、b. Mobile layouts wrap for readability.
+
+
+## Multi-page site
+Home: index.html. Learning directory: learn.html. Lessons: navigation.html, signals.html, computing.html, validation.html. Research: technology.html, results.html, team.html. Shared behavior: app.js, pages.js; animations: pages.css and inline SVG. Educational diagrams are conceptual, not measurements.

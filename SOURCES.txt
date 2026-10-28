@@ -4,3 +4,5 @@ CCE official emblem: https://ccee.nkust.edu.tw/p/412-1054-7450.php?Lang=zh-tw
 Logo: https://ccee.nkust.edu.tw/var/file/54/1054/img/logo1.jpg
 
 BDS research text and original I/Q figures: 劉予翰, BDS-SDRSIM (2025), user-supplied liuuuu_BDS-SDRSIM.pdf. Selected printed pages 1-3, 18-24; figures from printed page 24 (PDF page 26).
+
+2026-10-28 revision: BDS report used as background for plain-language navigation explanations; report figures removed from the page. Professor portrait supplied by the user.

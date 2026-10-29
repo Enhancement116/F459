@@ -5,3 +5,5 @@ header nav a[aria-current=page]{color:#a9d3ff;border-bottom:2px solid #8abaff;pa
 @media(prefers-reduced-motion:reduce){.signal-travel,.wave-draw,.scan-cursor,.compute-cell,.receiver-pulse{animation:none}.directory-card,.lesson-card{transition:none}}
 
 .lesson-references{padding:25px 7% 50px;color:#a9bfd9;font-size:16px}.lesson-references summary{cursor:pointer;color:#b2d5ff}.lesson-references a{color:#8ebdff}header nav{align-items:center}
+
+@media(min-width:801px){header nav{gap:14px}header nav a{font-size:14px}header .brand{font-size:22px}}

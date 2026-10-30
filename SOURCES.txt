@@ -8,3 +8,6 @@ BDS research text and original I/Q figures: 劉予翰, BDS-SDRSIM (2025), user-s
 2026-10-28 revision: BDS report used as background for plain-language navigation explanations; report figures removed from the page. Professor portrait supplied by the user.
 
 Homepage orbit classes: BeiDou official overview https://www.beidou.gov.cn/xt/gfxz/202008/P020200803362066799956.pdf . SVG is a conceptual geocentric animation with schematic counts and scale, not live orbit data.
+
+GeoTrust technical content revision: 2026-10-30
+User-supplied GeoTrust website and technical copy PDF, 26 pages. Implementation claims are attributed to this document, not independently source-code audited. No speedup, RF throughput or positioning accuracy is asserted. Existing team member assignments are preserved.

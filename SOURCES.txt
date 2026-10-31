@@ -11,3 +11,8 @@ Homepage orbit classes: BeiDou official overview https://www.beidou.gov.cn/xt/gf
 
 GeoTrust technical content revision: 2026-10-30
 User-supplied GeoTrust website and technical copy PDF, 26 pages. Implementation claims are attributed to this document, not independently source-code audited. No speedup, RF throughput or positioning accuracy is asserted. Existing team member assignments are preserved.
+
+2026-10-31 homepage globe: GPS and BeiDou positions for 2026-09-22 (DOY 265) computed in the browser from the user-supplied hourly mixed broadcast ephemerides BRDC00WRD_S_20262650000_01H_MN.rnx … BRDC00WRD_S_20262652300_01H_MN.rnx (RINEX 4.02, BNC from products.igs-ip.net BCEP00BKG0). tools/build-ephemeris.js merges them into data/gnss-2026-265.json (32 GPS + 36 BDS satellites, 1,256 ephemerides); gnss-orbit.js applies the IS-GPS-200 and BDS ICD orbit equations, using the nearest-toe ephemeris at each moment. Altitude is compressed on screen.
+Earth map: Natural Earth 1:50m countries (public domain) via world-atlas@2.0.2 on jsDelivr, rendered with d3-geo and topojson-client. Teaching mode uses an idealized GPS/BDS constellation, not ephemeris data.
+Ground-level map (homepage globe, zoomed in): Leaflet 1.9.4 (cdnjs) with Esri World Imagery and Esri reference layers (© Esri, Maxar, Earthstar Geographics), OpenTopoMap (© OpenTopoMap, CC-BY-SA; data © OpenStreetMap contributors, SRTM) and OpenStreetMap standard tiles (© OpenStreetMap contributors). Credits are shown in the globe panel under 資料與顯示說明 instead of on the map.
+Custom-site place names: OpenStreetMap Nominatim reverse geocoding (© OpenStreetMap contributors), requested only when a user clicks the ground map; results cached per point and language.

@@ -1,0 +1,194 @@
+/* Homepage globe console: the hero's centerpiece. Loaded after the page bundle and fixes.css. */
+.hero-stage--globe{display:block;max-width:1550px;margin:24px auto 0}
+.hero-stage--globe .hero-copy{max-width:none;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:48px;align-items:end;pointer-events:auto}
+.hero-stage--globe .hero-copy h1{grid-row:span 3;margin:0}
+.hero-stage--globe .hero-sub{margin:0 0 6px}
+.hero-stage--globe .hero-facts{margin:10px 0 4px;padding:14px 0}
+.hero-stage--globe .hero-actions .button{margin:10px 0}
+
+/* ---------- Console frame: globe on top, information deck below ---------- */
+.globe-console{margin-top:28px;border:1px solid #335b7e;background:linear-gradient(135deg,#0d223955,#07101eaa);box-shadow:inset 0 0 60px #2c7fbd0b,0 0 90px #1d63b011}
+.globe-console .console-top{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid #284561}
+.globe-console .console-top>span{font:11px Orbitron,sans-serif;letter-spacing:1.5px;color:#9ebfe1;margin-right:auto}
+.globe-modes{display:flex;border:1px solid #426c91}
+.globe-modes button,#globe-play{background:#102a42;border:0;color:#d8e8f8;padding:8px 14px;font-size:14px;cursor:pointer;white-space:nowrap;min-height:38px}
+.globe-modes button+button{border-left:1px solid #426c91}
+.globe-modes button[aria-pressed=true]{background:#a2ecd8;color:#092e34;font-weight:700}
+#globe-play{border:1px solid #426c91}
+.globe-body{display:block}
+.globe-console[data-mode=real] .teach-only{display:none}
+
+/* ---------- Globe canvas and overlays ---------- */
+.globe-stage{position:relative;min-width:0}
+#globe-canvas{display:block;width:100%;height:clamp(480px,calc(100svh - 240px),820px);cursor:grab;touch-action:none}
+.globe-console.is-dragging #globe-canvas{cursor:grabbing}
+#globe-canvas:focus-visible{outline:2px solid #a7f5dc;outline-offset:-4px}
+.globe-overlay{position:absolute;left:16px;top:12px;display:grid;gap:6px;justify-items:start;pointer-events:none}
+.globe-clock{margin:0;font:12px Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:#a9d4ef;background:#06101ecc;border:1px solid #284561;padding:6px 10px}
+.globe-frame-tag{margin:0;font-size:11px;color:#c9d9ea;background:#06101ecc;border:1px solid #284561;padding:4px 9px}
+.globe-corner{position:absolute;bottom:12px;display:grid;gap:8px;pointer-events:none}
+.globe-corner>*{pointer-events:auto}
+.globe-corner--left{left:14px}
+.globe-corner--right{right:14px;justify-items:end}
+.globe-legend{list-style:none;margin:0;background:#06101ecc;border:1px solid #284561;padding:8px 12px;display:grid;grid-template-columns:auto auto;gap:5px 16px}
+.globe-legend li{display:flex;align-items:center;gap:8px;font-size:13px}
+.globe-legend li::before{content:"";width:10px;height:10px;background:var(--c);box-shadow:0 0 8px var(--c)}
+.globe-legend b{font:700 12px Orbitron,sans-serif;color:var(--c)}
+.globe-legend span{color:#9bb7cf}
+.globe-prn{margin:0;background:#06101ecc;border:1px solid #284561;padding:8px 12px;display:grid;gap:4px}
+.globe-prn div{display:flex;gap:10px;align-items:baseline}
+.globe-prn dt{font:700 12px Orbitron,sans-serif;min-width:3.2ch}
+.globe-prn div:first-child dt{color:#70e3ed}
+.globe-prn div:last-child dt{color:#ff9f7a}
+.globe-prn dd{margin:0;font-size:12px;color:#c9d9ea}
+.globe-drag{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;color:#9bb7cf}
+.globe-zoom{display:flex;border:1px solid #426c91}
+.globe-zoom button{background:#102a42;border:0;color:#d8e8f8;width:32px;height:30px;font-size:16px;cursor:pointer}
+.globe-zoom button+button{border-left:1px solid #426c91}
+#globe-recenter,#globe-ground-enter{background:#102a42;border:1px solid #426c91;color:#d8e8f8;padding:6px 10px;font-size:12px;cursor:pointer}
+#globe-recenter{display:none}
+.globe-console.is-rotated #globe-recenter{display:inline-block}
+
+/* ---------- Ground-level detailed map (Leaflet) ---------- */
+.globe-ground{position:absolute;inset:0;z-index:3;background:#06101e}
+.globe-ground[hidden]{display:none}
+#globe-ground-map{position:absolute;inset:0;background:#0a1626;cursor:crosshair}
+.ground-bar{position:absolute;left:12px;top:12px;z-index:500;display:flex;gap:8px;flex-wrap:wrap}
+.ground-bar button{background:#06101ee6;border:1px solid #426c91;color:#e4f0fb;padding:7px 12px;font-size:13px;cursor:pointer}
+.ground-layers{display:flex}
+.ground-layers button+button{border-left:0}
+.ground-layers button[aria-pressed=true]{background:#a2ecd8;color:#092e34;font-weight:700}
+.ground-note{position:absolute;left:12px;bottom:12px;z-index:500;margin:0;max-width:min(440px,75%);font-size:12px;line-height:1.6;color:#dbe8f4;background:#06101ed9;border:1px solid #284561;padding:7px 11px;pointer-events:none}
+.globe-console.is-ground .globe-overlay,.globe-console.is-ground .globe-corner{display:none}
+.globe-ground .leaflet-tooltip.nkust-tip{background:#06101ee6;color:#e4fff8;border:1px solid #8affdd;font:600 12px 'Noto Sans TC',sans-serif;box-shadow:none}
+.globe-ground .leaflet-tooltip.nkust-tip::before{border-right-color:#8affdd}
+.globe-ground .leaflet-tooltip.pin-tip{border-color:#ffd27a;color:#fff3d6}
+.globe-ground .leaflet-tooltip.pin-tip::before{border-right-color:#ffd27a}
+.site-reset{display:none}
+.globe-console.is-custom-site .site-reset{display:inline-block}
+
+/* ---------- Information deck ---------- */
+/* Desktop: three columns under the globe — orbit class | visibility | controls & notes. */
+.globe-panel{border-top:1px solid #284561;color:#c1d1e2;font-size:14px;line-height:1.5;background:#06101e66;
+  display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,.8fr);
+  grid-template-areas:"orbit visible play" "orbit visible teach" "orbit visible foot";grid-template-rows:auto auto 1fr}
+.gp-orbit{grid-area:orbit}
+.gp-visible{grid-area:visible;border-left:1px solid #1e3a55}
+.gp-play{grid-area:play;border-left:1px solid #1e3a55}
+.gp-teach{grid-area:teach;border-left:1px solid #1e3a55}
+.gp-foot{grid-area:foot;border-left:1px solid #1e3a55}
+.gp-sec{padding:20px 22px;display:grid;gap:14px;align-content:start}
+.gp-play,.gp-teach{border-bottom:1px solid #1e3a55}
+.globe-panel .gp-title{margin:0;font:600 11px/1.4 Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1.5px;color:#7fa6c9;text-transform:uppercase}
+.gp-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gp-head .site-reset{background:none;border:1px solid #ffd27a88;color:#ffd27a;font-size:11px;padding:3px 8px;cursor:pointer}
+.gp-site{margin:-8px 0 0;font:500 11px Orbitron,'Noto Sans TC',sans-serif;color:#8fa9c2;letter-spacing:.5px}
+.globe-console.is-custom-site .gp-site{color:#ffd27a}
+
+/* Orbit class cards and brief */
+.orbit-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.orbit-card{display:grid;gap:3px;align-content:start;text-align:left;background:#0c1f30;border:1px solid #23415c;border-top:3px solid var(--c);padding:10px 12px;color:#c9dde7;cursor:pointer;font-family:inherit;transition:background .2s,border-color .2s}
+.orbit-card:hover{background:#11283d}
+.orbit-card[aria-pressed=true]{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 20%,transparent),#0c1f30 75%);border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset}
+.oc-code{font:700 14px/1.2 Orbitron,sans-serif;color:var(--c);letter-spacing:1px}
+.oc-name{font-size:12px;color:#dbe8f4}
+.oc-meta{font:500 10.5px/1.4 Orbitron,'Noto Sans TC',sans-serif;color:#8fa9c2}
+/* Briefs share one grid cell; the tallest sets the height so switching classes never resizes the deck. */
+.orbit-brief{display:grid}
+.ob{grid-area:1/1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 22px;align-content:start;align-items:start;visibility:hidden}
+.ob.is-active{visibility:visible}
+.ob h4{grid-column:1/-1;margin:0;padding-left:10px;border-left:3px solid var(--c);font-size:16px;line-height:1.4;color:#eef6ff}
+.ob-lead{grid-column:1/-1;margin:0;font-size:13px;line-height:1.75;color:#b6c8da}
+.ob-specs{margin:0;border-top:1px solid #1e3a55}
+.ob-specs div{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:7px 0;border-bottom:1px solid #1e3a55}
+.ob-specs dt{font-size:12px;color:#7fa6c9}
+.ob-specs dd{margin:0;font-size:13px;line-height:1.55;color:#e2edf8}
+.ob-specs [data-live]{color:#8affdd;font-weight:600}
+.ob-points{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ob-points li{position:relative;padding-left:14px;font-size:12.5px;line-height:1.7;color:#b6c8da}
+.ob-points li::before{content:"";position:absolute;left:0;top:.7em;width:5px;height:5px;background:#8affdd}
+
+/* Visibility: count and switch beside the sky plot, PRN chips below */
+.gp-vis-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:center}
+.gp-vis-main{display:grid;gap:14px}
+.gp-stat{display:flex;align-items:center;gap:12px}
+.globe-panel .gp-stat strong{font:700 44px/1 Orbitron,sans-serif;color:#8affdd;min-width:2ch}
+.gp-stat-label{display:block;font-size:12px;color:#9bb7cf}
+.gp-split{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.gp-split b{font:600 11px/1.4 Orbitron,'Noto Sans TC',sans-serif;padding:3px 8px;border:1px solid currentColor}
+.is-bds{color:#70e3ed}
+.is-gps{color:#ff9f7a}
+.gp-switch{position:relative;display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;user-select:none}
+.gp-switch input{position:absolute;opacity:0;width:1px;height:1px}
+.gp-switch-track{position:relative;width:36px;height:20px;border-radius:10px;background:#1b3550;border:1px solid #426c91;flex:none;transition:background .2s}
+.gp-switch-track::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#c9d9ea;transition:transform .2s}
+.gp-switch input:checked+.gp-switch-track{background:#2f8f7d;border-color:#8affdd}
+.gp-switch input:checked+.gp-switch-track::after{transform:translateX(16px);background:#fff}
+.gp-switch input:focus-visible+.gp-switch-track{outline:2px solid #a7f5dc;outline-offset:2px}
+.gp-sky{margin:0;display:grid;justify-items:center;gap:6px}
+#globe-sky{width:100%;max-width:220px;aspect-ratio:1}
+.gp-sky figcaption{font-size:11px;color:#7f93ab;text-align:center}
+.gp-prns{margin:0;display:flex;flex-wrap:wrap;gap:4px}
+.gp-prns:empty{display:none}
+.gp-prns span{font:600 10px/1.4 Orbitron,sans-serif;padding:2px 5px;background:#0b1d2f;border:1px solid #23415c}
+
+/* Controls and notes */
+.globe-teach{display:grid;gap:10px}
+.globe-teach label{display:grid;grid-template-columns:76px 1fr 2.5ch;gap:10px;align-items:center}
+.globe-teach b{font:700 11px Orbitron,'Noto Sans TC',sans-serif;color:var(--c)}
+.globe-teach input{accent-color:var(--c);width:100%;min-width:0}
+.globe-teach output{font:600 12px Orbitron,sans-serif;text-align:right}
+.globe-speed{display:grid;grid-template-columns:repeat(3,1fr) 1.4fr;border:1px solid #34586a}
+.globe-speed button{background:#0e2333;color:#c9dde7;border:0;border-right:1px solid #34586a;padding:9px 2px;font-size:12px;font-family:inherit;cursor:pointer}
+.globe-speed button:last-child{border-right:0}
+.globe-speed button[aria-pressed=true]{background:#2446bc;color:#fff;font-weight:700}
+.gp-foot{padding:18px 22px 22px;display:grid;gap:10px;align-content:start}
+.globe-source{margin:0;font-size:12px;color:#8fb2d6}
+.globe-frame{font-size:12px;line-height:1.7;border-top:1px solid #1e3a55;padding-top:8px}
+.globe-frame summary{cursor:pointer;color:#b5eee6;font-size:13px}
+.globe-frame p{margin:8px 0 0;color:#a9bccf;font-size:12px}
+.gp-foot .gnss-entry{color:#b5eee6;font-size:13px;text-decoration:underline;text-underline-offset:5px;padding:0;margin:0;background:none;border:0}
+
+/* ---------- Medium widths: orbit + visibility side by side, controls in a row below ---------- */
+@media(max-width:1300px){
+  .globe-panel{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
+    grid-template-areas:"orbit visible" "play foot" "teach foot";grid-template-rows:auto auto 1fr}
+  .gp-play,.gp-teach{border-left:0;border-top:1px solid #1e3a55}
+  .gp-foot{border-top:1px solid #1e3a55}
+  .orbit-cards{grid-template-columns:1fr 1fr}
+  .ob{grid-template-columns:1fr}
+  .gp-vis-grid{grid-template-columns:1fr}
+}
+@media(max-width:1100px){
+  .hero-stage--globe .hero-copy{grid-template-columns:1fr}
+  .hero-stage--globe .hero-copy h1{grid-row:auto;margin-bottom:14px}
+}
+
+/* ---------- Phone: single column ---------- */
+@media(max-width:700px){
+  .hero-stage--globe{margin-top:10px}
+  .globe-console{margin-top:18px}
+  .globe-console .console-top{flex-wrap:wrap;padding:10px}
+  .globe-console .console-top>span{width:100%;font-size:9px}
+  .globe-modes{flex:1}
+  .globe-modes button{flex:1;font-size:13px;padding:8px 6px}
+  #globe-play{font-size:13px;padding:8px 10px}
+  #globe-canvas{height:min(125vw,520px)}
+  .globe-overlay{left:8px;top:8px}
+  .globe-clock{font-size:10px;padding:4px 7px}
+  .globe-frame-tag{font-size:10px;padding:3px 7px}
+  .globe-corner{bottom:8px}
+  .globe-corner--left{left:8px}
+  .globe-corner--right{right:8px}
+  .globe-legend{gap:2px 10px;padding:5px 8px}
+  .globe-legend li{font-size:11px;gap:5px}
+  .globe-prn{padding:6px 8px}
+  .globe-prn dt,.globe-prn dd{font-size:11px}
+  .globe-drag>span{display:none}
+  .ground-note{font-size:10.5px;max-width:calc(100% - 24px)}
+  .globe-panel{display:flex;flex-direction:column}
+  .gp-sec,.gp-foot{padding:16px 14px;border-left:0}
+  .gp-visible,.gp-play,.gp-teach,.gp-foot{border-top:1px solid #1e3a55}
+  .gp-vis-grid{grid-template-columns:1fr 1fr;align-items:start}
+  .ob-specs div{grid-template-columns:84px 1fr}
+}

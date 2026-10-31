@@ -415,14 +415,14 @@
     OCEANS.forEach((c, i) => {
       if (d3.geoDistance(c, center) > 1.35) return;
       const p = projection(c);
-      ctx.font = `italic 500 ${Math.min(18, Math.max(10, state.R / 13))}px 'Noto Sans TC', sans-serif`;
+      ctx.font = `italic 500 ${Math.min(20, Math.max(13, state.R / 12))}px 'Noto Sans TC', sans-serif`;
       ctx.textAlign = 'center'; ctx.fillStyle = '#bfe3ff'; ctx.fillText(t.ocean[i], p[0], p[1]);
     });
     ctx.globalAlpha = 0.85;
     if (state.R > 110) Object.entries(PLACES).forEach(([k, c]) => {
       if (d3.geoDistance(c, center) > 1.3) return;
       const p = projection(c);
-      ctx.font = `500 ${Math.min(15, Math.max(9, state.R / 16))}px 'Noto Sans TC', sans-serif`;
+      ctx.font = `500 ${Math.min(17, Math.max(12, state.R / 14))}px 'Noto Sans TC', sans-serif`;
       ctx.textAlign = 'center'; ctx.fillStyle = '#f4f8ef'; ctx.fillText(t.places[k], p[0], p[1]);
     });
     ctx.globalAlpha = 1;
@@ -498,21 +498,21 @@
     const custom = state.site.custom;
     const badge = custom ? 'PIN' : 'TW', name = custom ? placeLine() : 'NKUST';
     const sub = custom ? coordText() : text[lang()].site;
-    const nameFont = custom ? "700 12px 'Noto Sans TC', sans-serif" : "700 12px Orbitron, sans-serif";
+    const nameFont = custom ? "700 14px 'Noto Sans TC', sans-serif" : "700 14px Orbitron, sans-serif";
     ctx.font = nameFont;
-    const badgeW = custom ? 26 : 20;
+    const badgeW = custom ? 30 : 24;
     const w1 = badgeW + 6 + ctx.measureText(name).width;
-    ctx.font = "500 11px 'Noto Sans TC', sans-serif";
-    const bw = Math.max(w1, ctx.measureText(sub).width) + 16, bx = x + 36, by = y - 38;
+    ctx.font = "500 13px 'Noto Sans TC', sans-serif";
+    const bw = Math.max(w1, ctx.measureText(sub).width) + 18, bx = x + 36, by = y - 44;
     ctx.fillStyle = '#06101ee6'; ctx.strokeStyle = '#8affdd99';
-    ctx.fillRect(bx, by, bw, 36); ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 35);
-    ctx.fillStyle = custom ? '#ffd27a' : '#8affdd'; ctx.fillRect(bx + 8, by + 6, badgeW, 13);
-    ctx.fillStyle = '#062421'; ctx.font = "800 9px Orbitron, sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(badge, bx + 8 + badgeW / 2, by + 13);
+    ctx.fillRect(bx, by, bw, 44); ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 43);
+    ctx.fillStyle = custom ? '#ffd27a' : '#8affdd'; ctx.fillRect(bx + 8, by + 7, badgeW, 15);
+    ctx.fillStyle = '#062421'; ctx.font = "800 10px Orbitron, sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(badge, bx + 8 + badgeW / 2, by + 15);
     ctx.fillStyle = '#e4fff8'; ctx.font = nameFont; ctx.textAlign = 'left';
-    ctx.fillText(name, bx + 14 + badgeW, by + 13);
-    ctx.fillStyle = '#b9cfe2'; ctx.font = "500 11px 'Noto Sans TC', sans-serif";
-    ctx.fillText(sub, bx + 8, by + 28);
+    ctx.fillText(name, bx + 14 + badgeW, by + 15);
+    ctx.fillStyle = '#b9cfe2'; ctx.font = "500 13px 'Noto Sans TC', sans-serif";
+    ctx.fillText(sub, bx + 8, by + 33);
   }
 
   // Polar sky plot as seen from NKUST: centre = zenith, rim = horizon, north up.
@@ -532,16 +532,16 @@
     c.beginPath(); c.moveTo(cx - r0, cy); c.lineTo(cx + r0, cy); c.moveTo(cx, cy - r0); c.lineTo(cx, cy + r0); c.stroke();
     c.strokeStyle = '#ff9f7a'; c.setLineDash([3, 3]);
     c.beginPath(); c.arc(cx, cy, rad(state.mask), 0, 2 * Math.PI); c.stroke(); c.setLineDash([]);
-    c.font = "600 10px Orbitron, sans-serif"; c.fillStyle = '#9ebfe1'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = "600 12px Orbitron, sans-serif"; c.fillStyle = '#9ebfe1'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText('N', cx, cy - r0 - 9); c.fillText('S', cx, cy + r0 + 9); c.fillText('E', cx + r0 + 9, cy); c.fillText('W', cx - r0 - 9, cy);
     const up = sats.filter(s => s.el >= state.mask);
     up.forEach(s => {
       const x = cx + rad(s.el) * Math.sin(s.az * D2R), y = cy - rad(s.el) * Math.cos(s.az * D2R);
       c.fillStyle = satColor(s); c.beginPath(); c.arc(x, y, 3.5, 0, 2 * Math.PI); c.fill();
-      if (s.label && size > 150) label(s.label, x, y - 9, satColor(s), 8, 'center', c);
+      if (s.label && size > 150) label(s.label, x, y - 10, satColor(s), 10, 'center', c);
     });
     if (!up.length) {
-      c.fillStyle = '#9bb7cf'; c.font = "11px 'Noto Sans TC', sans-serif";
+      c.fillStyle = '#9bb7cf'; c.font = "13px 'Noto Sans TC', sans-serif";
       c.fillText(text[lang()].skyEmpty, cx, cy);
     }
   }
@@ -573,7 +573,7 @@
     sats.filter(s => s.front).forEach(s => drawSat(s, true));
     const many = state.mode === 'real' && state.filter === 'all' && !state.onlyVisible;
     sats.filter(s => s.front && s.label && (!many || (s.el >= state.mask && state.R > 110)))
-      .forEach(s => label(s.label, s.x, s.y - 15, satColor(s), state.mode === 'real' ? 9.5 : 11));
+      .forEach(s => label(s.label, s.x, s.y - 15, satColor(s), state.mode === 'real' ? 12 : 13));
 
     if (now - lastPanel > 250) {
       lastPanel = now;
@@ -853,4 +853,37 @@
 
   buildTeach(); resize(); updateUi();
   requestAnimationFrame(now => { state.last = now; frame(now); });
+})();
+
+// Hero spec spotlight: highlight each spec cell in turn; hovering a cell holds it.
+// Clicking (or Enter/Space) opens that cell's explanation below the row and pins the highlight.
+(() => {
+  const cells = [...document.querySelectorAll('.hero-specs > div')];
+  const panel = document.getElementById('spec-detail');
+  if (cells.length < 2 || !panel) return;
+  const articles = [...panel.querySelectorAll('[data-spec-detail]')];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let active = 0, held = false, open = -1;
+  const show = i => { active = i; cells.forEach((c, k) => c.classList.toggle('is-active', k === i)); };
+  function setOpen(i) {
+    open = i;
+    panel.hidden = i < 0;
+    articles.forEach((a, k) => { a.hidden = k !== i; });
+    cells.forEach((c, k) => c.setAttribute('aria-expanded', String(k === i)));
+    if (i >= 0) show(i);
+  }
+  cells.forEach((c, i) => {
+    c.addEventListener('mouseenter', () => { held = true; if (open < 0) show(i); });
+    c.addEventListener('mouseleave', () => { held = false; });
+    c.addEventListener('click', () => setOpen(open === i ? -1 : i));
+    c.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(open === i ? -1 : i); }
+    });
+  });
+  panel.querySelector('.sd-close').addEventListener('click', () => { const i = open; setOpen(-1); cells[i]?.focus(); });
+  setInterval(() => {
+    if (held || open >= 0 || reduced.matches || document.hidden) return;
+    show((active + 1) % cells.length);
+  }, 3200);
+  show(0);
 })();

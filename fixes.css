@@ -22,3 +22,13 @@ header #site-nav a{font-size:15px}
 @media(max-width:600px){.brand-logo{width:30px;height:30px;margin-right:2px}}
 @media(max-width:600px){header .brand span{white-space:nowrap}}
 @media(max-width:360px){header .brand span{display:none}}
+
+/* Hide the browser scrollbar (pages still scroll with wheel, touch and keyboard). */
+html{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+
+/* Brand: logo on the left, "GeoTrust" with "BY F459 LAB" stacked underneath. */
+header .brand,footer .brand{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:10px;row-gap:2px;align-items:center;justify-content:start;line-height:1.05}
+header .brand .brand-logo,footer .brand .brand-logo{grid-row:1/3;margin-right:0}
+header .brand span,footer .brand span{grid-column:2;margin-top:0;align-self:start;white-space:nowrap}
+@media(max-width:360px){header .brand span{display:block}}

@@ -7,13 +7,6 @@
 .hero-stage--globe .hero-text h1{margin:0;max-width:none;font-size:clamp(34px,4.4vw,62px);line-height:1.2;letter-spacing:-.5px}
 .hero-stage--globe .hero-text .hero-sub{margin:0;max-width:34em;font-size:clamp(17px,1.6vw,22px);line-height:1.7;color:#b9c8df}
 .hero-side{width:100%;display:grid;justify-items:center;gap:22px}
-.hero-specs{width:100%;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #335b7e;border-bottom:1px solid #335b7e}
-.hero-specs>div{padding:16px 12px;display:grid;gap:5px;align-content:center;justify-items:center}
-.hero-specs>div+div{border-left:1px solid #1e3a55}
-.hero-specs dt{font:600 13px/1.4 Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:#7fa6c9}
-.hero-specs dd{margin:0;font:700 28px/1.15 Orbitron,sans-serif;color:#a4eddd;white-space:nowrap}
-.hero-specs>div:first-child dd{font-size:17px;line-height:1.35}
-.hero-specs p{margin:0;font-size:14px;line-height:1.5;color:#9bb3c9}
 .hero-cta{display:grid;grid-template-columns:repeat(2,minmax(0,290px));gap:12px;justify-content:center;width:100%}
 /* Keep the headline on one line where it fits. */
 @media(min-width:900px){html:not([lang=en]) .hero-stage--globe .hero-text h1{max-width:none;white-space:nowrap}html:not([lang=en]) .hero-stage--globe .hero-text h1 br{display:none}}
@@ -41,7 +34,7 @@ html[lang=en] .hero-stage--globe .hero-text h1{max-width:100%;text-wrap:balance}
 
 /* ---------- Globe canvas and overlays ---------- */
 .globe-stage{position:relative;min-width:0}
-#globe-canvas{display:block;width:100%;height:clamp(480px,calc(100svh - 240px),820px);cursor:grab;touch-action:none}
+#globe-canvas{display:block;width:100%;height:clamp(480px,calc(100svh - 240px),820px);cursor:grab;touch-action:pan-y}
 .globe-console.is-dragging #globe-canvas{cursor:grabbing}
 #globe-canvas:focus-visible{outline:2px solid #a7f5dc;outline-offset:-4px}
 .globe-overlay{position:absolute;left:16px;top:12px;display:grid;gap:6px;justify-items:start;pointer-events:none}
@@ -212,53 +205,189 @@ html[lang=en] .hero-stage--globe .hero-text h1{max-width:100%;text-wrap:balance}
   .ob-specs div{grid-template-columns:84px 1fr}
 }
 
-/* Hero copy at smaller widths */
-
+/* Hero buttons at phone width */
 @media(max-width:700px){
-  .hero-specs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .hero-specs>div:nth-child(3){border-left:0}
-  .hero-specs>div:nth-child(n+3){border-top:1px solid #1e3a55}
-  .hero-specs dd{font-size:24px}
   .hero-cta{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
   .cta-primary,.cta-secondary{padding:6px 8px;font-size:15px;gap:6px;text-align:center;line-height:1.3}
-  .hero-specs dd{white-space:normal}
   .cta-primary span[aria-hidden]{display:none}
 }
 
-/* Spec spotlight: every cell has a badge; the highlight rotates through the four (see globe.js).
-   The active cell only changes colour, glow and scale, so the row never shifts. */
-.hero-specs>div{position:relative;transition:background .5s,box-shadow .5s}
-.hero-specs dd,.hero-specs dt,.hero-specs p{transition:color .5s,text-shadow .5s,transform .5s}
-.spec-badge{justify-self:center;font:700 12px/1 Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:#8affdd;border:1px solid #8affdd55;padding:4px 8px;margin-bottom:2px;transition:background .5s,color .5s,border-color .5s}
-.hero-specs>div.is-active{background:linear-gradient(180deg,#8affdd1f,#8affdd05 70%);box-shadow:inset 0 2px 0 #8affdd}
-.hero-specs>div.is-active .spec-badge{background:#8affdd;color:#06231f;border-color:#8affdd}
-.hero-specs>div.is-active dd{color:#c8fff1;text-shadow:0 0 18px #8affdd66;transform:scale(1.12)}
-.hero-specs>div.is-active dt{color:#b5eee6}
-.hero-specs>div.is-active p{color:#d3e6f3}
-@media(prefers-reduced-motion:reduce){.hero-specs>div,.hero-specs dd,.hero-specs dt,.hero-specs p,.spec-badge{transition:none}}
+/* Hero → globe hand-off: a live line from the globe's data and a scroll cue into the console. */
+.hero-live{margin:0;display:inline-flex;align-items:center;gap:10px;font:500 15px/1.5 'Noto Sans TC',sans-serif;color:#c8fff1;background:#8affdd12;border:1px solid #8affdd55;padding:8px 16px}
+.hl-dot{width:9px;height:9px;border-radius:50%;background:#8affdd;box-shadow:0 0 0 0 #8affdd88;animation:hl-pulse 1.8s ease-out infinite;flex:none}
+@keyframes hl-pulse{0%{box-shadow:0 0 0 0 #8affdd99}100%{box-shadow:0 0 0 12px #8affdd00}}
+.hero-scroll{position:relative;display:block;width:2px;height:56px;margin:4px auto -18px;background:linear-gradient(#8affdd00,#8affdd88)}
+.hero-scroll span{position:absolute;left:-4px;top:0;width:10px;height:10px;border-radius:50%;background:#8affdd;box-shadow:0 0 10px #8affdd;animation:hero-drop 1.8s ease-in infinite}
+@keyframes hero-drop{0%{top:0;opacity:0}20%{opacity:1}100%{top:46px;opacity:0}}
+#globe-console{scroll-margin-top:8px} /* html already reserves the header height via scroll-padding */
+@media(prefers-reduced-motion:reduce){.hl-dot,.hero-scroll span{animation:none}}
+@media(max-width:700px){.hero-live{font-size:13.5px;padding:7px 12px;text-align:left}}
 
-/* Project title above the headline */
-.hero-project{margin:0 auto 18px;max-width:900px;text-align:center;font:500 clamp(14px,1.25vw,18px)/1.6 'Space Grotesk','Noto Sans TC',sans-serif;letter-spacing:.3px;color:#9ebfe1}
-.hero-project .hp-name{font-family:Orbitron,sans-serif;font-weight:700;color:#c8fff1;letter-spacing:1px}
+/* Section after the globe: hands off to the project overview. */
+.mission-invite .mission-lead{max-width:40em;margin:10px 0 0;font-size:17px;line-height:1.75;color:#b9c8df}
+.mission-invite .mission-cta{display:inline-flex;margin-top:22px}
 
-/* Clickable spec cells and their explanation panel */
-.hero-specs>div[role=button]{cursor:pointer;outline:none}
-.hero-specs>div[role=button]:hover dt{color:#d6fff4}
-.hero-specs>div[role=button]:focus-visible{box-shadow:inset 0 0 0 2px #a7f5dc}
-.hero-specs>div[aria-expanded=true]{background:linear-gradient(180deg,#8affdd2e,#8affdd0a 75%)}
-.hero-specs>div[aria-expanded=true]::after{content:"";position:absolute;left:50%;bottom:-1px;width:14px;height:14px;background:#0b1d2f;border-left:1px solid #8affdd;border-top:1px solid #8affdd;transform:translate(-50%,50%) rotate(45deg);z-index:2}
-.spec-hint{margin:-10px 0 0;font-size:13px;color:#7f93ab}
-.spec-detail{position:relative;width:100%;margin-top:-8px;background:#0b1d2f;border:1px solid #8affdd;padding:22px 28px 24px;text-align:left}
-.spec-detail[hidden]{display:none}
-.spec-detail[hidden]+.spec-hint{display:block}
-.spec-detail:not([hidden])+.spec-hint{display:none}
-.spec-detail article{display:grid;gap:10px}
-.spec-detail article[hidden]{display:none}
-.spec-detail h3{margin:0;padding-right:90px;font-size:clamp(18px,1.6vw,22px);color:#eef6ff}
-.sd-lead{margin:0;font-size:16px;line-height:1.7;color:#c8fff1}
-.spec-detail ul{margin:4px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px}
-.spec-detail li{position:relative;padding-left:16px;font-size:15px;line-height:1.7;color:#c1d1e2}
-.spec-detail li::before{content:"";position:absolute;left:0;top:.72em;width:6px;height:6px;background:#8affdd}
-.sd-close{position:absolute;top:16px;right:18px;background:none;border:1px solid #426c91;color:#c9dde7;font-size:13px;padding:5px 10px;cursor:pointer}
-.sd-close:hover{border-color:#a2ecd8;color:#fff}
-@media(max-width:800px){.spec-detail{padding:18px 16px 20px}.spec-detail ul{grid-template-columns:1fr}.spec-detail h3{padding-right:76px}}
+/* ---------- Why GeoTrust (between the globe and the 'how' teaser) ---------- */
+.why-home{padding:84px 6% 72px;border-top:1px solid #284561;background:linear-gradient(180deg,#0a1626,#07101e)}
+.wh-inner{max-width:1240px;margin:0 auto;display:grid;gap:34px}
+.wh-head{display:grid;gap:12px}
+.wh-head h2{margin:0;font-size:clamp(26px,3vw,40px);line-height:1.3;color:#eef6ff}
+.wh-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;position:relative}
+.wh-steps li{position:relative;padding:22px 24px 24px;border-top:2px solid #284561;display:grid;gap:10px;align-content:start}
+.wh-steps li+li{border-left:1px solid #1e3a55}
+.wh-steps li:last-child{border-top-color:#8affdd}
+.wh-steps li::before{content:"";position:absolute;top:-2px;left:0;height:2px;width:0;background:#8affdd;transition:width 1s ease}
+.why-home.is-in .wh-steps li::before{width:100%}
+.why-home.is-in .wh-steps li:nth-child(2)::before{transition-delay:.5s}
+.why-home.is-in .wh-steps li:nth-child(3)::before{transition-delay:1s}
+.wh-steps b{font:700 30px/1 Orbitron,sans-serif;color:transparent;-webkit-text-stroke:1px #8affdd}
+.wh-steps h3{margin:0;font-size:20px;color:#eef6ff}
+.wh-steps p{margin:0;font-size:16px;line-height:1.75;color:#b9c8df}
+.wh-mission{display:flex;align-items:center;gap:18px;padding:20px 24px;border:1px solid #8affdd;background:linear-gradient(90deg,#8affdd1a,#8affdd05)}
+.wh-k{flex:none;font:700 13px/1 Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:#06231f;background:#8affdd;padding:8px 10px}
+.wh-mission p{margin:0;font-size:clamp(17px,1.6vw,21px);line-height:1.6;color:#eef6ff;font-weight:600}
+.wh-uses-head h3{margin:0;font-size:22px;color:#eef6ff}
+.wh-uses{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:-16px}
+.wh-uses article{border:1px solid #284561;background:#0b1d2f;padding:20px;display:grid;gap:10px;align-content:start;transition:border-color .25s,transform .25s}
+.wh-uses article:hover{border-color:#8affdd;transform:translateY(-3px)}
+.wh-uses article:first-child{border-color:#8affdd88}
+.wh-uses svg{width:30px;height:30px;color:#8affdd}
+.wh-uses h4{margin:0;font-size:17px;color:#eef6ff}
+.wh-uses p{margin:0;font-size:15px;line-height:1.7;color:#9bb3c9}
+@media(max-width:1000px){.wh-uses{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){
+  .why-home{padding:56px 16px 48px}
+  .wh-steps{grid-template-columns:1fr}
+  .wh-steps li+li{border-left:0}
+  .wh-mission{flex-direction:column;align-items:flex-start;gap:10px;padding:16px}
+  .wh-uses{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.wh-steps li::before{transition:none}.wh-uses article{transition:none}}
+
+/* Hero: three short facts explain what the satellites broadcast before handing off to the globe. */
+.hero-facts3{list-style:none;margin:6px 0 4px;padding:0;width:100%;max-width:1040px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:left;border-top:1px solid #335b7e;border-bottom:1px solid #335b7e}
+.hero-facts3 li{display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:6px;align-content:start;padding:16px 18px}
+.hero-facts3 li+li{border-left:1px solid #1e3a55}
+.hero-facts3 b{grid-row:span 2;font:700 22px/1 Orbitron,sans-serif;color:transparent;-webkit-text-stroke:1px #8affdd;padding-top:2px}
+.hf-k{font:700 13px/1.4 'Noto Sans TC',sans-serif;letter-spacing:1px;color:#8affdd}
+.hero-facts3 p{margin:0;font-size:15.5px;line-height:1.7;color:#c8d6e6}
+.hero-stage--globe .hero-text .hero-sub{font-size:clamp(16px,1.4vw,19px);color:#b5eee6}
+@media(max-width:860px){
+  .hero-facts3{grid-template-columns:1fr}
+  .hero-facts3 li+li{border-left:0;border-top:1px solid #1e3a55}
+  .hero-facts3 li{padding:12px 4px}
+}
+
+/* Hero identity: who we are (above the headline) and what GeoTrust is (right below it). */
+.hero-id{margin:0;display:inline-flex;align-items:center;gap:12px;font:600 14px/1.4 'Noto Sans TC',sans-serif;letter-spacing:.5px;color:#b5c7da;border:1px solid #335b7e;background:#0c1f30;padding:7px 14px}
+.hero-id i{width:1px;height:14px;background:#426c91}
+.hero-stage--globe .hero-text .hero-def{margin:2px 0 4px;max-width:44em;font-size:clamp(17px,1.55vw,21px);line-height:1.7;color:#e6f0fa}
+.hero-def b{font-family:Orbitron,sans-serif;color:#8affdd;letter-spacing:.5px}
+@media(max-width:700px){.hero-id{font-size:12.5px;gap:8px;padding:6px 10px}}
+.hero-id b{font:700 14px Orbitron,sans-serif;color:#8affdd;letter-spacing:1px}
+.hero-facts3 .hf-note{grid-column:2;font-size:13.5px;line-height:1.65;color:#9bb3c9}
+.hero-facts3 .hf-link{grid-column:2;justify-self:start;font-size:13.5px;font-weight:600;color:#8affdd;text-decoration:none;border-bottom:1px solid #8affdd66}
+.hero-facts3 .hf-link:hover{color:#fff}
+/* Keep the three "read more" links on one baseline. */
+.hero-facts3 li{grid-template-rows:auto auto 1fr auto}
+.hero-facts3 .hf-note{align-self:start}
+.hero-facts3 .hf-link{align-self:end;margin-top:4px}
+
+/* ---------- One section-head format for the homepage: kicker, title, one-line lead ---------- */
+.home-head{display:grid;gap:12px;justify-items:start;text-align:left;max-width:52em}
+.home-head .micro,.mission-invite>.micro{font:600 13px/1.4 Orbitron,'Noto Sans TC',sans-serif;letter-spacing:2px;color:#8affdd}
+.home-head h2,.mission-invite>h2{margin:0;font-size:clamp(26px,3vw,40px);line-height:1.3;color:#eef6ff}
+.home-lead,.mission-invite .mission-lead{margin:0;max-width:46em;font-size:17px;line-height:1.75;color:#b9c8df}
+#live-sky{margin:56px auto 0;max-width:1550px;scroll-margin-top:8px}
+.hero-stage--globe .globe-console{margin-top:24px}
+.hero-stage--globe .hero-text .hero-def{margin-bottom:8px}
+@media(max-width:700px){#live-sky{margin-top:40px}.home-lead{font-size:15.5px}}
+/* All homepage sections share the hero's content edge. */
+.why-home{padding-left:6%;padding-right:6%}
+.wh-inner{max-width:1550px}
+.mission-invite{padding-left:6%!important;padding-right:6%!important}
+.mission-invite>*{max-width:1550px;margin-left:auto;margin-right:auto}
+.mission-invite>.micro,.mission-invite>h2,.mission-invite>.mission-lead,.mission-invite>.story-expand,.mission-invite>.mission-cta{display:block;width:100%;max-width:1550px}
+.mission-invite>.story-expand,.mission-invite>.mission-cta{width:auto;display:inline-flex}
+
+/* ---------- Order: intro hero → why → orbit view → how ---------- */
+.hero.hero--intro{min-height:0;height:auto;padding-bottom:80px}
+.hero.hero--intro .hero-scroll{margin-bottom:-40px}
+.orbit-sec{padding:72px 6% 64px;background:radial-gradient(ellipse at 70% 30%,#13365b44,transparent 60%),#070e18;border-top:1px solid #284561}
+.orbit-sec .hero-stage--globe{margin:0 auto}
+.orbit-sec #live-sky{margin:0}
+.wh-next{justify-self:start;display:inline-flex;align-items:center;gap:12px;margin-top:6px;padding:12px 18px;font-size:16px;font-weight:600;color:#e2edf8;text-decoration:none;border:1px dashed #426c91;transition:border-color .2s,color .2s}
+.wh-next:hover{border-color:#8affdd;color:#fff}
+.wh-next em{font-style:normal;color:#8affdd;animation:po-bob-home 1.6s ease-in-out infinite}
+@keyframes po-bob-home{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@media(max-width:700px){.orbit-sec{padding:48px 16px 40px}.hero.hero--intro{padding-bottom:56px}}
+@media(prefers-reduced-motion:reduce){.wh-next em{animation:none}}
+
+/* ---------- HOW: five-step signal pipeline ---------- */
+.how-flow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;margin:30px auto 0;max-width:1550px}
+.hf-stage{position:relative;border:1px solid #284561;background:linear-gradient(180deg,#0a1726,#071120);padding:0 0 12px;min-width:0}
+.hf-bar{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid #1d3650}
+.hf-tag{font:600 12px/1.4 Orbitron,sans-serif;letter-spacing:2px;color:#7f9bb8}
+.hf-count{margin-left:auto;font:700 14px/1 Orbitron,sans-serif;color:#8affdd}
+.hf-play{padding:7px 14px;font:600 14px/1 'Noto Sans TC',sans-serif;color:#dbe8f6;background:transparent;border:1px solid #426c91;cursor:pointer}
+.hf-play:hover{border-color:#8affdd;color:#fff}
+.hf-canvas{display:block;width:100%;aspect-ratio:8/5}
+.hf-timer{height:3px;margin:0 16px;background:#16304a}
+.hf-timer i{display:block;height:100%;width:0;background:#8affdd}
+.hf-note{display:block;padding:10px 16px 0;font-size:13px;color:#6f8aa6}
+.hf-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:none}
+.hf-steps li{position:relative;border:1px solid #223d58;background:#0a1624;transition:border-color .25s,background .25s}
+.hf-steps li::before{content:"";position:absolute;left:-1px;top:-1px;bottom:-1px;width:3px;background:transparent;transition:background .25s}
+.hf-steps li.is-done::before{background:#2f6f63}
+.hf-steps li.is-active{border-color:#8affdd;background:linear-gradient(90deg,#8affdd14,#0a1624 70%)}
+.hf-steps li.is-active::before{background:#8affdd}
+.hf-step{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:baseline;gap:12px;width:100%;padding:14px 18px;text-align:left;background:none;border:0;color:inherit;cursor:pointer;font:inherit}
+.hf-step b{font:700 15px/1 Orbitron,sans-serif;color:#5d7f9f}
+.hf-name{font-size:14px;font-weight:700;color:#7f9bb8;letter-spacing:1px}
+.hf-title{font-size:18px;font-weight:700;color:#c9d8ea}
+.is-active .hf-step b,.is-active .hf-name{color:#8affdd}
+.is-active .hf-title{color:#fff}
+.hf-step:focus-visible{outline:2px solid #8affdd;outline-offset:-2px}
+.hf-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
+.hf-body{padding:0 18px}
+.hf-body>div{overflow:hidden;min-height:0}
+.is-active .hf-body{grid-template-rows:1fr}
+.hf-body p{margin:0}
+.hf-body p:first-child{font-size:16px;line-height:1.75;color:#b9c8df;padding-bottom:10px}
+.hf-io{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.hf-io{padding-bottom:16px}
+.hf-io span{padding:4px 10px;border:1px solid #2f5577;color:#dbe8f6;background:#0d2134}
+.hf-io span:last-child{border-color:#8affdd;color:#8affdd}
+.hf-io em{font-style:normal;color:#8affdd}
+@media(max-width:1000px){.how-flow{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){.hf-step{padding:12px 14px;gap:10px}.hf-title{font-size:16px}.hf-body{padding:0 14px}.hf-tag{display:none}.hf-count{margin-left:0}.hf-play{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){.hf-body{transition:none}}
+.mission-invite{scroll-margin-top:8px}
+.hf-canvas{touch-action:pan-y}.hf-canvas:focus-visible{outline:2px solid #8affdd;outline-offset:-2px}
+
+/* Steps read as one chain: a short connector joins each card to the next. */
+.hf-steps li:not(:last-child)::after{content:"";position:absolute;left:30px;bottom:-9px;width:2px;height:8px;background:#2f5577}
+.hf-steps li.is-done:not(:last-child)::after{background:#8affdd88}
+
+/* Hint shown when the page scrolls past the globe without zooming it. */
+.globe-scroll-hint{position:absolute;left:50%;top:50%;z-index:6;max-width:min(80%,420px);padding:12px 18px;transform:translate(-50%,-50%);font-size:15px;line-height:1.5;text-align:center;color:#e2edf8;background:#061019e8;border:1px solid #426c91;pointer-events:none;opacity:0;transition:opacity .25s}
+.globe-scroll-hint.is-on{opacity:1}
+
+/* Larger type for the HOW pipeline. */
+.hf-tag{font-size:13px}
+.hf-count,.hf-play{font-size:15px}
+.hf-note{font-size:14px}
+.hf-step b{font-size:16px}
+.hf-name{font-size:15px}
+.hf-title{font-size:20px}
+.hf-body p:first-child{font-size:17px}
+.hf-io{font-size:15px}
+@media(max-width:700px){.hf-title{font-size:18px}.hf-body p:first-child{font-size:16px}}
+
+/* Back / next through the pipeline, beat by beat. */
+.hf-bar{gap:8px}
+.hf-count{margin-right:6px}
+.hf-nav{padding:7px 12px;font:600 15px/1 'Noto Sans TC',sans-serif;color:#dbe8f6;background:#0d2134;border:1px solid #426c91;cursor:pointer}
+.hf-nav:hover,.hf-play:hover{border-color:#8affdd;color:#fff}
+.hf-nav:focus-visible,.hf-play:focus-visible{outline:2px solid #8affdd;outline-offset:2px}
+@media(max-width:700px){.hf-count{margin-right:auto}.hf-play{margin-left:0}.hf-nav,.hf-play{padding:7px 9px;font-size:14px}}

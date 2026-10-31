@@ -78,7 +78,9 @@
       live: (g, i, m) => `GEO ${g} · IGSO ${i} · MEO ${m}`, liveOne: n => `${n} 顆（仰角 ≥ 10°）`,
       dataSource: (g, c) => `GPS ${g} 顆 · 北斗 ${c} 顆（2026-09-22）`, dataMeo: (g, c) => `GPS ${g} 顆 · 北斗 ${c} 顆`,
       cardMeta: { all: 'GPS＋北斗', GEO: '35,786 km', IGSO: '傾角 55°', MEO: '約 2 萬 km' }, cardCount: n => `${n} 顆`,
-      customSite: '自訂觀測點', sea: '海域', visibleTitle: name => `${name} 可見衛星`,
+      customSite: '自訂觀測點', sea: '海域',
+      heroLive: (time, site, n, g, c) => `2026-09-22 UTC ${time}　${site} 上空可見 ${n} 顆衛星（GPS ${g}・北斗 ${c}）`,
+      heroTeach: n => `教學示意　可見 ${n} 顆衛星`, visibleTitle: name => `${name} 可見衛星`,
       bds: n => `北斗 ${n}`, gps: n => `GPS ${n}`, site: '國立高雄科技大學 · 台灣',
       sourceReal: (g, c) => `廣播星曆 2026-09-22（DOY 265）· GPS ${g} 顆＋北斗 ${c} 顆`,
       sourceTeach: '理想化星座 · GPS＋北斗',
@@ -121,7 +123,9 @@
       live: (g, i, m) => `GEO ${g} · IGSO ${i} · MEO ${m}`, liveOne: n => `${n} (elevation ≥ 10°)`,
       dataSource: (g, c) => `${g} GPS · ${c} BeiDou (2026-09-22)`, dataMeo: (g, c) => `${g} GPS · ${c} BeiDou`,
       cardMeta: { all: 'GPS + BeiDou', GEO: '35,786 km', IGSO: '55° incl.', MEO: '~20,000 km' }, cardCount: n => `${n} sats`,
-      customSite: 'Custom site', sea: 'Open sea', visibleTitle: name => `Visible from ${name}`,
+      customSite: 'Custom site', sea: 'Open sea',
+      heroLive: (time, site, n, g, c) => `2026-09-22 UTC ${time} · ${n} satellites above ${site} (GPS ${g} · BeiDou ${c})`,
+      heroTeach: n => `Teaching model · ${n} satellites visible`, visibleTitle: name => `Visible from ${name}`,
       bds: n => `BeiDou ${n}`, gps: n => `GPS ${n}`, site: 'Kaohsiung, Taiwan',
       sourceReal: (g, c) => `Broadcast ephemerides 2026-09-22 (DOY 265) · ${g} GPS + ${c} BeiDou`,
       sourceTeach: 'Idealized constellation · GPS + BeiDou',
@@ -173,7 +177,7 @@
 
   const MAX_ZOOM = 4;
   function setZoom(z) {
-    if (z > MAX_ZOOM && state.zoom >= MAX_ZOOM - 0.01) { enterGround(); return; }
+    if (z > MAX_ZOOM && state.zoom >= MAX_ZOOM - 0.01) { setWheelActive(true); enterGround(); return; }
     state.zoom = Math.max(0.6, Math.min(MAX_ZOOM, z));
     state.R = state.baseR * state.zoom;
     if (projection) projection.scale(state.R);
@@ -603,6 +607,14 @@
     $('globe-vis-count').textContent = visible.length;
     $('globe-vis-bds').textContent = t.bds(visible.length - gps.length);
     $('globe-vis-gps').textContent = t.gps(gps.length);
+    // Hero line above the globe: the same live figures, so the headline hands off to the globe.
+    const heroLive = document.getElementById('hero-live-text');
+    if (heroLive && (real || state.mode === 'teach')) {
+      const d = new Date(utcMs());
+      heroLive.textContent = real
+        ? t.heroLive(`${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`, siteName(), visible.length, gps.length, visible.length - gps.length)
+        : t.heroTeach(visible.length);
+    }
     // PRN chips (real mode only; teaching satellites have no PRN).
     $('globe-visible-list').replaceChildren(...(real ? visible : []).slice().sort((a, b) => a.label.localeCompare(b.label)).map(s => {
       const chip = document.createElement('span');
@@ -704,7 +716,7 @@
     $('globe-ground').hidden = false;
     try { await loadLeaflet(); } catch { exitGround(); return; }
     if (!ground) {
-      const map = L.map('globe-ground-map', { minZoom: 4, maxZoom: 18, worldCopyJump: true, zoomSnap: 0.5, zoomControl: false, attributionControl: false });
+      const map = L.map('globe-ground-map', { scrollWheelZoom: wheelActive, dragging: !coarse, minZoom: 4, maxZoom: 18, worldCopyJump: true, zoomSnap: 0.5, zoomControl: false, attributionControl: false });
       L.control.zoom({ position: 'topright' }).addTo(map);
       const layers = {
         imagery: L.layerGroup([
@@ -725,6 +737,7 @@
         .addTo(map).bindTooltip('TW · NKUST 國立高雄科技大學', { permanent: true, direction: 'right', className: 'nkust-tip' });
       // Wheel-out at the minimum zoom leaves the map.
       map.getContainer().addEventListener('wheel', e => {
+        if (!wheelActive) { showScrollHint(); return; }
         if (e.deltaY > 0 && map.getZoom() <= map.getMinZoom()) exitGround(false);
       });
       // Clicking the map moves the observation site there.
@@ -765,6 +778,8 @@
   }
 
   // ---------- Events ----------
+  let wheelActive = false;
+  const coarse = matchMedia('(pointer: coarse)').matches;
   $('globe-play').addEventListener('click', () => { state.playing = !state.playing; updateUi(); });
   root.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { state.mode = b.dataset.mode; updateUi(); }));
   root.querySelectorAll('[data-orbit]').forEach(b => b.addEventListener('click', () => { state.filter = b.dataset.orbit; updateUi(); }));
@@ -776,7 +791,7 @@
     buildTeach(); updateUi();
   }));
   $('globe-recenter').addEventListener('click', resetView);
-  $('globe-ground-enter').addEventListener('click', enterGround);
+  $('globe-ground-enter').addEventListener('click', () => { setWheelActive(true); enterGround(); });
   root.querySelectorAll('[data-site-reset]').forEach(b => b.addEventListener('click', () => setSite(LAT0, LON0, false)));
   $('globe-ground-exit').addEventListener('click', () => exitGround(true));
   root.querySelectorAll('[data-layer]').forEach(b => b.addEventListener('click', () => setGroundLayer(b.dataset.layer)));
@@ -787,11 +802,37 @@
   new ResizeObserver(resize).observe(canvas);
   new ResizeObserver(resize).observe(sky);
 
+  // Scrolling the page past the globe must never move it. The wheel zooms only after the globe has been
+  // clicked (until the pointer leaves the console) or with Ctrl/⌘ held; on touch, one finger scrolls the
+  // page, a sideways drag rotates and two fingers zoom.
+  const scrollHint = document.createElement('div');
+  scrollHint.className = 'globe-scroll-hint';
+  scrollHint.setAttribute('aria-hidden', 'true');
+  canvas.parentElement.append(scrollHint);
+  let hintTimer = 0, touchHinted = false;
+  function showScrollHint(touch) {
+    const en = document.documentElement.lang === 'en';
+    scrollHint.textContent = touch
+      ? (en ? 'Drag sideways to rotate · pinch to zoom' : '左右拖曳可旋轉 · 兩指可縮放')
+      : (en ? 'Click the globe first, or hold Ctrl (⌘ on Mac) while scrolling, to zoom' : '先點一下地球，或按住 Ctrl（Mac 為 ⌘）再滾動，即可縮放');
+    scrollHint.classList.add('is-on');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => scrollHint.classList.remove('is-on'), 1600);
+  }
+  function setWheelActive(v) {
+    wheelActive = v;
+    if (ground) ground.map.scrollWheelZoom[v ? 'enable' : 'disable']();
+  }
+  root.addEventListener('mouseleave', () => setWheelActive(false));
+  $('globe-ground').addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') setWheelActive(true); });
+
   // Drag to rotate, wheel or pinch to zoom; arrow keys and +/− do the same for keyboard users.
   const pointers = new Map();
   let drag = null, pinch = null;
   const pinchDistance = () => { const [a, b] = [...pointers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
   canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') setWheelActive(true);
+    else if (!touchHinted) { touchHinted = true; showScrollHint(true); }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     canvas.setPointerCapture(e.pointerId);
     if (pointers.size === 2) { drag = null; pinch = { d: pinchDistance(), zoom: state.zoom }; }
@@ -813,6 +854,7 @@
   canvas.addEventListener('pointerup', endPointer);
   canvas.addEventListener('pointercancel', endPointer);
   canvas.addEventListener('wheel', e => {
+    if (!wheelActive && !e.ctrlKey && !e.metaKey) { showScrollHint(false); return; }
     e.preventDefault();
     setZoom(state.zoom * Math.exp(-e.deltaY * 0.0015));
   }, { passive: false });
@@ -855,35 +897,11 @@
   requestAnimationFrame(now => { state.last = now; frame(now); });
 })();
 
-// Hero spec spotlight: highlight each spec cell in turn; hovering a cell holds it.
-// Clicking (or Enter/Space) opens that cell's explanation below the row and pins the highlight.
+// Why-GeoTrust steps: draw the progress line across the three beats when the section scrolls into view.
 (() => {
-  const cells = [...document.querySelectorAll('.hero-specs > div')];
-  const panel = document.getElementById('spec-detail');
-  if (cells.length < 2 || !panel) return;
-  const articles = [...panel.querySelectorAll('[data-spec-detail]')];
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  let active = 0, held = false, open = -1;
-  const show = i => { active = i; cells.forEach((c, k) => c.classList.toggle('is-active', k === i)); };
-  function setOpen(i) {
-    open = i;
-    panel.hidden = i < 0;
-    articles.forEach((a, k) => { a.hidden = k !== i; });
-    cells.forEach((c, k) => c.setAttribute('aria-expanded', String(k === i)));
-    if (i >= 0) show(i);
-  }
-  cells.forEach((c, i) => {
-    c.addEventListener('mouseenter', () => { held = true; if (open < 0) show(i); });
-    c.addEventListener('mouseleave', () => { held = false; });
-    c.addEventListener('click', () => setOpen(open === i ? -1 : i));
-    c.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(open === i ? -1 : i); }
-    });
-  });
-  panel.querySelector('.sd-close').addEventListener('click', () => { const i = open; setOpen(-1); cells[i]?.focus(); });
-  setInterval(() => {
-    if (held || open >= 0 || reduced.matches || document.hidden) return;
-    show((active + 1) % cells.length);
-  }, 3200);
-  show(0);
+  const why = document.querySelector('.why-home');
+  if (!why) return;
+  new IntersectionObserver((entries, obs) => {
+    if (entries[0].isIntersecting) { why.classList.add('is-in'); obs.disconnect(); }
+  }, { threshold: 0.3 }).observe(why);
 })();

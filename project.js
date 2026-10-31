@@ -191,3 +191,36 @@
   addEventListener('resize', update);
   update();
 })();
+
+// Core features spotlight: highlight each spec cell in turn; hovering a cell holds it.
+// Clicking (or Enter/Space) opens that cell's explanation below the row and pins the highlight.
+(() => {
+  const cells = [...document.querySelectorAll('.hero-specs > div')];
+  const panel = document.getElementById('spec-detail');
+  if (cells.length < 2 || !panel) return;
+  const articles = [...panel.querySelectorAll('[data-spec-detail]')];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let active = 0, held = false, open = -1;
+  const show = i => { active = i; cells.forEach((c, k) => c.classList.toggle('is-active', k === i)); };
+  function setOpen(i) {
+    open = i;
+    panel.hidden = i < 0;
+    articles.forEach((a, k) => { a.hidden = k !== i; });
+    cells.forEach((c, k) => c.setAttribute('aria-expanded', String(k === i)));
+    if (i >= 0) show(i);
+  }
+  cells.forEach((c, i) => {
+    c.addEventListener('mouseenter', () => { held = true; if (open < 0) show(i); });
+    c.addEventListener('mouseleave', () => { held = false; });
+    c.addEventListener('click', () => setOpen(open === i ? -1 : i));
+    c.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(open === i ? -1 : i); }
+    });
+  });
+  panel.querySelector('.sd-close').addEventListener('click', () => { const i = open; setOpen(-1); cells[i]?.focus(); });
+  setInterval(() => {
+    if (held || open >= 0 || reduced.matches || document.hidden) return;
+    show((active + 1) % cells.length);
+  }, 3200);
+  show(0);
+})();

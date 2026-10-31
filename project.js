@@ -15,7 +15,7 @@
     const count = document.getElementById('po-step-count');
     const span = 160 * (nodes.length - 1);
     flow.style.strokeDasharray = span;
-    let step = 0, playing = !reduced.matches, visible = false;
+    let step = 0, playing = !reduced.matches, visible = false, elapsed = 0;
 
     // Compact step buttons for narrow screens, where the diagram labels get small.
     const chips = document.createElement('div');
@@ -48,6 +48,9 @@
       flow.style.strokeDashoffset = span - step * 160;
       packet.setAttribute('cx', 80 + step * 160);
       count.textContent = `${String(step + 1).padStart(2, '0')} / ${String(nodes.length).padStart(2, '0')}`;
+      // Hint at what comes next while the tour is running.
+      nodes.forEach((n, k) => n.classList.toggle('is-next', playing && k === (step + 1) % nodes.length));
+      elapsed = 0;
       labels();
     }
     nodes.forEach((n, i) => {
@@ -56,11 +59,23 @@
     });
     document.getElementById('po-prev').addEventListener('click', () => { playing = false; go(step - 1); });
     document.getElementById('po-next').addEventListener('click', () => { playing = false; go(step + 1); });
-    playBtn.addEventListener('click', () => { playing = !playing; labels(); });
+    playBtn.addEventListener('click', () => { playing = !playing; go(step); });
     document.addEventListener('languagechange', () => setTimeout(labels));
-    reduced.addEventListener('change', () => { if (reduced.matches) playing = false; labels(); });
+    reduced.addEventListener('change', () => { if (reduced.matches) playing = false; go(step); });
     onScreen(pipe, v => { visible = v; });
-    setInterval(() => { if (playing && visible && !document.hidden) go(step + 1); }, 3600);
+    // Each step stays up for STEP_MS; the bar under the counter shows time until the next one.
+    const STEP_MS = 6000, timer = document.getElementById('po-timer');
+    setInterval(() => {
+      if (playing && visible && !document.hidden) {
+        elapsed += 100;
+        if (elapsed >= STEP_MS) go(step + 1);
+      }
+      timer.style.width = playing ? `${Math.min(100, elapsed / STEP_MS * 100)}%` : '0';
+    }, 100);
+    // SVG <animateMotion> ignores CSS, so pause it explicitly for reduced motion.
+    const syncSmil = () => pipe.querySelectorAll('svg.sc').forEach(svg => reduced.matches ? svg.pauseAnimations() : svg.unpauseAnimations());
+    reduced.addEventListener('change', syncSmil);
+    syncSmil();
     go(0);
   }
 
@@ -148,4 +163,31 @@
   // ---------- 06 Validation levels: reveal when scrolled into view ----------
   const levels = document.querySelector('.po-levels');
   if (levels) onScreen(levels, v => { if (v) levels.classList.add('is-in'); });
+})();
+
+// Chapter rail: highlight the section in view and fill the line up to it.
+(() => {
+  const rail = document.getElementById('po-rail');
+  if (!rail) return;
+  const links = [...rail.querySelectorAll('[data-rail]')];
+  const sections = links.map(a => document.getElementById(a.dataset.rail));
+  const fill = document.createElement('span');
+  fill.className = 'po-rail-fill';
+  rail.querySelector('ol').append(fill);
+  function update() {
+    const line = rail.getBoundingClientRect().bottom + 40;
+    let current = -1;
+    sections.forEach((sec, i) => { if (sec.getBoundingClientRect().top <= line) current = i; });
+    links.forEach((a, i) => {
+      a.classList.toggle('is-current', i === current);
+      a.classList.toggle('is-past', i < current);
+      if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+    });
+    // The line spans from the first to the last dot: (n − 1) / n of the rail width.
+    const n = links.length;
+    fill.style.width = current < 0 ? '0' : `calc(${current / (n - 1)} * (100% - 100% / ${n}))`;
+  }
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', update);
+  update();
 })();

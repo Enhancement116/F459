@@ -397,3 +397,7 @@
   .pbn-k{grid-row:auto}
   .po-bridge-next b{font-size:15px}
 }
+
+/* "Go deeper" bullets: a label, then one sentence. */
+.po .po-deep li b{display:inline-block;margin-right:4px;color:var(--mint);font-weight:700}
+.po .po-rt-facts + .po-note{margin-top:12px}

@@ -39,6 +39,7 @@
       bds: c.id, bdsMs: c.range / C * 1000,
     };
     window.GT_EPH = eph;
+    window.GT_DATA = data;   // the whole day, for the orbit chapter
     // Rewrite the example wherever it appears: text, both language attributes and labels.
     const swaps = [
       ['2026-09-22', eph.date], ['G13', eph.prn], ['45.2°', eph.el.toFixed(1) + '°'],

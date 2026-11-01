@@ -44,7 +44,8 @@
   function paintSky() {
     const W = innerWidth, H = innerHeight, narrow = W < 760;
     const south = site.lat < 0, s = south ? -1 : 1, latA = Math.abs(site.lat);
-    const px = narrow ? W * 0.5 : W * 0.13, py = narrow ? H * 0.07 : H * 0.3;      // visible pole on screen
+    const margin = (W - Math.min(1240, W)) / 2;                                           // the reading column is dimmed
+    const px = narrow ? W * 0.5 : margin > 140 ? margin / 2 : W * 0.13, py = narrow ? H * 0.07 : H * 0.3;  // visible pole on screen
     const R = Math.ceil(Math.hypot(Math.max(px, W - px), Math.max(py, H - py))) + 60;
     const reach = Math.min(178, 180 - latA + 2);                                   // degrees from the pole that ever rise here
     const k = R / Math.max(120, reach);

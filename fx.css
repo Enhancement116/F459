@@ -3,7 +3,7 @@
 
 /* Star field behind everything, cursor glow above the background */
 .fx-skywrap{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;transition:opacity .6s ease,transform .9s ease-out;will-change:transform,opacity}
-.fx-skywrap{opacity:.6}
+.fx-skywrap{opacity:.6;--col:min(1240px,100vw);-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(50% - var(--col)/2 - 40px),#000c calc(50% - var(--col)/2 + 40px),#000c calc(50% + var(--col)/2 - 40px),#000 calc(50% + var(--col)/2 + 40px),#000 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(50% - var(--col)/2 - 40px),#000c calc(50% - var(--col)/2 + 40px),#000c calc(50% + var(--col)/2 - 40px),#000 calc(50% + var(--col)/2 + 40px),#000 100%)}
 .fx-skywrap.is-scrolling{opacity:.22}
 .fx-skywrap.is-switching{opacity:0;transition:opacity .45s ease}
 .is-south .fx-skyrot{animation-name:fx-skyspin-s}
@@ -20,7 +20,7 @@
 .fx-skylabel b{font:600 11px 'Noto Sans TC',sans-serif;color:rgba(170,205,240,.42)}
 .fx-skylabel small{font:500 10px 'Noto Sans TC',sans-serif;color:rgba(170,205,240,.28)}
 /* Reading column stays calm: a soft dark veil over the centre, stars and orbits remain at the edges */
-.fx-veil{position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,transparent 0,#07090cb3 9%,#07090ccc 50%,#07090cb3 91%,transparent 100%)}
+.fx-veil{display:none}
 .fx-sat{position:fixed;left:0;top:var(--y);z-index:0;width:90px;height:2px;pointer-events:none;background:linear-gradient(90deg,transparent,#8affdd99,#e6fff8);border-radius:2px;animation:fx-sat 22s linear infinite;animation-delay:var(--d,0s);will-change:transform;opacity:.55}
 @keyframes fx-sat{from{transform:translate3d(-120px,0,0) rotate(-4deg)}55%{transform:translate3d(110vw,-6vh,0) rotate(-4deg)}to{transform:translate3d(110vw,-6vh,0) rotate(-4deg)}}
 .fx-on main,.fx-on footer{position:relative;z-index:1}
@@ -89,3 +89,25 @@
 .fx-on .why-home,.fx-on .mission-invite{background:linear-gradient(180deg,#07101ecc,#07101e99)!important}
 .fx-on .orbit-sec{background:radial-gradient(ellipse at 70% 30%,#13365b44,transparent 60%),#070e18bb!important}
 .fx-on .hero.hero--intro{background:transparent!important}
+
+/* Stars stay visible; only the sky right behind each line of text is darkened, by a soft halo around the letters. */
+main :is(p,li,h1,h2,h3,h4,dt,dd,figcaption,blockquote){text-shadow:0 0 10px #07101e,0 0 22px #07101ecc}
+
+/* Satellite colour key, shown next to every figure that draws satellites. */
+.sat-legend{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-left:auto;margin-right:14px;font:600 14px/1.2 'Noto Sans TC',sans-serif;color:#dbe8f6;text-shadow:none}
+.sat-legend>span{display:inline-flex;align-items:center;gap:7px}
+.sat-legend i{display:inline-block;width:16px;height:9px;border-radius:2px;background:var(--c);box-shadow:0 0 8px var(--c)}
+figure>.sat-legend{display:flex;margin:10px 0 0;justify-content:flex-start}
+.po-viz-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hf-bar .sat-legend{margin-right:8px}
+
+/* Main navigation: every item on one line and the same height; the current page is underlined without growing taller. */
+#site-nav a{white-space:nowrap}
+@media(min-width:801px){#site-nav a[aria-current=page]{padding-block:0;border-bottom:0;box-shadow:0 10px 0 -8px #8abaff}}
+
+/* No page ever scrolls sideways; decorative sweeps are clipped at the page edge. */
+body{overflow-x:clip}
+/* The homepage walkthrough bar: on phones the colour key takes its own row so the buttons keep their size. */
+.hf-bar{flex-wrap:wrap}
+@media(max-width:700px){.hf-bar .sat-legend{order:9;flex:1 0 100%;margin:4px 0 0}}
+figure>.sat-legend{flex-wrap:wrap;max-width:100%}

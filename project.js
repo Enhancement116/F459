@@ -1,220 +1,4 @@
-// Phones, tablets and low-end machines draw at most 30 frames per second at a lower pixel ratio.
-const PO_LOW = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
-
-// Project overview page: pipeline stepper, signal-layer waveform and scroll reveals.
-(() => {
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const isEn = () => document.documentElement.lang === 'en';
-  const onScreen = (el, cb) => new IntersectionObserver(entries => cb(entries[0].isIntersecting), { threshold: 0.15 }).observe(el);
-
-  // ---------- 02 Pipeline: auto-advancing stepper with a travelling packet ----------
-  const pipe = document.getElementById('po-pipe');
-  if (pipe) {
-    const nodes = [...pipe.querySelectorAll('.po-node')];
-    const details = [...pipe.querySelectorAll('[data-step-detail]')];
-    const flow = document.getElementById('po-pipe-flow');
-    const packet = pipe.querySelector('.po-packet');
-    const playBtn = document.getElementById('po-play');
-    const count = document.getElementById('po-step-count');
-    const span = 160 * (nodes.length - 1);
-    flow.style.strokeDasharray = span;
-    let step = 0, playing = !reduced.matches, visible = false, elapsed = 0;
-
-    // Compact step buttons for narrow screens, where the diagram labels get small.
-    const chips = document.createElement('div');
-    chips.className = 'po-chips';
-    nodes.forEach((n, i) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.dataset.chip = i;
-      b.addEventListener('click', () => { playing = false; go(i); });
-      chips.append(b);
-    });
-    pipe.querySelector('.po-pipe-svg').after(chips);
-
-    function labels() {
-      playBtn.textContent = isEn() ? (playing ? 'Pause Ⅱ' : 'Play ▷') : (playing ? '暫停 Ⅱ' : '播放 ▷');
-      playBtn.setAttribute('aria-pressed', String(playing));
-      chips.querySelectorAll('button').forEach((b, i) => {
-        b.textContent = `${String(i + 1).padStart(2, '0')} ${nodes[i].querySelector('.po-node-name').textContent}`;
-      });
-    }
-    function go(i) {
-      step = (i + nodes.length) % nodes.length;
-      nodes.forEach((n, k) => {
-        n.classList.toggle('is-active', k === step);
-        n.classList.toggle('is-done', k < step);
-        n.setAttribute('aria-pressed', String(k === step));
-      });
-      chips.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-pressed', String(k === step)));
-      details.forEach((d, k) => { d.hidden = k !== step; });
-      flow.style.strokeDashoffset = span - step * 160;
-      packet.setAttribute('cx', 80 + step * 160);
-      count.textContent = `${String(step + 1).padStart(2, '0')} / ${String(nodes.length).padStart(2, '0')}`;
-      // Hint at what comes next while the tour is running.
-      nodes.forEach((n, k) => n.classList.toggle('is-next', playing && k === (step + 1) % nodes.length));
-      elapsed = 0;
-      labels();
-    }
-    nodes.forEach((n, i) => {
-      n.addEventListener('click', () => { playing = false; go(i); });
-      n.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playing = false; go(i); } });
-    });
-    document.getElementById('po-prev').addEventListener('click', () => { playing = false; go(step - 1); });
-    document.getElementById('po-next').addEventListener('click', () => { playing = false; go(step + 1); });
-    playBtn.addEventListener('click', () => { playing = !playing; go(step); });
-    document.addEventListener('languagechange', () => setTimeout(labels));
-    reduced.addEventListener('change', () => { if (reduced.matches) playing = false; go(step); });
-    onScreen(pipe, v => { visible = v; });
-    // Each step stays up for STEP_MS; the bar under the counter shows time until the next one.
-    const STEP_MS = 6000, timer = document.getElementById('po-timer');
-    setInterval(() => {
-      if (playing && visible && !document.hidden) {
-        elapsed += 100;
-        if (elapsed >= STEP_MS) go(step + 1);
-      }
-      timer.style.width = playing ? `${Math.min(100, elapsed / STEP_MS * 100)}%` : '0';
-    }, 100);
-    // SVG <animateMotion> ignores CSS, so pause it explicitly for reduced motion.
-    const syncSmil = () => pipe.querySelectorAll('svg.sc').forEach(svg => reduced.matches ? svg.pauseAnimations() : svg.unpauseAnimations());
-    reduced.addEventListener('change', syncSmil);
-    syncSmil();
-    go(0);
-  }
-
-  // ---------- 03 Signal anatomy: scrolling waveform per layer ----------
-  const anatomy = document.getElementById('po-anatomy');
-  const canvas = document.getElementById('po-wave');
-  if (anatomy && canvas) {
-    const ctx = canvas.getContext('2d');
-    const tabs = [...anatomy.querySelectorAll('[data-layer]')];
-    const texts = [...anatomy.querySelectorAll('[data-layer-detail]')];
-    let layer = 'data', phase = 0, last = 0, visible = false, w = 0, h = 0, dpr = 1;
-    const COLORS = { data: '#f6c775', code: '#bd9aff', carrier: '#70e3ed', sum: '#8affdd' };
-    // Deterministic pseudo-random bits so the pattern is stable between frames.
-    const bit = (seed, n) => (Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453 % 1 + 1) % 1 > 0.5 ? 1 : -1;
-
-    function resize() {
-      const r = canvas.getBoundingClientRect();
-      dpr = Math.min(devicePixelRatio || 1, PO_LOW ? 1.5 : 2);
-      w = r.width; h = r.height;
-      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-    }
-    function sample(kind, x, seed) {
-      const d = bit(seed, Math.floor((x + phase * 0.4) / 180));          // slow data bits
-      const c = bit(seed + 7, Math.floor((x + phase) / 14));             // fast code chips
-      const carrier = Math.sin((x + phase * 1.6) * 0.42 + seed);
-      if (kind === 'data') return d;
-      if (kind === 'code') return d * c;
-      return d * c * carrier;
-    }
-    function draw() {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = '#1e3a55'; ctx.lineWidth = 1;
-      for (let y = 0; y <= h; y += 35) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-      for (let x = 0; x <= w; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-      const mid = h / 2, amp = h * 0.32;
-      ctx.lineWidth = 2;
-      if (layer === 'sum') {
-        // Four channels drawn faintly, their sum drawn bright.
-        const seeds = [1, 2, 3, 4];
-        seeds.forEach((sd, k) => {
-          ctx.strokeStyle = ['#f6c77555', '#bd9aff55', '#70e3ed55', '#ff9f7a55'][k];
-          ctx.beginPath();
-          for (let x = 0; x <= w; x += 2) { const y = mid - sample('carrier', x, sd) * amp * 0.35; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
-          ctx.stroke();
-        });
-        ctx.strokeStyle = COLORS.sum;
-        ctx.beginPath();
-        for (let x = 0; x <= w; x += 2) {
-          const v = seeds.reduce((a, sd) => a + sample('carrier', x, sd), 0) / 2.2;
-          const y = mid - v * amp * 0.6; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-      } else {
-        ctx.strokeStyle = COLORS[layer];
-        ctx.shadowColor = COLORS[layer]; ctx.shadowBlur = 8;
-        ctx.beginPath();
-        for (let x = 0; x <= w; x += layer === 'carrier' ? 1 : 2) {
-          const y = mid - sample(layer, x, 1) * amp; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
-      ctx.fillStyle = '#9ebfe1'; ctx.font = "600 12px Orbitron, sans-serif";
-      ctx.fillText('+1', 8, mid - amp - 6); ctx.fillText('−1', 8, mid + amp + 16);
-    }
-    function frame(now) {
-      if (now - last < 33) { requestAnimationFrame(frame); return; }
-      const dt = Math.min((now - last) / 1000, 0.1); last = now;
-      if (visible && !reduced.matches && !document.hidden) phase += dt * 40;
-      if (visible) draw();
-      requestAnimationFrame(frame);
-    }
-    tabs.forEach(tab => tab.addEventListener('click', () => {
-      layer = tab.dataset.layer;
-      tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
-      texts.forEach(a => { a.hidden = a.dataset.layerDetail !== layer; });
-      draw();
-    }));
-    texts.forEach(a => { a.hidden = a.dataset.layerDetail !== layer; });
-    new ResizeObserver(() => { resize(); draw(); }).observe(canvas);
-    onScreen(canvas, v => { visible = v; });
-    resize(); draw();
-    requestAnimationFrame(now => { last = now; frame(now); });
-  }
-
-  // ---------- 06 Validation levels: reveal when scrolled into view ----------
-  const levels = document.querySelector('.po-levels');
-  if (levels) onScreen(levels, v => { if (v) levels.classList.add('is-in'); });
-})();
-
-// Chapter HUD: a vertical orbit track on wide screens, a progress line with a chapter chip on narrow ones.
-// --p (0–1) is continuous: the current chapter plus how far through it the reader is.
-(() => {
-  const rail = document.getElementById('po-rail');
-  if (!rail) return;
-  const ol = rail.querySelector('ol');
-  const links = [...rail.querySelectorAll('[data-rail]')];
-  const sections = links.map(a => document.getElementById(a.dataset.rail));
-  const sat = document.createElement('span');
-  sat.className = 'po-hud-sat';
-  sat.setAttribute('aria-hidden', 'true');
-  ol.append(sat);
-  const chip = document.createElement('button');
-  chip.type = 'button';
-  chip.className = 'po-hud-chip';
-  chip.setAttribute('aria-expanded', 'false');
-  rail.prepend(chip);
-  const close = () => { rail.classList.remove('is-open'); chip.setAttribute('aria-expanded', 'false'); };
-  chip.addEventListener('click', () => chip.setAttribute('aria-expanded', String(rail.classList.toggle('is-open'))));
-  links.forEach(a => a.addEventListener('click', close));
-  document.addEventListener('click', e => { if (!rail.contains(e.target)) close(); });
-  // Anchor jumps clear the header plus, on narrow screens, the fixed chapter bar.
-  const setOffset = () => document.documentElement.style.setProperty('--hud-h', (innerWidth <= 1180 ? chip.offsetHeight + 2 : 0) + 'px');
-  addEventListener('resize', setOffset);
-  setOffset();
-  function update() {
-    const line = innerHeight * 0.35;
-    let current = 0;
-    sections.forEach((sec, i) => { if (sec.getBoundingClientRect().top <= line) current = i; });
-    const r = sections[current].getBoundingClientRect();
-    const within = Math.min(1, Math.max(0, (line - r.top) / Math.max(1, r.height)));
-    rail.style.setProperty('--p', Math.min(1, (current + within) / (sections.length - 1)).toFixed(4));
-    links.forEach((a, i) => {
-      a.classList.toggle('is-current', i === current);
-      a.classList.toggle('is-past', i < current);
-      if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
-    });
-    const a = links[current];
-    chip.innerHTML = `<b>${a.querySelector('b').textContent}</b><span>${a.querySelector('.pr-title').textContent}</span><i aria-hidden="true">▾</i>`;
-  }
-  addEventListener('scroll', update, { passive: true });
-  addEventListener('resize', update);
-  document.addEventListener('languagechange', () => setTimeout(update));
-  update();
-})();
+// Project overview page: capability spotlight, chapter scenes and formulas. Helpers come from scene-kit.js.
 
 // Without JavaScript every 'go deeper' section and capability panel stays open; with it they start collapsed.
 document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false; });
@@ -253,84 +37,9 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
   show(0);
 })();
 
-// ---------- Chapter animations: time, orbit, propagation ----------
-// Each canvas draws in a virtual space (wide on desktop, taller on phones) and only runs while on screen.
+// ---------- Chapter animations ----------
 (() => {
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const isEn = () => document.documentElement.lang === 'en';
-  const C = { grid: '#17304a', text: '#dbe8f6', dim: '#7f9bb8', gps: '#70b7ff', bds: '#f6c775', acc: '#8affdd', pur: '#bd9aff', line: '#2f5577' };
-
-  function scene(id, draw) {
-    const cv = document.getElementById(id);
-    if (!cv) return;
-    const ctx = cv.getContext('2d');
-    let W = 800, H = 320, k = 1, dpr = 1, t = 0, last = 0, visible = false;
-    const g = {
-      ctx,
-      get W() { return W; }, get H() { return H; }, get n() { return W < 700; },
-      txt(s, x, y, { size = 14, color = C.text, align = 'left', weight = 500, mono = false } = {}) {
-        const px = size * (W < 700 ? 1.15 : 1.1);
-        ctx.fillStyle = color; ctx.textBaseline = 'middle';
-        if (!s.includes('_{')) {
-          ctx.font = `${weight} ${px}px ${mono ? "'JetBrains Mono',Consolas,monospace" : "'Noto Sans TC',sans-serif"}`;
-          ctx.textAlign = align; ctx.fillText(s, x, y); return;
-        }
-        // Formulas: "_{…}" is drawn as a real subscript in a math face, never as an underscore.
-        const parts = []; let i = 0;
-        for (const m of s.matchAll(/_\{([^}]*)\}/g)) { if (m.index > i) parts.push([s.slice(i, m.index), false]); parts.push([m[1], true]); i = m.index + m[0].length; }
-        if (i < s.length) parts.push([s.slice(i), false]);
-        const font = low => `${weight} ${low ? px * 0.7 : px}px 'Cambria Math','STIX Two Math','Times New Roman',serif`;
-        const widths = parts.map(([p, low]) => { ctx.font = font(low); return ctx.measureText(p).width; });
-        const total = widths.reduce((a, b) => a + b, 0);
-        let cx = align === 'right' ? x - total : align === 'center' ? x - total / 2 : x;
-        ctx.textAlign = 'left';
-        parts.forEach(([p, low], k) => { ctx.font = font(low); ctx.fillText(p, cx, low ? y + px * 0.3 : y); cx += widths[k]; });
-      },
-      line(x1, y1, x2, y2, color, w = 1.5, dash = []) {
-        ctx.beginPath(); ctx.setLineDash(dash); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-        ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); ctx.setLineDash([]);
-      },
-      dot(x, y, r, color, glow = 0) {
-        ctx.shadowColor = color; ctx.shadowBlur = glow;
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); ctx.shadowBlur = 0;
-      },
-      box(x, y, w, h, stroke) {
-        ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fillStyle = '#0b1b2c'; ctx.fill();
-        ctx.strokeStyle = stroke; ctx.lineWidth = 1.2; ctx.stroke();
-      },
-      sat(x, y, color) {
-        ctx.fillStyle = color; ctx.fillRect(x - 6, y - 5, 12, 10);
-        ctx.globalAlpha *= 0.75; ctx.fillRect(x - 21, y - 3, 12, 6); ctx.fillRect(x + 9, y - 3, 12, 6); ctx.globalAlpha /= 0.75;
-      },
-    };
-    function resize() {
-      const r = cv.getBoundingClientRect();
-      dpr = Math.min(devicePixelRatio || 1, PO_LOW ? 1.5 : 2);
-      W = r.width < 560 ? 400 : 800; H = r.width < 560 ? 440 : 320;
-      cv.style.aspectRatio = `${W} / ${H}`;
-      k = r.width / W;
-      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.width * H / W * dpr);
-    }
-    function paint() {
-      ctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
-      for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-      for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-      draw(g, reduced.matches ? 2 : t, isEn());
-    }
-    function frame(now) {
-      if (now - last < 33) { requestAnimationFrame(frame); return; }
-      const dt = Math.min((now - last) / 1000, 0.1); last = now;
-      if (visible && !document.hidden) { if (!reduced.matches) t += dt; paint(); }
-      requestAnimationFrame(frame);
-    }
-    new IntersectionObserver(e => { visible = e[0].isIntersecting; }, { threshold: 0.1 }).observe(cv);
-    new ResizeObserver(() => { resize(); paint(); }).observe(cv);
-    document.addEventListener('languagechange', () => setTimeout(paint));
-    resize(); paint();
-    requestAnimationFrame(now => { last = now; frame(now); });
-  }
+  const { reduced, isEn, C, RED, arrow, scene } = window.GTScene;
 
   // 04 Time: GPST and BDT clocks, the receiver's sample axis, and each satellite's transmit time behind it.
   scene('po-time-cv', (g, t, en) => {
@@ -368,48 +77,6 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       g.dot(tx + (cx - tx) * p, y + (ay - y) * p, 4, c, 10);
       g.txt(en ? `sent ${tau} ms earlier` : `早 ${tau} ms 發出`, tx + 10, y + 22, { size: 12, color: C.text, weight: 700 });
     });
-  });
-
-  // 05 Orbit: M grows evenly, E from Kepler's equation, ν the true angle; exaggerated eccentricity.
-  scene('po-orbit-cv', (g, t, en) => {
-    const { ctx, W, n } = g;
-    const e = 0.4, a = n ? 120 : 140, b = a * Math.sqrt(1 - e * e);
-    const cx = n ? W / 2 - 20 : 230, cy = n ? 140 : 160, fx = cx + a * e;
-    const M = (t * 0.55) % (Math.PI * 2);
-    let E = M;
-    for (let i = 0; i < 8; i++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-    const nu = Math.atan2(Math.sqrt(1 - e * e) * Math.sin(E), Math.cos(E) - e);
-    // Auxiliary circle, ellipse, Earth at the focus.
-    ctx.beginPath(); ctx.setLineDash([3, 5]); ctx.arc(cx, cy, a, 0, Math.PI * 2); ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
-    ctx.beginPath(); ctx.ellipse(cx, cy, a, b, 0, 0, Math.PI * 2); ctx.strokeStyle = C.gps + '99'; ctx.lineWidth = 1.6; ctx.stroke();
-    const eg = ctx.createRadialGradient(fx - 5, cy - 5, 2, fx, cy, 16);
-    eg.addColorStop(0, '#2c74a8'); eg.addColorStop(1, '#123a5c');
-    ctx.beginPath(); ctx.arc(fx, cy, 16, 0, Math.PI * 2); ctx.fillStyle = eg; ctx.fill();
-    g.dot(cx, cy, 2.5, C.dim);
-    // M on the circle (uniform), E on the circle, the satellite on the ellipse.
-    const mx = cx + a * Math.cos(M), my = cy - a * Math.sin(M);
-    const ex = cx + a * Math.cos(E), ey = cy - a * Math.sin(E);
-    const sx = cx + a * Math.cos(E), sy = cy - b * Math.sin(E);
-    g.line(cx, cy, mx, my, C.dim, 1, [3, 3]); g.dot(mx, my, 4, C.dim);
-    g.line(cx, cy, ex, ey, C.pur, 1.6); g.dot(ex, ey, 4, C.pur);
-    g.line(ex, ey, sx, sy, C.pur + '88', 1, [2, 3]);
-    g.line(fx, cy, sx, sy, C.acc, 2);
-    ctx.beginPath(); ctx.arc(fx, cy, 30, 0, -nu, nu > 0); ctx.strokeStyle = C.acc; ctx.lineWidth = 2; ctx.stroke();
-    g.sat(sx, sy, C.gps);
-    g.txt('M', mx + 8, my - 10, { size: 12, color: C.dim, weight: 700, mono: true });
-    g.txt('E', ex + 8, ey - 10, { size: 12, color: C.pur, weight: 700, mono: true });
-    g.txt('ν', fx + 36, cy - 12, { size: 13, color: C.acc, weight: 700, mono: true });
-    // Readout.
-    const deg = v => ((v * 180 / Math.PI + 360) % 360).toFixed(1) + '°';
-    const rx = n ? 16 : 470, ry = n ? 290 : 30, lh = n ? 24 : 30, vx = rx + (n ? 200 : 300);
-    [[en ? 'M  even-paced angle' : 'M　等速前進的角度', M, C.dim], [en ? 'E  helper angle' : 'E　輔助角度', E, C.pur], [en ? 'ν  satellite’s real angle' : 'ν　衛星真正的角度', nu, C.acc]].forEach(([lab, v, c], i) => {
-      g.txt(lab, rx, ry + i * lh, { size: 13, color: c, weight: 700 });
-      g.txt(deg(v), vx, ry + i * lh, { size: 15, color: C.text, weight: 700, mono: true, align: 'right' });
-    });
-    const iy = ry + lh * 3 + (n ? 10 : 22);
-    g.txt(en ? 'Closer to Earth it moves faster,' : '離地球近時走得快，', rx, iy, { size: 13, color: C.text, weight: 700 });
-    g.txt(en ? 'farther away it moves slower.' : '離地球遠時走得慢。', rx, iy + (n ? 22 : 26), { size: 13, color: C.text, weight: 700 });
-    if (!n) g.txt(en ? 'The calculation turns the even-paced angle into the real one.' : '計算就是把「等速角度」換算成「真正的角度」。', rx, iy + 62, { size: 12, color: C.dim });
   });
 
   // 06 Propagation: the pulse leaves from where the satellite was (ghost) and arrives after it has moved on.
@@ -457,93 +124,865 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       rx, ry + lh * 4 + (n ? 0 : 4), { size: 13, color: fd >= 0 ? C.gps : C.bds, weight: 700 });
   });
 
-  // 02 Journey: G13 travels start → six stations → receiver; bands show who runs each station.
-  scene('po-journey-cv', (g, t, en) => {
-    const { ctx, W, n } = g;
-    const E = window.GT_EPH || {}, P = E.prn || 'G13', KM = (E.km ?? 21641).toLocaleString('en-US'), MS = (E.ms ?? 72.2).toFixed(1);
-    const NODES = en ? [
-      ['Start', 'ephemeris + settings', 'Starting from the real broadcast ephemeris, a start time and the NKUST site.'],
-      ['Time', 'transmit time', `Fix each sample’s receive time, then step back by ${P}’s flight time to when ${P} transmitted.`],
-      ['Orbit', 'satellite position', `Feed that moment into ${P}’s ephemeris: where ${P} was in space, and its clock error.`],
-      ['Propagation', 'delay · Doppler', `${P} is ${KM} km away: a ${MS} ms flight, and the frequency is slightly high as it rises.`],
-      ['Signal', 'one satellite’s signal', `${P}’s navigation data × its own PRN code, placed on the carrier.`],
-      ['Combine', 'I/Q', `${P} and the other visible satellites are computed together and added into one I/Q stream.`],
-      ['Real-time', 'RF signal', 'Computed and sent as it goes: each 1 ms is handed to the SDR within 1 ms.'],
-      ['Receiver', 'position · time', `The receiver finds ${P} by its PRN code and, with the others, solves a position.`],
-    ] : [
-      ['起點', '星曆＋設定', '從真實廣播星曆、起始時刻與高科大的接收位置出發。'],
-      ['時間', '發射時刻', `確定接收端每個樣本的時刻，再扣掉 ${P} 的飛行時間，得到 ${P} 發出訊號的時刻。`],
-      ['軌道', '衛星位置', `把這個時刻代入 ${P} 的星曆，算出 ${P} 當時在太空中的位置與時鐘誤差。`],
-      ['傳播', '延遲・頻率偏移', `${P} 距離 ${KM} km：訊號飛 ${MS} ms，而且正在升起，頻率略為偏高。`],
-      ['訊號', '一顆衛星的訊號', `把 ${P} 的導航電文乘上它專屬的 PRN 碼，放到載波上。`],
-      ['合成', 'I/Q', `${P} 和其他看得到的衛星一起計算，相加成一路 I/Q。`],
-      ['即時發射', '射頻訊號', '邊算邊發：每 1 ms 的訊號在 1 ms 內算完，即時送進 SDR。'],
-      ['接收機', '位置・時間', `接收機用 ${P} 的 PRN 碼找到它，和其他衛星一起算出位置。`],
-    ];
-    const HW = [[1, 3, 'CPU', C.gps], [4, 5, 'GPU · CUDA', C.pur], [6, 6, 'SDR · USRP', C.acc]];
-    const per = 2.4, dwell = 1.7;
-    const f = (t / per) % NODES.length, k = Math.floor(f), p = (f - k) * per;
-    const moving = p > dwell && k < NODES.length - 1, q = moving ? (p - dwell) / (per - dwell) : 0;
-    const ease = x => 1 - Math.pow(1 - x, 3);
-    if (!n) {
-      const xs = NODES.map((_, i) => 50 + i * 100), y = 150;
-      HW.forEach(([a, b, lab, c]) => {
-        ctx.fillStyle = c + '22'; ctx.fillRect(xs[a] - 44, 18, xs[b] - xs[a] + 88, 26);
-        ctx.strokeStyle = c + '88'; ctx.lineWidth = 1; ctx.strokeRect(xs[a] - 44, 18, xs[b] - xs[a] + 88, 26);
-        g.txt(lab, (xs[a] + xs[b]) / 2, 31, { size: 12, color: c, align: 'center', weight: 700 });
-        for (let i = a; i <= b; i++) g.line(xs[i], 44, xs[i], 74, c + '44', 1, [3, 4]);
-      });
-      g.line(xs[0], y, xs[xs.length - 1], y, C.line, 3);
-      g.line(xs[0], y, xs[k] + (moving ? (xs[k + 1] - xs[k]) * ease(q) : 0), y, C.acc, 3);
-      NODES.forEach(([name, out], i) => {
-        const on = i <= k, cur = i === k && !moving;
-        ctx.beginPath();
-        if (i === 0 || i === NODES.length - 1) ctx.roundRect(xs[i] - 22, y - 22, 44, 44, 8); else ctx.arc(xs[i], y, 22, 0, Math.PI * 2);
-        ctx.fillStyle = cur ? C.acc : on ? '#123a3a' : '#0b1b2c'; ctx.fill();
-        ctx.strokeStyle = on ? C.acc : C.line; ctx.lineWidth = cur ? 3 : 1.6; ctx.stroke();
-        if (cur) { ctx.shadowColor = C.acc; ctx.shadowBlur = 18; ctx.stroke(); ctx.shadowBlur = 0; }
-        g.txt(i === 0 ? '▶' : i === NODES.length - 1 ? 'RX' : String(i), xs[i], y + 1, { size: 14, color: cur ? '#06231f' : C.text, align: 'center', weight: 700, mono: true });
-        g.txt(name, xs[i], y + 42, { size: 14, color: cur ? '#fff' : C.text, align: 'center', weight: 700 });
-        g.txt(out, xs[i], y + 62, { size: 10, color: C.dim, align: 'center' });
-      });
-      const tx = xs[k] + (moving ? (xs[k + 1] - xs[k]) * ease(q) : 0);
-      g.sat(tx, y - 40, C.gps);
-      g.txt(P, tx + 30, y - 40, { size: 11, color: C.gps, align: 'left', weight: 700, mono: true });
-      const [name, , desc] = NODES[k];
-      g.box(20, 236, W - 40, 70, C.line);
-      g.txt(k === 0 ? (en ? 'Start' : '起點') : k === NODES.length - 1 ? (en ? 'Arrival' : '抵達') : `${en ? 'Station' : '第'} ${k}${en ? '' : ' 站'} · ${name}`, 38, 256, { size: 13, color: C.acc, weight: 700 });
-      g.txt(desc, 38, 284, { size: 14, color: C.text });
-      return;
+
+  // 06: one LO at the midpoint; the NCO pushes GPS to +7.161 MHz and BeiDou to −7.161 MHz inside a 20.8 Msps band.
+  scene('po-eng-spec', (g, t, en) => {
+    const { ctx, W, H, n } = g;
+    const x0 = 24, x1 = W - 24, base = n ? H - 120 : H - 72, top = n ? 120 : 92, amp = base - top;
+    const fx = f => x0 + (f + 12) / 24 * (x1 - x0);
+    const cyc = t % 9, k = Math.min(1, cyc / 2.6), ease = 1 - (1 - k) ** 3;
+    const win = Math.min(1, Math.max(0, (cyc - 2.8) / 1));
+    const sinc2 = u => Math.abs(u) < 1e-6 ? 1 : (Math.sin(Math.PI * u) / (Math.PI * u)) ** 2;
+    const gC = 7.161 * ease, bC = -7.161 * ease;
+    // Sampling band.
+    if (win > 0) {
+      ctx.globalAlpha = win;
+      ctx.fillStyle = '#8affdd10'; ctx.fillRect(fx(-10.4), top - 26, fx(10.4) - fx(-10.4), amp + 26);
+      g.line(fx(-10.4), top - 26, fx(-10.4), base, C.acc + 'aa', 1, [4, 4]);
+      g.line(fx(10.4), top - 26, fx(10.4), base, C.acc + 'aa', 1, [4, 4]);
+      g.txt(en ? 'Sampling band 20.8 Msps (±10.4 MHz)' : '取樣頻寬 20.8 Msps（±10.4 MHz）', fx(0), top - 14, { size: n ? 10 : 12, color: C.acc, align: 'center', weight: 700 });
+      ctx.globalAlpha = 1;
     }
-    // Phone: the journey runs top to bottom.
-    const x0 = 40, ys = NODES.map((_, i) => 26 + i * 42);
-    g.line(x0, ys[0], x0, ys[ys.length - 1], C.line, 3);
-    g.line(x0, ys[0], x0, ys[k] + (moving ? (ys[k + 1] - ys[k]) * ease(q) : 0), C.acc, 3);
-    NODES.forEach(([name, out], i) => {
-      const on = i <= k, cur = i === k && !moving;
-      ctx.beginPath(); ctx.arc(x0, ys[i], 15, 0, Math.PI * 2);
-      ctx.fillStyle = cur ? C.acc : on ? '#123a3a' : '#0b1b2c'; ctx.fill();
-      ctx.strokeStyle = on ? C.acc : C.line; ctx.lineWidth = cur ? 2.5 : 1.4; ctx.stroke();
-      g.txt(i === 0 ? '▶' : i === NODES.length - 1 ? 'RX' : String(i), x0, ys[i] + 1, { size: 11, color: cur ? '#06231f' : C.text, align: 'center', weight: 700, mono: true });
-      g.txt(`${name}　${out}`, x0 + 26, ys[i], { size: 12, color: cur ? '#fff' : C.text, weight: cur ? 700 : 500 });
-      const hw = HW.find(([a, b]) => i >= a && i <= b);
-      if (hw) g.txt(hw[2].split(' ')[0], W - 14, ys[i], { size: 11, color: hw[3], align: 'right', weight: 700, mono: true });
+    // Main lobes.
+    [[gC, 1.023, 1, C.gps], [bC, 2.046, 0.55, C.bds]].forEach(([c, w, h, col]) => {
+      ctx.beginPath(); ctx.moveTo(fx(-12), base);
+      for (let f = -12; f <= 12; f += 0.04) {
+        const jit = 1 + 0.04 * Math.sin(f * 9 + t * 5);
+        ctx.lineTo(fx(f), base - amp * h * sinc2((f - c) / w) * jit);
+      }
+      ctx.lineTo(fx(12), base); ctx.closePath();
+      ctx.fillStyle = col + '30'; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
     });
-    g.box(10, 362, W - 20, 70, C.line);
-    const words = NODES[k][2];
-    // Wrap by words in English, by characters in Chinese.
-    const lines = [], perLine = en ? 46 : 22;
-    if (en) { let cur = ''; for (const w of words.split(' ')) { if ((cur + ' ' + w).trim().length > perLine) { lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); } lines.push(cur); }
-    else for (let i = 0; i < words.length; i += perLine) lines.push(words.slice(i, i + perLine));
-    lines.slice(0, 3).forEach((l, i) => g.txt(l, 22, 382 + i * 20, { size: 12, color: C.text }));
+    g.txt('GPS L1 C/A', fx(gC), base - amp - 12, { size: n ? 11 : 13, color: C.gps, align: 'center', weight: 700 });
+    g.txt(en ? 'BeiDou B1I' : '北斗 B1I', fx(bC), base - amp * 0.55 - 12, { size: n ? 11 : 13, color: C.bds, align: 'center', weight: 700 });
+    // NCO shifts.
+    const ay = base + (n ? 34 : 30);
+    if (ease > 0.05) {
+      arrow(g, fx(0), ay, fx(gC), ay, C.gps); arrow(g, fx(0), ay, fx(bC), ay, C.bds);
+      g.txt('NCO +7.161 MHz', fx(gC / 2), ay + 14, { size: n ? 9.5 : 11, color: C.gps, align: 'center', mono: true });
+      g.txt('NCO −7.161 MHz', fx(bC / 2), ay + 14, { size: n ? 9.5 : 11, color: C.bds, align: 'center', mono: true });
+    }
+    // Axis: baseband offset below, RF frequency in brackets.
+    g.line(x0, base, x1, base, C.line, 1.2);
+    g.line(fx(0), top - 40, fx(0), base + 6, C.text + '88', 1.2, [3, 4]);
+    g.txt(`LO 1568.259 MHz`, fx(0), top - 50, { size: n ? 11 : 13, color: C.text, align: 'center', weight: 700, mono: true });
+    [[-7.161, '1561.098'], [7.161, '1575.42']].forEach(([f, rf]) => {
+      g.line(fx(f), base, fx(f), base + 6, C.dim, 1);
+      g.txt(`${rf} MHz`, fx(f), base + (n ? 70 : 64), { size: n ? 9.5 : 11, color: C.dim, align: 'center', mono: true });
+    });
+    g.txt(en ? 'One complex I/Q stream · one transmit channel' : '一路複數 I/Q · 一個發射通道', W / 2, H - (n ? 14 : 12), { size: n ? 11 : 12, color: C.dim, align: 'center' });
   });
+
+  // 07: three 1 ms blocks, each with its own frequency. Top: phase restarts at every edge. Bottom: phase carried over.
+  const PF = [2.6, 3.1, 2.8, 3.4, 2.7, 3.2, 2.9, 3.3], PS = PF.reduce((a, b) => a + b, 0);
+  const PRE = PF.map((_, i) => PF.slice(0, i).reduce((a, b) => a + b, 0));
+  const cum = b => Math.floor(b / 8) * PS + PRE[b % 8];
+  scene('po-eng-phase', (g, t, en) => {
+    const { ctx, W, H, n } = g;
+    const xs = 16, xe = W - 16, ppb = n ? 150 : 250, scroll = t * 0.45, amp = n ? 34 : 30;
+    const rows = n ? [[150, true], [330, false]] : [[115, true], [245, false]];
+    // Block edges.
+    for (let b = Math.floor(scroll); b <= scroll + (xe - xs) / ppb + 1; b++) {
+      const x = xs + (b - scroll) * ppb;
+      if (b % 2 === 0) { ctx.fillStyle = '#ffffff06'; ctx.fillRect(Math.max(xs, x), 40, Math.min(ppb, xe - Math.max(xs, x)), H - 60); }
+      if (x < xs || x > xe) continue;
+      g.line(x, 40, x, H - 20, C.line, 1, [4, 5]);
+    }
+    g.txt(en ? 'each band = one 1 ms block' : '每一格 = 一個 1 ms 區塊', W - 16, 22, { size: n ? 10 : 11, color: C.dim, align: 'right' });
+    rows.forEach(([cy, reset]) => {
+      const col = reset ? RED : C.acc;
+      g.txt(reset ? (en ? '✗ Phase reset each block → jumps (cycle slip)' : '✗ 每塊重設相位 → 交界跳變，接收機週跳')
+                  : (en ? '✓ Phase carried over → continuous' : '✓ 繼承相位、只換頻率 → 波形連續'),
+        xs, cy - amp - 22, { size: n ? 11 : 13, color: col, weight: 700 });
+      ctx.beginPath();
+      for (let x = xs; x <= xe; x += 1) {
+        const tau = (x - xs) / ppb + scroll, b = Math.floor(tau), u = tau - b, f = PF[b % 8];
+        const ph = 2 * Math.PI * (reset ? f * u : cum(b) + f * u);
+        const y = cy - amp * Math.sin(ph);
+        const jump = reset && u < (1 / ppb) * 1.01;
+        if (x === xs || jump) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+      if (reset) {
+        for (let b = Math.ceil(scroll); b <= scroll + (xe - xs) / ppb; b++) {
+          const x = xs + (b - scroll) * ppb;
+          if (x < xs + 4 || x > xe - 4) continue;
+          const a = Math.sin(2 * Math.PI * PF[(b - 1) % 8]), y1 = cy - amp * a;
+          g.line(x, y1, x, cy, RED, 2.5);
+          ctx.beginPath(); ctx.arc(x, (y1 + cy) / 2, 11, 0, Math.PI * 2); ctx.strokeStyle = RED + 'cc'; ctx.lineWidth = 1.4; ctx.stroke();
+        }
+      }
+    });
+  });
+
+  // 08: CPU prepares block n+1 while the GPU synthesises block n; finished blocks fill a ring buffer the SDR drains
+  // at a fixed rate. An occasional slow block (jitter) dips the buffer but never empties it.
+  {
+    let w = 5, r = 0, prog = 0, blk = 5, prevT = 0;
+    const hash = i => { const s = Math.sin(i * 127.1) * 43758.5453; return s - Math.floor(s); };
+    const dur = i => (i % 9 === 6 ? 2.6 : 0.62 + 0.3 * hash(i));
+    scene('po-eng-pipe', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      let dt = t - prevT; prevT = t; if (dt < 0 || dt > 0.3) dt = 0;
+      const s = dt / 0.55;
+      r += s;
+      if (w - r < 8) { prog += s / dur(blk); if (prog >= 1) { prog = 0; w++; blk++; } }
+      const level = Math.max(0, w - r), slow = dur(blk) > 2;
+      // Layout.
+      const L = n
+        ? { cpu: [12, 46, 182, 74], gpu: [206, 46, 182, 74], cx: 200, cy: 236, R: 74, sdr: [100, 336, 200, 84] }
+        : { cpu: [16, 48, 220, 82], gpu: [16, 190, 220, 82], cx: 420, cy: 160, R: 96, sdr: [584, 108, 200, 104] };
+      const card = ([x, y, bw, bh], title, sub, p, col) => {
+        g.box(x, y, bw, bh, col + '99');
+        g.txt(title, x + 12, y + 18, { size: n ? 11 : 13, color: col, weight: 700 });
+        g.txt(sub, x + 12, y + 40, { size: n ? 9.5 : 11.5, color: C.text });
+        ctx.fillStyle = '#ffffff12'; ctx.fillRect(x + 12, y + bh - 16, bw - 24, 5);
+        ctx.fillStyle = col; ctx.fillRect(x + 12, y + bh - 16, (bw - 24) * Math.min(1, p), 5);
+      };
+      card(L.cpu, 'CPU', en ? `block ${blk + 1}: satellite geometry` : `區塊 ${blk + 1}：衛星幾何`, Math.min(1, prog * 2.2 + 0.15), C.gps);
+      card(L.gpu, 'GPU · CUDA Streams', slow ? (en ? `block ${blk}: I/Q — slow (jitter)` : `區塊 ${blk}：I/Q 合成（運算抖動）`) : (en ? `block ${blk}: I/Q synthesis` : `區塊 ${blk}：I/Q 合成`), prog, slow ? C.bds : C.acc);
+      // Ring buffer: eight slots; filled slots are blocks written but not yet sent.
+      const { cx, cy, R } = L;
+      for (let i = 0; i < 8; i++) {
+        const a0 = -Math.PI / 2 + i * Math.PI / 4 + 0.05, a1 = a0 + Math.PI / 4 - 0.1;
+        let fill = 0;
+        for (let kb = Math.floor(r); kb < w; kb++) if (((kb % 8) + 8) % 8 === i) fill = kb === Math.floor(r) ? 1 - (r - kb) : 1;
+        ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.arc(cx, cy, R - 20, a1, a0, true); ctx.closePath();
+        ctx.fillStyle = '#ffffff0d'; ctx.fill();
+        if (fill > 0) { ctx.globalAlpha = 0.35 + 0.65 * fill; ctx.fillStyle = C.acc; ctx.fill(); ctx.globalAlpha = 1; }
+      }
+      const ptr = (v, col, lab) => {
+        const a = -Math.PI / 2 + (v % 8) * Math.PI / 4;
+        g.line(cx + Math.cos(a) * (R - 30), cy + Math.sin(a) * (R - 30), cx + Math.cos(a) * (R + 8), cy + Math.sin(a) * (R + 8), col, 2.2);
+        g.txt(lab, cx + Math.cos(a) * (R + 22), cy + Math.sin(a) * (R + 22), { size: n ? 9 : 10.5, color: col, align: 'center', weight: 700 });
+      };
+      ptr(w + prog, C.bds, en ? 'write' : '寫入');
+      ptr(r, C.gps, en ? 'read' : '讀出');
+      g.txt('Ring Buffer', cx, cy - 8, { size: n ? 11 : 13, color: C.text, align: 'center', weight: 700 });
+      g.txt(`${level.toFixed(1)} / 8`, cx, cy + 14, { size: n ? 12 : 14, color: level < 2 ? C.bds : C.acc, align: 'center', weight: 700, mono: true });
+      // Flow arrows.
+      if (n) { arrow(g, 103, 122, cx - R * 0.6, cy - R * 0.85, C.dim); arrow(g, 297, 122, cx + R * 0.55, cy - R * 0.88, C.dim); arrow(g, cx, cy + R + 4, cx, 334, C.dim); }
+      else { arrow(g, 126, 132, 126, 186, C.dim); arrow(g, 238, 231, cx - R - 8, cy + 30, C.dim); arrow(g, cx + R + 8, cy, 582, cy, C.dim); }
+      // SDR: transmits continuously.
+      const [sx, sy, sw, sh] = L.sdr;
+      g.box(sx, sy, sw, sh, C.acc + '99');
+      g.txt('SDR · UHD', sx + 12, sy + 18, { size: n ? 11 : 13, color: C.acc, weight: 700 });
+      g.txt('underrun (U): 0', sx + 12, sy + 42, { size: n ? 10 : 12, color: C.text, mono: true });
+      g.txt(en ? 'end-to-end < 0.1 s' : '端到端延遲 < 0.1 s', sx + 12, sy + 64, { size: n ? 10 : 12, color: C.text });
+      for (let i = 0; i < 3; i++) {
+        const ph = ((t * 1.4 + i / 3) % 1);
+        ctx.beginPath(); ctx.arc(sx + sw - 26, sy + 24, 6 + ph * 18, -0.9, 0.9);
+        ctx.strokeStyle = `rgba(138,255,221,${0.8 * (1 - ph)})`; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+    });
+  }
+
+  // 09: a pseudorange bias is injected into one satellite; its residual grows past the RAIM threshold, the receiver
+  // flags it, excludes it, and the position returns to the truth.
+  scene('po-eng-raim', (g, t, en) => {
+    const { ctx, W, H, n } = g;
+    const p = t % 11, BAD = 2, THR = 0.6;
+    const bias = p < 2 ? 0 : p < 5 ? (p - 2) / 3 : p < 9.5 ? 1 : 0;
+    const out = p >= 6 && p < 9.5, flagged = (p >= 2 && p < 6);
+    const sats = [['G05', 160], ['G13', 128], ['C23', 100], ['G21', 70], ['C32', 44], ['G27', 18]];
+    // Sky.
+    const rx = n ? W / 2 : 210, ry = n ? 214 : H - 40, R = n ? 150 : 200;
+    ctx.beginPath(); ctx.arc(rx, ry, R, Math.PI, 0); ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); ctx.stroke(); ctx.setLineDash([]);
+    sats.forEach(([id, deg], i) => {
+      const a = deg * Math.PI / 180, x = rx + Math.cos(a) * R * 0.92, y = ry - Math.sin(a) * R * 0.92;
+      const bad = i === BAD && bias > 0, gone = i === BAD && out;
+      const col = gone ? '#4b6680' : bad ? RED : id[0] === 'G' ? C.gps : C.bds;
+      g.line(x, y, rx, ry, gone ? '#33475c' : bad ? RED : col + '77', bad ? 1.8 : 1.1, bad || gone ? [5, 5] : []);
+      g.sat(x, y, col);
+      g.txt(id, x, y - 16, { size: n ? 10 : 11, color: col, align: 'center', weight: 700, mono: true });
+      if (bad && !gone) g.txt(en ? '+ range bias' : '＋偽距偏差', (x + rx) / 2 + 8, (y + ry) / 2, { size: n ? 10 : 11, color: RED, weight: 700 });
+      if (gone) g.txt(en ? '✕ excluded' : '✕ 已剔除', x, y + 20, { size: n ? 10 : 11, color: '#9fb4c8', align: 'center', weight: 700 });
+    });
+    // Receiver: true position (ring) and solution (dot).
+    const off = out ? 0 : bias * (n ? 26 : 34);
+    ctx.beginPath(); ctx.arc(rx, ry, 9, 0, Math.PI * 2); ctx.strokeStyle = C.acc; ctx.lineWidth = 1.5; ctx.stroke();
+    g.dot(rx + off, ry - off * 0.4, 4.5, off > 3 ? RED : C.acc, 8);
+    if (off > 3) g.txt(en ? 'position error' : '定位誤差', rx + off + 10, ry - off * 0.4 - 10, { size: n ? 10 : 11, color: RED });
+    // Residual bars.
+    const bx = n ? 30 : 470, bw = n ? W - 60 : 300, by = n ? H - 30 : H - 60, bh = n ? 120 : 170;
+    g.txt(en ? 'RAIM residual per satellite' : '各衛星 RAIM 殘差', bx, by - bh - 22, { size: n ? 11 : 13, color: C.text, weight: 700 });
+    const ty = by - THR * bh;
+    g.line(bx - 4, ty, bx + bw, ty, RED + 'aa', 1, [5, 4]);
+    g.txt(en ? 'threshold' : '門檻', bx + bw, ty - 10, { size: n ? 9.5 : 10.5, color: RED, align: 'right' });
+    sats.forEach(([id], i) => {
+      const gone = i === BAD && out;
+      let res = 0.16 + 0.07 * Math.sin(t * 1.3 + i * 1.7);
+      if (!out) res += i === BAD ? bias * 0.72 : bias * 0.1;
+      const x = bx + i * (bw / 6) + 6, cw = bw / 6 - 12, hgt = Math.min(1, res) * bh;
+      ctx.fillStyle = gone ? '#2a3b4d' : res > THR ? RED : C.acc + 'bb';
+      ctx.fillRect(x, by - hgt, cw, hgt);
+      g.txt(id, x + cw / 2, by + 12, { size: n ? 9 : 10, color: C.dim, align: 'center', mono: true });
+    });
+    // Status line.
+    const st = p < 2 ? (en ? 'Normal: every residual is under the threshold' : '正常：殘差都在門檻內')
+      : p < 5.2 ? (en ? 'Injecting: C23 pseudorange drifts away' : '注入：C23 偽距逐步偏移')
+      : p < 6 ? (en ? 'RAIM: residual over threshold → fault detected' : 'RAIM：殘差超過門檻 → 偵測到異常')
+      : p < 9.5 ? (en ? 'C23 excluded → position back on the truth' : '剔除 C23 → 定位回到正確位置')
+      : (en ? 'Reset' : '重置');
+    g.txt(st, n ? W / 2 : 16, n ? 26 : 24, { size: n ? 12 : 14, color: flagged ? RED : C.acc, weight: 700, align: n ? 'center' : 'left' });
+  });
+
+
+  // 01: what the three ways to test cost, in USD on a log scale.
+  {
+    const COST = [
+      { zh: '戶外實測', en: 'Outdoor test', lo: 100, hi: 5000, col: '#9fb4c8', note: ['接收機＋天線，消費級到測量級；外出人力與時間另計', 'Receiver + antenna, consumer to survey grade; travel and time extra'] },
+      { zh: '傳統硬體模擬器', en: 'Hardware simulator', lo: 20000, hi: 500000, col: C.gps, note: ['依星系、頻點與通道數，依廠商報價', 'Depends on systems, bands and channels; vendor quote'] },
+      { zh: 'GeoTrust', en: 'GeoTrust', lo: 3800, hi: 5500, col: C.acc, note: ['USRP B210 約 US$3,000＋電腦（依 GPU 等級）', 'USRP B210 about US$3,000 + a computer (by GPU tier)'] },
+    ];
+    const fmt = v => v >= 1e6 ? `${v / 1e6}M` : v >= 1000 ? `${v / 1000}k` : String(v);
+    scene('po-why-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      const grow = Math.min(1, t / 1.4), e = 1 - (1 - grow) ** 3;
+      g.txt(en ? 'Equipment cost (USD, log scale)' : '設備成本（美金，對數刻度）', 14, 24, { size: n ? 14 : 16, color: C.text, weight: 700 });
+      const x0 = n ? 14 : 190, x1 = W - (n ? 14 : 30), L = Math.log10, X = v => x0 + (x1 - x0) * (L(v) - 2) / (L(1e6) - 2);
+      [100, 1000, 10000, 100000, 1000000].forEach(v => {
+        g.line(X(v), 50, X(v), H - 34, '#1d3650', 1);
+        g.txt('US$' + fmt(v), X(v), H - 18, { size: n ? 10 : 12, color: C.dim, align: v === 100 ? 'left' : v === 1e6 ? 'right' : 'center', mono: true });
+      });
+      COST.forEach((c, i) => {
+        const y = n ? 82 + i * 90 : 76 + i * 78;
+        if (n) g.txt(en ? c.en : c.zh, x0, y - 22, { size: 14, color: c.col, weight: 700 });
+        else g.txt(en ? c.en : c.zh, 14, y, { size: 15, color: c.col, weight: 700 });
+        const a = X(c.lo), b = X(c.lo) + (X(c.hi) - X(c.lo)) * e;
+        ctx.fillStyle = c.col + '33'; ctx.fillRect(a, y - 13, Math.max(4, b - a), 26);
+        ctx.fillStyle = c.col; ctx.fillRect(a, y - 13, 3, 26); ctx.fillRect(b - 3, y - 13, 3, 26);
+        if (grow > 0.9) {
+          const label = `US$${c.lo.toLocaleString('en-US')} – ${c.hi.toLocaleString('en-US')}${c.hi >= 500000 ? '+' : ''}`, roomy = b + 10 < x1 - (n ? 150 : 210);
+          g.txt(label, roomy ? b + 10 : a, roomy ? y : y - 24, { size: n ? 12 : 14, color: C.text, weight: 700, mono: true });
+          g.txt(en ? c.note[1] : c.note[0], a, y + (n ? 26 : 24), { size: n ? 10.5 : 12, color: C.dim });
+        }
+      });
+    }, { h: 360, nh: 520 });
+  }
+
+  // 02: where a scenario starts. The usual command-line loop with a prepared NMEA file, next to drawing the path in the GUI.
+  scene('po-gui-cv', (g, t, en) => {
+    const { ctx, W, H, n } = g;
+    const local = t % 12;
+    // How a dynamic scenario is set up: the usual command-line loop vs drawing the path in the GUI.
+    const half = n ? H / 2 : W / 2;
+    const boxes = en ? ['Write an NMEA file', 'Make the motion physical (walk / drive)', 'Load it from the command line', 'Run, check, edit again'] : ['寫好 NMEA 檔', '做成符合人走、車行的物理運動', '在命令列載入', '跑一次、檢查、再修改'];
+    const lx = 14, ly = n ? 40 : 48, bw = n ? W - 28 : half - 40, bh = n ? 30 : 40;
+    g.txt(en ? 'Typical SDR simulators' : '一般 SDR 模擬工具', lx, n ? 18 : 22, { size: n ? 13 : 15, color: C.bds, weight: 700 });
+    const hot = Math.floor(local * 1.1) % 4;
+    boxes.forEach((s, i) => {
+      const y = ly + i * (bh + (n ? 8 : 14));
+      g.box(lx, y, bw, bh, i === hot ? C.bds : '#2f5577');
+      g.txt(`${i + 1}  ${s}`, lx + 12, y + bh / 2, { size: n ? 11.5 : 13.5, color: i === hot ? '#fff' : C.text, weight: i === hot ? 700 : 500 });
+    });
+    const loopY0 = ly + bh / 2, loopY1 = ly + 3 * (bh + (n ? 8 : 14)) + bh / 2;
+    g.line(lx + bw + 10, loopY1, lx + bw + 20, loopY1, C.bds, 1.4); g.line(lx + bw + 20, loopY1, lx + bw + 20, loopY0, C.bds, 1.4);
+    arrow(g, lx + bw + 20, loopY0, lx + bw + 6, loopY0, C.bds);
+    g.txt(en ? 'repeat' : '反覆', lx + bw + 24, (loopY0 + loopY1) / 2, { size: 11, color: C.bds, weight: 700 });
+    // GeoTrust: draw the path, signals follow.
+    const rx = n ? 14 : half + 20, ry = n ? H / 2 + 20 : 48, rw = n ? W - 28 : half - 34, rh = n ? H / 2 - 40 : H - 70;
+    g.txt(en ? 'GeoTrust: draw it in the GUI' : 'GeoTrust：在 GUI 直接畫路徑', rx, ry - (n ? 6 : 26), { size: n ? 13 : 15, color: C.acc, weight: 700 });
+    g.box(rx, ry, rw, rh, C.acc + '88');
+    ctx.strokeStyle = '#1d3650'; ctx.lineWidth = 1;
+    for (let x = rx + 20; x < rx + rw; x += 28) g.line(x, ry + 6, x, ry + rh - 6, '#16304a', 1);
+    for (let y = ry + 20; y < ry + rh; y += 28) g.line(rx + 6, y, rx + rw - 6, y, '#16304a', 1);
+    const P = u => [rx + 30 + (rw - 60) * u, ry + rh * 0.62 - Math.sin(u * Math.PI * 1.6) * rh * 0.3];
+    const drawn = Math.min(1, (local % 6) / 3);
+    ctx.beginPath(); for (let u = 0; u <= drawn; u += 0.01) { const [x, y] = P(u); u ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = C.acc; ctx.lineWidth = 3; ctx.stroke();
+    const [cx, cy] = P(drawn); g.dot(cx, cy, 6, '#fff', 12);
+    g.txt(drawn < 1 ? (en ? 'drawing the route…' : '畫出路徑中…') : (en ? 'signals follow the path live' : '訊號即時跟著路徑走'), rx + 12, ry + rh - 14, { size: n ? 11.5 : 13, color: C.acc, weight: 700 });
+  }, { h: 340, nh: 560 });
+
+  // 02: the six stations, told like the homepage walkthrough: one stage, a caption that explains it, and tabs, back,
+  // play and next. The stage shows what happens to G13 at the selected station; nothing has to be watched to the end.
+  {
+    const ST = [
+      { hw: 'CPU', zh: ['現在是幾點？', '接收端的樣本時刻是 04:00:00 GPS 時間（台灣約中午 12:00）。往回扣掉飛行時間，就是 G13 發出這段訊號的時刻。'],
+        en: ['What time is it?', 'The receiver sample time is 04:00:00 GPS time (about noon in Taiwan). Step back by the flight time to get when G13 sent this piece of signal.'], go: 'time' },
+      { hw: 'CPU', zh: ['那一刻，G13 在哪裡？', '把時刻代入 G13 的廣播星曆：它在高科大上空、仰角 {el}，正在升起。'],
+        en: ['Where is G13 at that moment?', 'Put the time into G13’s broadcast ephemeris: it is above NKUST at {el} elevation and rising.'], go: 'orbit' },
+      { hw: 'CPU', zh: ['訊號要飛多久？', '距離 {km}，訊號要飛 {ms}；G13 正在靠近，頻率略為偏高。'],
+        en: ['How long does the signal fly?', '{km} away, so it flies {ms}; G13 is approaching, so the frequency is slightly high.'], go: 'propagation' },
+      { hw: 'GPU', zh: ['G13 的訊號長什麼樣？', '導航電文 × G13 專屬的 PRN 碼 × 載波。延遲決定碼從哪裡開始，頻移決定載波轉多快。'],
+        en: ['What does G13’s signal look like?', 'Navigation data × G13’s own PRN code × the carrier. The delay sets where the code starts; the shift sets how fast the carrier turns.'], go: 'signal' },
+      { hw: 'GPU', zh: ['其他衛星呢？', '所有看得到的 GPS 與北斗衛星各占一個通道，在同一個瞬間相加成一路 I/Q。'],
+        en: ['What about the other satellites?', 'Every visible GPS and BeiDou satellite gets a channel; all are added in the same instant into one I/Q stream.'], go: 'synthesis' },
+      { hw: 'SDR', zh: ['怎麼不間斷地送出？', '每 1 ms 的樣本必須在 1 ms 內算完，經過緩衝準時送進 SDR，變成真正的電波。'],
+        en: ['How does it go out without a gap?', 'Each 1 ms of samples must be done within 1 ms and sent through a buffer to the SDR on time, becoming a real radio signal.'], go: 'realtime' },
+    ];
+    const DUR = 7;
+    const curStation = () => cur;
+    let cur = 0, playing = !reduced.matches, start = 0, now = 0;
+    const root = document.getElementById('pj4');
+    const tabs = root ? [...root.querySelectorAll('.pj4-tabs button')] : [];
+    const playBtn = root?.querySelector('.pj4-play'), go = root?.querySelector('.pj4-go');
+    const fill = s => {
+      const E = window.GT_EPH || {};
+      return s.replace('{el}', `${(E.el ?? 45.2).toFixed(1)}°`).replace('{km}', `${(E.km ?? 21641).toLocaleString('en-US')} km`).replace('{ms}', `${(E.ms ?? 72.2).toFixed(1)} ms`);
+    };
+    const render = () => {
+      if (!root) return;
+      const en = isEn();
+      tabs.forEach((b, i) => { b.setAttribute('aria-selected', String(i === cur)); b.classList.toggle('is-done', i < cur); });
+      playBtn.textContent = en ? (playing ? 'Pause Ⅱ' : 'Play ▷') : (playing ? '暫停 Ⅱ' : '播放 ▷');
+      playBtn.setAttribute('aria-pressed', String(playing));
+      go.href = '#' + ST[cur].go;
+      go.textContent = en ? `Station ${cur + 1} in depth ↓` : `深入第${'一二三四五六'[cur]}站 ↓`;
+    };
+    const goTo = (i, stop) => { cur = (i + 6) % 6; start = now; if (stop) playing = false; render(); };
+    tabs.forEach((b, i) => b.addEventListener('click', () => goTo(i, true)));
+    root?.querySelector('.pj4-prev').addEventListener('click', () => goTo(cur - 1, true));
+    root?.querySelector('.pj4-next').addEventListener('click', () => goTo(cur + 1, true));
+    playBtn?.addEventListener('click', () => { playing = !playing; start = now; render(); });
+    document.addEventListener('languagechange', () => setTimeout(render));
+    render();
+    // Wrap a caption to a width, by words in English and by characters in Chinese.
+    function wrap(g, s, x, y, maxW, lh, size, color, weight = 500) {
+      const { ctx, n } = g, px = size * (n ? 1.15 : 1.1);
+      ctx.font = `${weight} ${px}px 'Noto Sans TC',sans-serif`;
+      const parts = /[\u3400-\u9fff]/.test(s) ? [...s] : s.split(/(?<= )/);
+      let line = '', yy = y;
+      for (const p of parts) {
+        if (ctx.measureText(line + p).width > maxW && line) { g.txt(line.trimEnd(), x, yy, { size, color, weight }); line = p.trimStart(); yy += lh; }
+        else line += p;
+      }
+      if (line) g.txt(line, x, yy, { size, color, weight });
+      return yy;
+    }
+    // Each station is laid out for the short stage it gets: the drawing on the left, the key value on the right
+    // (stacked on phones), with every label placed in its own space.
+    function stage(g, t, en, e, W, H) {
+      const { ctx, n } = g;
+      const E = window.GT_EPH || {}, el = E.el ?? 45.2, ms = E.ms ?? 72.2, km = E.km ?? 21641;
+      const vx = n ? W / 2 : W * 0.8, vy = n ? H - 44 : H / 2 - 10;
+      const value = (big, small, col = C.acc) => {
+        g.txt(big, vx, vy, { size: n ? 24 : 30, color: col, align: 'center', weight: 700, mono: true });
+        if (small) g.txt(small, vx, vy + (n ? 24 : 30), { size: n ? 12 : 14, color: C.dim, align: 'center', weight: 600 });
+      };
+      if (!n) g.line(W * 0.64, 24, W * 0.64, H - 24, '#1d3650', 1);
+      const earth = (x, y, r) => {
+        const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+        gr.addColorStop(0, '#2c74a8'); gr.addColorStop(1, '#0e2c4a');
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = gr; ctx.fill();
+      };
+      const cur = curStation();
+      if (cur === 0) {
+        // Two clocks, 72 ms apart.
+        const r = n ? 42 : 50, cy = n ? 76 : H / 2 - 10, xs = n ? [W * 0.24, W * 0.76] : [W * 0.14, W * 0.46];
+        [[xs[0], en ? 'G13 sends' : 'G13 發射', C.gps, ms], [xs[1], en ? 'receiver gets it' : '接收機收到', C.acc, 0]].forEach(([x, lab, col, back]) => {
+          ctx.beginPath(); ctx.arc(x, cy, r, 0, Math.PI * 2); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+          for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; g.line(x + Math.cos(a) * r * 0.84, cy + Math.sin(a) * r * 0.84, x + Math.cos(a) * r, cy + Math.sin(a) * r, col + '88', 1.4); }
+          const a = -Math.PI / 2 + ((t * 0.5 - back / 1000 * 30) % 1) * Math.PI * 2;
+          g.line(x, cy, x + Math.cos(a) * r * 0.76, cy + Math.sin(a) * r * 0.76, col, 2.4);
+          g.txt(lab, x, cy + r + 18, { size: 14, color: col, align: 'center', weight: 700 });
+        });
+        arrow(g, xs[0] + r + 10, cy, xs[1] - r - 10, cy, '#d9bf8c');
+        g.txt(`${ms.toFixed(1)} ms`, (xs[0] + xs[1]) / 2, cy - 14, { size: 13, color: '#d9bf8c', align: 'center', weight: 700, mono: true });
+        value('04:00:00', en ? 'GPS time of the sample' : '這個樣本的 GPS 時間');
+      } else if (cur === 1) {
+        // Orbit, G13 moving into place, and the line of sight from NKUST.
+        const R = n ? 40 : 46, ox = n ? W / 2 : W * 0.3, oy = n ? 100 : H / 2 + 12;
+        ctx.beginPath(); ctx.ellipse(ox, oy, R * 2.6, R * 1.05, -0.3, 0, Math.PI * 2); ctx.strokeStyle = C.gps + '66'; ctx.lineWidth = 1.4; ctx.stroke();
+        earth(ox, oy, R);
+        const a = -2.4 + e * 1.6, ca = Math.cos(-0.3), sa = Math.sin(-0.3);   // ends up and to the right, clear of NKUST
+        const ex = Math.cos(a) * R * 2.6, ey = Math.sin(a) * R * 1.05, sx = ox + ex * ca - ey * sa, sy = oy + ex * sa + ey * ca;
+        const nx = ox + R * 0.45, ny = oy - R * 0.9;
+        g.line(nx, ny, sx, sy, '#8affdd88', 1.2, [4, 4]);
+        g.dot(nx, ny, 4, C.acc, 8);
+        g.txt('NKUST', nx + 10, ny + 4, { size: 12, color: C.acc, weight: 700 });
+        g.sat(sx, sy, C.gps); g.txt('G13', sx, sy - 16, { size: 12, color: C.gps, align: 'center', weight: 700, mono: true });
+        value(`${el.toFixed(1)}°`, en ? 'elevation above NKUST, rising' : '高科大上空的仰角・正在升起');
+      } else if (cur === 2) {
+        // A pulse crossing from G13 to the receiver.
+        const sx = n ? W - 60 : W * 0.5, sy = 30, rx = n ? 50 : W * 0.08, ry = n ? 150 : H - 34;
+        g.sat(sx, sy, C.gps); g.txt('G13', sx + 28, sy, { size: 12, color: C.gps, weight: 700, mono: true });
+        ctx.fillStyle = C.text; ctx.beginPath(); ctx.moveTo(rx - 10, ry + 8); ctx.lineTo(rx + 10, ry + 8); ctx.lineTo(rx, ry - 10); ctx.fill();
+        g.txt(en ? 'receiver' : '接收機', rx + 18, ry + 2, { size: 13, color: C.dim, weight: 600 });
+        g.line(sx, sy, rx, ry, '#ffffff33', 1.2, [4, 5]);
+        const p = (t * 0.5) % 1; g.dot(sx + (rx - sx) * p, sy + (ry - sy) * p, 6, '#fff', 14);
+        g.txt(`${km.toLocaleString('en-US')} km`, (sx + rx) / 2 + 14, (sy + ry) / 2 - 12, { size: 13, color: C.text, weight: 700, mono: true });
+        value(`${ms.toFixed(1)} ms`, en ? 'flight time' : '訊號的飛行時間');
+      } else if (cur === 3) {
+        // data × code × carrier = signal, one row each.
+        const x0 = n ? 92 : 140, x1 = n ? W - 14 : W * 0.6, span = x1 - x0, sc = t * 0.05, rh = n ? 34 : (H - 24) / 4;
+        const d = u => (Math.floor(u * 2) % 2 ? -1 : 1), c = u => (Math.sin(Math.floor(u * 22) * 12.9898) * 43758.5 % 1 + 1) % 1 > 0.5 ? 1 : -1, k = u => Math.cos(u * 55);
+        const rows = [[en ? 'data' : '導航電文', C.pur, d], [en ? '× PRN code' : '× PRN 碼', C.gps, c], [en ? '× carrier' : '× 載波', C.bds, k], [en ? '= signal' : '= 訊號', C.acc, u => d(u) * c(u) * k(u)]];
+        rows.forEach(([lab, col, f], i) => {
+          const y = 18 + rh * i + rh / 2;
+          g.txt(lab, x0 - 12, y, { size: 13, color: col, align: 'right', weight: 700 });
+          ctx.beginPath();
+          for (let j = 0; j <= span; j += 2) { const v = f(sc + j / span); j ? ctx.lineTo(x0 + j, y - v * rh * 0.32) : ctx.moveTo(x0 + j, y - v * rh * 0.32); }
+          ctx.strokeStyle = col; ctx.lineWidth = i === 3 ? 2 : 1.5; ctx.stroke();
+        });
+        if (!n) value(en ? 'BPSK' : '三層相乘', en ? 'data × code × carrier' : '電文 × 碼 × 載波');
+      } else if (cur === 4) {
+        // Satellites converge into one Σ.
+        const sats = [[0.06, C.gps, 'G13'], [0.18, C.gps, 'G05'], [0.3, C.bds, 'C23'], [0.42, C.gps, 'G21'], [0.54, C.bds, 'C32']];
+        const sx = n ? W / 2 : W * 0.3, sy = n ? 140 : H - 40, top = 34;
+        sats.forEach(([fx, col, id], i) => {
+          const x = n ? 30 + i * (W - 60) / 4 : W * fx, y = top;
+          g.sat(x, y, col); g.txt(id, x, y - 16, { size: 11, color: col, align: 'center', weight: 700, mono: true });
+          g.line(x, y + 8, sx, sy - 20, col + '55', 1.2);
+          const p = ((t * 0.6) + i / 5) % 1; g.dot(x + (sx - x) * p, y + 8 + (sy - 20 - y - 8) * p, 3, col, 6);
+        });
+        ctx.beginPath(); ctx.arc(sx, sy, 18, 0, Math.PI * 2); ctx.fillStyle = '#04211c'; ctx.fill(); ctx.strokeStyle = C.acc; ctx.lineWidth = 2; ctx.stroke();
+        g.txt('Σ', sx, sy + 1, { size: 18, color: C.acc, align: 'center', weight: 700 });
+        if (!n) value(en ? 'one I/Q' : '一路 I/Q', en ? 'all channels added in one instant' : '所有通道在同一瞬間相加');
+        else g.txt(en ? 'one I/Q stream' : '一路 I/Q', sx + 28, sy, { size: 13, color: C.acc, weight: 700 });
+      } else {
+        // 1 ms blocks streaming into the SDR, which radiates without a gap.
+        const y = n ? 80 : H / 2 - 4, bw = n ? 34 : 50, ax = n ? W - 70 : W * 0.52;
+        const off = (t * 50) % (bw + 8);
+        ctx.save(); ctx.beginPath(); ctx.rect(14, y - 20, ax - 60, 40); ctx.clip();
+        for (let x = 14 - off; x < ax - 40; x += bw + 8) {
+          ctx.fillStyle = '#8affdd26'; ctx.fillRect(x, y - 16, bw, 32); ctx.strokeStyle = C.acc; ctx.lineWidth = 1; ctx.strokeRect(x, y - 16, bw, 32);
+          g.txt('1 ms', x + bw / 2, y, { size: 11, color: C.acc, align: 'center', mono: true });
+        }
+        ctx.restore();
+        g.box(ax - 40, y - 22, 62, 44, C.acc);
+        g.txt('SDR', ax - 9, y, { size: 14, color: C.acc, align: 'center', weight: 700, mono: true });
+        g.line(ax + 12, y - 22, ax + 22, y - 52, C.acc, 2);
+        for (let j = 0; j < 3; j++) { const p = (t * 1.1 + j / 3) % 1; ctx.beginPath(); ctx.arc(ax + 22, y - 52, 6 + p * 30, -1.2, 0.3); ctx.strokeStyle = `rgba(138,255,221,${1 - p})`; ctx.lineWidth = 1.6; ctx.stroke(); }
+        value('≤ 1 ms', en ? 'every block, on time' : '每個區塊都準時送出');
+      }
+    }
+    scene('po-journey-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      now = t;
+      if (playing && t - start > DUR) goTo(cur + 1, false);
+      const local = t - start, k = Math.min(1, local / 1.2), e = 1 - (1 - k) ** 3;
+      const bar = root?.querySelector('.pj4-progress i');
+      if (bar) bar.style.transform = `scaleX(${playing ? Math.min(1, local / DUR) : 0})`;
+      const SH = Math.round(H * (n ? 0.56 : 0.62));
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, SH); ctx.clip();
+      stage(g, t, en, e, W, SH);
+      ctx.restore();
+      // Caption: the station's question, its answer for G13, and who runs it.
+      const cx = n ? 12 : 20, cw = W - cx * 2, cy = SH + 8, ch = H - cy - 10;
+      g.box(cx, cy, cw, ch, '#2f5577');
+      for (let i = 0; i < 6; i++) g.dot(cx + 18 + i * 14, cy + 18, 4, i <= cur ? C.acc : '#2b4a66');
+      g.txt(`${ST[cur].hw}`, cx + cw - 14, cy + 18, { size: 11, color: '#d9bf8c', align: 'right', weight: 700, mono: true });
+      const d = en ? ST[cur].en : ST[cur].zh;
+      ctx.globalAlpha = k;
+      g.txt(`${cur + 1}. ${d[0]}`, cx + 16, cy + (n ? 44 : 40), { size: n ? 15 : 17, color: '#fff', weight: 700 });
+      wrap(g, fill(d[1]), cx + 16, cy + (n ? 74 : 68), cw - 32, n ? 22 : 24, n ? 13 : 14.5, C.text);
+      ctx.globalAlpha = 1;
+    }, { h: 330, nh: 480 });
+  }
+
+  // 04: ephemeris → position → sky. Left: G13's real broadcast parameters. Middle: the time put in gives a point on the
+  // orbit. Right: that point seen from NKUST, as a direction and a height. Every value comes from the same data file.
+  {
+    const RE = 6378137, D = Math.PI / 180, WE = 7.2921151467e-5;
+    const LAT = 22.75843215402263 * D, LON = 120.33823886027615 * D, T0 = 4 * 3600, SPAN = 4 * 3600, STEP = 120;
+    const up = [Math.cos(LAT) * Math.cos(LON), Math.cos(LAT) * Math.sin(LON), Math.sin(LAT)];
+    const east = [-Math.sin(LON), Math.cos(LON), 0], north = [-Math.sin(LAT) * Math.cos(LON), -Math.sin(LAT) * Math.sin(LON), Math.cos(LAT)];
+    const SITE = up.map(v => v * RE), dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    let tracks = null, orbit = null, hero = null, eph = null, prn = 'G13', date = '';
+    const near = (list, t) => list.reduce((b, r) => Math.abs(t - r[0]) < Math.abs(t - b[0]) ? r : b, list[0]);
+    function build(data) {
+      prn = (window.GT_EPH && window.GT_EPH.prn) || 'G13'; date = data.date;
+      const at = (sys, num, list, t) => { const r = near(list, t); return GnssOrbit.position(GnssOrbit.fromRecord(sys, num, r.slice(1)), t - r[0]); };
+      const look = p => { const d = p.map((v, i) => v - SITE[i]), r = Math.hypot(...d); return [Math.atan2(dot3(d, east), dot3(d, north)), Math.asin(dot3(d, up) / r) / D]; };
+      tracks = [];
+      for (const [id, list] of Object.entries(data.sats)) {
+        const sys = id[0]; if (sys !== 'G' && sys !== 'C') continue;
+        const num = +id.slice(1);
+        if (GnssOrbit.fromRecord(sys, num, list[0].slice(1)).kind === 'GEO') continue;
+        const pts = [];
+        for (let s = -SPAN / 2; s <= SPAN / 2; s += STEP) pts.push(look(at(sys, num, list, T0 + s)));
+        tracks.push({ id, sys, pts });
+      }
+      const list = data.sats[prn];
+      if (!list) return;
+      eph = GnssOrbit.fromRecord('G', +prn.slice(1), near(list, T0).slice(1));
+      orbit = []; hero = [];
+      for (let s = 0; s <= 43200; s += 600) {
+        const p = at('G', +prn.slice(1), list, T0 + s), th = WE * s;
+        orbit.push([p[0] * Math.cos(th) - p[1] * Math.sin(th), p[0] * Math.sin(th) + p[1] * Math.cos(th), p[2]]);
+      }
+      for (let s = -SPAN / 2; s <= SPAN / 2; s += STEP) hero.push(at('G', +prn.slice(1), list, T0 + s));
+    }
+    const tryBuild = () => { if (!tracks && window.GT_DATA && window.GnssOrbit) build(window.GT_DATA); };
+    document.addEventListener('gt-eph', tryBuild);
+
+    scene('po-orbit-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      tryBuild();
+      const N = tracks ? tracks[0].pts.length : 1, idx = Math.round(((t * 0.03) % 1) * (N - 1)), secs = -SPAN / 2 + idx * STEP, clock = T0 + secs;
+      const hh = Math.floor(clock / 3600), mm = Math.floor(clock % 3600 / 60), pad = v => String(v).padStart(2, '0');
+      const cols = n ? [[0, 0, W, 250], [0, 280, W, 260], [0, 570, W, 330]] : [[0, 0, 250, H], [276, 0, 250, H], [552, 0, 248, H]];
+      // Panel 1: the ephemeris.
+      const [ax, ay, aw] = cols[0];
+      g.txt(en ? `① ${prn} broadcast ephemeris` : `① ${prn} 的廣播星曆`, ax + 14, ay + 22, { size: 14, color: C.text, weight: 700 });
+      g.txt(date, ax + 14, ay + 42, { size: 11.5, color: C.dim, mono: true });
+      if (eph) {
+        const rows = [['√A', `${eph.sqrtA.toFixed(3)} m½`, en ? 'orbit size' : '軌道大小'], ['e', eph.e.toFixed(5), en ? 'shape' : '形狀（偏心率）'],
+                      ['i₀', `${(eph.i0 / D).toFixed(2)}°`, en ? 'tilt' : '傾角'], ['Ω₀', `${(eph.omega0 / D).toFixed(2)}°`, en ? 'orientation' : '軌道面方向'],
+                      ['ω', `${(eph.omega / D).toFixed(2)}°`, en ? 'perigee' : '近地點方向'], ['M₀', `${(eph.m0 / D).toFixed(2)}°`, en ? 'where it starts' : '起始位置']];
+        const hot = Math.floor(t * 0.8) % rows.length;
+        rows.forEach(([k, v, d], i) => {
+          const y = ay + (n ? 70 : 76) + i * (n ? 28 : 40);
+          if (i === hot) { ctx.fillStyle = '#d9bf8c18'; ctx.fillRect(ax + 8, y - 15, aw - 16, n ? 26 : 34); }
+          g.txt(k, ax + 16, y, { size: 14, color: '#d9bf8c', weight: 700, mono: true });
+          g.txt(v, ax + aw - 14, y, { size: 13, color: C.text, align: 'right', weight: 700, mono: true });
+          if (!n) g.txt(d, ax + 56, y + 13, { size: 10.5, color: C.dim });
+          else g.txt(d, ax + 56, y, { size: 10.5, color: C.dim });
+        });
+      }
+      // Panel 2: put the time in → a point on the orbit.
+      const [bx, by, bw, bh] = cols[1];
+      g.txt(en ? '② put the time in → position' : '② 代入時刻 → 軌道上的位置', bx + 10, by + 22, { size: 14, color: C.text, weight: 700 });
+      g.txt(`t = ${pad(hh)}:${pad(mm)} GPST`, bx + 10, by + 42, { size: 12, color: C.acc, weight: 700, mono: true });
+      const ox = bx + bw / 2, oy = by + (n ? 150 : bh / 2 + 22), sc = (n ? 95 : 100) / 26.6e6, yaw = 0.5, pitch = 1.15;
+      const proj = p => { const x1 = p[0] * Math.cos(yaw) - p[1] * Math.sin(yaw), y1 = p[0] * Math.sin(yaw) + p[1] * Math.cos(yaw); return [ox + x1 * sc, oy - (p[2] * Math.cos(pitch) - y1 * Math.sin(pitch)) * sc]; };
+      const er = RE * sc, eg = ctx.createRadialGradient(ox - er * 0.3, oy - er * 0.3, er * 0.1, ox, oy, er);
+      eg.addColorStop(0, '#2c74a8'); eg.addColorStop(1, '#0e2c4a');
+      ctx.beginPath(); ctx.arc(ox, oy, er, 0, Math.PI * 2); ctx.fillStyle = eg; ctx.fill();
+      if (orbit && hero) {
+        ctx.beginPath(); orbit.forEach((p, i) => { const q = proj(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
+        ctx.strokeStyle = C.gps + '88'; ctx.lineWidth = 1.4; ctx.stroke();
+        const k = Math.round((secs + 43200) % 43200 / 600) % (orbit.length - 1), q = proj(orbit[k]);
+        g.sat(q[0], q[1], C.gps); g.txt(prn, q[0], q[1] - 16, { size: 12, color: C.gps, align: 'center', weight: 700, mono: true });
+        const p = hero[idx];
+        g.txt(`x ${(p[0] / 1e3).toFixed(0)} km`, bx + 10, by + bh - (n ? 52 : 58), { size: 11.5, color: C.text, mono: true });
+        g.txt(`y ${(p[1] / 1e3).toFixed(0)} km`, bx + 10, by + bh - (n ? 34 : 38), { size: 11.5, color: C.text, mono: true });
+        g.txt(`z ${(p[2] / 1e3).toFixed(0)} km`, bx + 10, by + bh - (n ? 16 : 18), { size: 11.5, color: C.text, mono: true });
+      }
+      if (!n) { arrow(g, 250, H / 2, 272, H / 2, C.dim); arrow(g, 528, H / 2, 548, H / 2, C.dim); }
+      // Panel 3: seen from NKUST.
+      const [cx0, cy0, cw, ch] = cols[2];
+      g.txt(en ? '③ seen from NKUST' : '③ 從高科大看出去', cx0 + 10, cy0 + 22, { size: 14, color: C.text, weight: 700 });
+      const sx = cx0 + cw / 2, sr = n ? 120 : 92, sy = cy0 + (n ? 170 : 150);
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+      [1, 2 / 3, 1 / 3].forEach(f => { ctx.beginPath(); ctx.arc(sx, sy, sr * f, 0, Math.PI * 2); ctx.stroke(); });
+      g.txt(en ? 'N' : '北', sx, sy - sr - 10, { size: 11, color: C.dim, align: 'center', weight: 700 });
+      const P = (az, el) => [sx + Math.sin(az) * sr * (90 - el) / 90, sy - Math.cos(az) * sr * (90 - el) / 90];
+      let cur = null;
+      if (tracks) tracks.forEach(tk => {
+        const p = tk.pts[idx]; if (p[1] < 0) return;
+        const mine = tk.id === prn, [x, y] = P(p[0], p[1]);
+        if (mine) cur = p; else g.dot(x, y, 2.6, (tk.sys === 'G' ? C.gps : C.bds) + '77');
+      });
+      if (cur) {
+        const [x, y] = P(cur[0], cur[1]);
+        g.line(sx, sy, x, y, '#8affdd66', 1, [3, 4]); g.dot(x, y, 6, C.gps, 12);
+        const az = ((cur[0] / D) + 360) % 360;
+        g.txt(en ? `azimuth ${az.toFixed(0)}°` : `方位 ${az.toFixed(0)}°`, cx0 + 10, sy + sr + 26, { size: 13, color: C.text, weight: 700, mono: true });
+        g.txt(en ? `elevation ${cur[1].toFixed(1)}°` : `仰角 ${cur[1].toFixed(1)}°`, cx0 + cw - 10, sy + sr + 26, { size: 13, color: C.acc, align: 'right', weight: 700, mono: true });
+      } else if (tracks) g.txt(en ? `${prn} is below the horizon now` : `${prn} 此刻在地平線下`, sx, sy + sr + 26, { size: 12, color: C.dim, align: 'center' });
+      if (!tracks) g.txt(en ? 'Loading the ephemeris…' : '載入星曆中…', W / 2, H / 2, { size: 13, color: C.dim, align: 'center' });
+    }, { h: 380, nh: 900 });
+  }
+
+  // 06: G13's signal, told in five beats like the homepage walkthrough: data, code, the multiplication rule, the carrier,
+  // and finally the receiver's side, where only G13's own code pulls a peak out of the noise and another code does not.
+  {
+    const CAPS = [
+      ['① 導航電文：衛星要說的內容', '軌道、時鐘修正與時間等資訊，以 +1／−1 表示，每秒 50 個位元，每個位元持續 20 ms，變化得很慢。',
+       '① Navigation data: what the satellite says', 'Orbit, clock corrections and time, sent as +1 / −1 at 50 bits a second; each bit lasts 20 ms and changes slowly.'],
+      ['② PRN 碼：G13 的指紋', '每顆衛星有一組專屬、快速跳動的 ±1 序列。一個電文位元裡塞了很多碼片：GPS 是 20,460 個，北斗 B1I 是 40,920 個。',
+       '② PRN code: G13’s fingerprint', 'Each satellite has its own fast ±1 sequence. One data bit holds many chips: 20,460 for GPS, 40,920 for BeiDou B1I.'],
+      ['③ 相乘：電文決定碼要不要翻轉', '電文是 +1 時，碼維持原樣；電文是 −1 時，碼整段上下翻轉。這就是送出去的內容。',
+       '③ Multiply: the data decides whether the code flips', 'Where the data is +1 the code passes unchanged; where it is −1 the code flips upside down. That is what gets sent.'],
+      ['④ 放上載波：翻轉變成相位跳 180°', '載波是 1575.42 MHz（北斗 1561.098 MHz）的正弦波。相乘結果每翻一次，載波的相位就跳 180°，這叫 BPSK。',
+       '④ Onto the carrier: a flip becomes a 180° phase jump', 'The carrier is a 1575.42 MHz sine (BeiDou 1561.098 MHz). Each flip of the product makes the carrier jump 180° in phase: BPSK.'],
+      ['⑤ 接收機：用對的碼，才找得到', '收到的訊號埋在雜訊下面。拿 G13 的碼去比對，會出現一個尖峰，位置就是延遲；拿 G05 的碼比對，什麼都沒有。',
+       '⑤ The receiver: only the right code finds it', 'The signal arrives buried under noise. Matching it with G13’s code raises one peak, at the delay; matching with G05’s code finds nothing.'],
+    ];
+    const DATA = [1, -1, -1, 1, -1, 1, 1, -1], FLIP = '#ff8f7a', DUR = 8;
+    const chip = (seed, k) => (Math.sin(k * 12.9898 + seed * 78.233) * 43758.5453 % 1 + 1) % 1 > 0.5 ? 1 : -1;
+    const noise = i => { const s = Math.sin(i * 78.233 + 1.7) * 43758.5453; return ((s - Math.floor(s)) - 0.5) * 2; };
+    let beat = 0, playing = !reduced.matches, start = 0, now = 0;
+    const root = document.querySelector('.ps3-ctrl');
+    const playBtn = root?.querySelector('.ps3-play');
+    const render = () => {
+      if (!playBtn) return;
+      const en = isEn();
+      playBtn.textContent = en ? (playing ? 'Pause Ⅱ' : 'Play ▷') : (playing ? '暫停 Ⅱ' : '播放 ▷');
+      playBtn.setAttribute('aria-pressed', String(playing));
+    };
+    const goTo = (i, stop) => { beat = (i + 5) % 5; start = now; if (stop) playing = false; render(); };
+    root?.querySelector('.ps3-prev').addEventListener('click', () => goTo(beat - 1, true));
+    root?.querySelector('.ps3-next').addEventListener('click', () => goTo(beat + 1, true));
+    playBtn?.addEventListener('click', () => { playing = !playing; start = now; render(); });
+    document.addEventListener('languagechange', () => setTimeout(render));
+    render();
+    function wrap(g, s, x, y, maxW, lh, size, color) {
+      const { ctx, n } = g, px = size * (n ? 1.15 : 1.1);
+      ctx.font = `500 ${px}px 'Noto Sans TC',sans-serif`;
+      const parts = /[㐀-鿿]/.test(s) ? [...s] : s.split(/(?<= )/);
+      let line = '', yy = y;
+      for (const p of parts) {
+        if (ctx.measureText(line + p).width > maxW && line) { g.txt(line.trimEnd(), x, yy, { size, color }); line = p.trimStart(); yy += lh; }
+        else line += p;
+      }
+      if (line) g.txt(line, x, yy, { size, color });
+    }
+    scene('po-signal-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      now = t;
+      if (playing && t - start > DUR) goTo(beat + 1, false);
+      const local = t - start, rv = Math.min(1, local / 0.8);
+      const SH = Math.round(H * (n ? 0.6 : 0.66));
+      const x0 = n ? 14 : 170, x1 = W - (n ? 14 : 24), BIT = n ? 110 : 150, CH = n ? 9 : 10, shift = t * 26;
+      const amp = n ? 14 : 16;
+      const dIdx = x => Math.floor((x + shift) / BIT), dVal = k => DATA[((k % 8) + 8) % 8];
+      const data = x => dVal(dIdx(x)), code = (x, seed = 13) => chip(seed, Math.floor((x + shift) / CH));
+      const trace = (y, f, col, w = 1.8, a = amp) => { ctx.beginPath(); for (let x = x0; x <= x1; x += 1.5) { const v = f(x); x === x0 ? ctx.moveTo(x, y - v * a) : ctx.lineTo(x, y - v * a); } ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke(); };
+      const windows = [];
+      for (let k = dIdx(x0); k * BIT - shift < x1; k++) { const a = Math.max(x0, k * BIT - shift), b = Math.min(x1, (k + 1) * BIT - shift); if (b > a) windows.push({ a, b, d: dVal(k) }); }
+      const label = (y, zh, enS, sub, col) => {
+        if (n) g.txt(`${en ? enS : zh} · ${sub}`, x0, y - amp - 12, { size: 12, color: col, weight: 700 });
+        else { g.txt(en ? enS : zh, 18, y - 7, { size: 14, color: col, weight: 700 }); g.txt(sub, 18, y + 13, { size: 11, color: C.dim, mono: true }); }
+      };
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, SH); ctx.clip();
+      if (beat < 4) {
+        const rows = n ? [40, 98, 156, 214] : [38, 100, 162, 224].map(v => v * SH / 300);
+        // Row 1: data.
+        label(rows[0], '導航電文', 'Navigation data', '50 bps', C.pur);
+        trace(rows[0], data, C.pur);
+        windows.forEach(({ a, b, d }) => { if (b - a > 34) g.txt(d > 0 ? '+1' : '−1', (a + b) / 2, rows[0] - amp - 8, { size: 12, color: C.pur, align: 'center', weight: 700, mono: true }); });
+        if (beat >= 1) {
+          ctx.globalAlpha = beat === 1 ? rv : 1;
+          label(rows[1], 'G13 的 PRN 碼', 'G13’s PRN code', '1.023 Mcps', C.gps);
+          trace(rows[1], x => code(x), C.gps);
+          if (beat === 1) {
+            const w = windows.find(w => w.b - w.a >= BIT - 1);
+            if (w) { ctx.strokeStyle = '#8affdd88'; ctx.lineWidth = 1.2; ctx.strokeRect(w.a, rows[0] - amp - 18, BIT, rows[1] - rows[0] + amp * 2 + 24);
+              g.txt(en ? '1 data bit = many chips' : '1 個電文位元 ＝ 許多碼片', w.a + BIT / 2, rows[1] + amp + 16, { size: 12, color: C.acc, align: 'center', weight: 700 }); }
+          }
+          ctx.globalAlpha = 1;
+        }
+        if (beat >= 2) {
+          ctx.globalAlpha = beat === 2 ? rv : 1;
+          if (beat === 2) windows.forEach(({ a, b, d }) => {
+            ctx.fillStyle = d > 0 ? '#8affdd12' : '#ff8f7a1c'; ctx.fillRect(a, rows[0] - amp - 6, b - a, rows[2] - rows[0] + amp * 2 + 12);
+            if (b - a > 44) g.txt(d > 0 ? (en ? 'unchanged' : '不變') : (en ? 'flipped' : '翻轉'), (a + b) / 2, rows[2] + amp + 14, { size: 12, color: d > 0 ? C.acc : FLIP, align: 'center', weight: 700 });
+          });
+          label(rows[2], '① × ②', '① × ②', en ? 'sent content' : '送出的內容', C.acc);
+          windows.forEach(({ a, b, d }) => { ctx.save(); ctx.beginPath(); ctx.rect(a, rows[2] - amp - 4, b - a, amp * 2 + 8); ctx.clip(); trace(rows[2], x => d * code(x), d > 0 ? C.acc : FLIP); ctx.restore(); });
+          ctx.globalAlpha = 1;
+        }
+        if (beat >= 3) {
+          ctx.globalAlpha = rv;
+          label(rows[3], en ? '× carrier' : '× 載波', '× carrier', 'BPSK', C.bds);
+          const prod = x => data(x) * code(x);
+          trace(rows[3], x => prod(x) * Math.cos((x + shift) * 1.3), C.bds, 1.3);
+          // Mark each phase jump.
+          let prev = prod(x0);
+          for (let x = x0 + 1; x <= x1; x++) { const v = prod(x); if (v !== prev) { g.line(x, rows[3] - amp - 6, x, rows[3] + amp + 6, '#ffffff55', 1, [2, 3]); prev = v; } }
+          g.txt(en ? 'dashed: phase jumps 180°' : '虛線：相位跳 180°', x1, rows[3] + amp + 16, { size: 12, color: C.dim, align: 'right', weight: 700 });
+          ctx.globalAlpha = 1;
+        }
+      } else {
+        // The receiver: noisy input, then two matches side by side.
+        const y0 = n ? 46 : 46;
+        label(y0, en ? 'What arrives' : '收到的訊號', 'What arrives', en ? 'under the noise' : '埋在雜訊下', '#9fb4c8');
+        trace(y0, x => 0.25 * data(x) * code(x) + 0.9 * noise(Math.floor(x + shift)), '#9fb4c8aa', 1, amp * 1.2);
+        const panels = n ? [[x0, 98, x1 - x0, (SH - 110) / 2 - 6], [x0, 98 + (SH - 110) / 2 + 6, x1 - x0, (SH - 110) / 2 - 6]] : [[x0, 96, (x1 - x0) / 2 - 10, SH - 108], [x0 + (x1 - x0) / 2 + 10, 96, (x1 - x0) / 2 - 10, SH - 108]];
+        [['G13', true], ['G05', false]].forEach(([id, ok], i) => {
+          const [px, py, pw, ph] = panels[i], col = ok ? C.acc : FLIP;
+          g.box(px, py, pw, ph, col + '88');
+          g.txt(en ? `match with ${id}’s code` : `用 ${id} 的碼比對`, px + 12, py + 18, { size: 13, color: col, weight: 700 });
+          const by = py + ph - 14, top = py + 60, grow = Math.min(1, local / 1.6);
+          g.line(px + 10, by, px + pw - 10, by, C.line, 1);
+          ctx.beginPath();
+          for (let k = 0; k <= 120; k++) {
+            const x = px + 10 + (pw - 20) * k / 120, peak = ok ? Math.max(0, 1 - Math.abs(k - 74) / 2.5) * grow : 0;
+            const y = by - (peak + Math.abs(noise(k * 3 + i * 40)) * 0.13) * (by - top);
+            k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+          ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke();
+          if (grow > 0.9) g.txt(ok ? (en ? 'peak = found, and its delay' : '尖峰＝找到了，位置就是延遲') : (en ? 'no peak = not this satellite' : '沒有尖峰＝不是這顆衛星'), px + 12, py + 40, { size: 12, color: col, weight: 700 });
+        });
+      }
+      ctx.restore();
+      // Caption.
+      const cx = n ? 12 : 20, cw = W - cx * 2, cy = SH + 8, ch = H - cy - 10;
+      g.box(cx, cy, cw, ch, '#2f5577');
+      for (let i = 0; i < 5; i++) g.dot(cx + 18 + i * 14, cy + 18, 4, i <= beat ? C.acc : '#2b4a66');
+      g.txt('GPS L1 C/A · BeiDou B1I', cx + cw - 14, cy + 18, { size: 11, color: C.dim, align: 'right', mono: true });
+      const c = CAPS[beat];
+      ctx.globalAlpha = rv;
+      g.txt(en ? c[2] : c[0], cx + 16, cy + 46, { size: n ? 14 : 17, color: '#fff', weight: 700 });
+      wrap(g, en ? c[3] : c[1], cx + 16, cy + (n ? 74 : 78), cw - 32, n ? 21 : 25, n ? 13 : 15, C.text);
+      ctx.globalAlpha = 1;
+    }, { h: 520, nh: 660 });
+  }
+
+  // 07: every channel at the same instant, the summed waveform, and that sum as points on the I/Q plane.
+  {
+    const CH7 = [['G13', C.gps, 1.0, 0.0, 0.9], ['G05', C.gps, 1.3, 1.2, 0.8], ['G21', C.gps, 0.8, 2.3, 0.7], ['C23', C.bds, 1.6, 0.6, 0.85], ['C32', C.bds, 1.15, 3.1, 0.75], ['C24', C.bds, 0.65, 4.2, 0.8]];
+    const trail = [];
+    scene('po-syn-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      const L0 = n ? 52 : 64, L1 = n ? W - 64 : 470, rh = n ? 34 : 36, top = n ? 34 : 34, amp = n ? 11 : 12;
+      const cu = 0.65, sx = L0 + (L1 - L0) * cu, phase = (x, f, ph) => 2 * Math.PI * f * ((x - L0) / (L1 - L0) * 6 + t * 1.2) / 2 + ph;
+      let I = 0, Q = 0;
+      CH7.forEach(([id, col, f, ph, a], j) => {
+        const y = top + j * rh + rh / 2;
+        g.txt(id, 10, y, { size: 12.5, color: col, weight: 700, mono: true });
+        ctx.beginPath();
+        for (let x = L0; x <= L1; x += 2) { const v = a * Math.cos(phase(x, f, ph)); x === L0 ? ctx.moveTo(x, y - v * amp) : ctx.lineTo(x, y - v * amp); }
+        ctx.strokeStyle = col + 'bb'; ctx.lineWidth = 1.3; ctx.stroke();
+        const vi = a * Math.cos(phase(sx, f, ph)), vq = a * Math.sin(phase(sx, f, ph));
+        I += vi; Q += vq; g.dot(sx, y - vi * amp, 3.5, col, 6);
+      });
+      // The summed waveform.
+      const sy = top + CH7.length * rh + (n ? 40 : 44), sAmp = n ? 9 : 10;
+      g.txt(en ? 'Σ summed waveform' : 'Σ 疊加後的波形', 10, sy - (n ? 30 : 32), { size: 13, color: C.acc, weight: 700 });
+      g.line(L0, sy, L1, sy, '#1d3650', 1);
+      ctx.beginPath();
+      for (let x = L0; x <= L1; x += 2) { let v = 0; CH7.forEach(([, , f, ph, a]) => { v += a * Math.cos(phase(x, f, ph)); }); x === L0 ? ctx.moveTo(x, sy - v * sAmp) : ctx.lineTo(x, sy - v * sAmp); }
+      ctx.strokeStyle = C.acc; ctx.lineWidth = 2; ctx.stroke();
+      g.dot(sx, sy - I * sAmp, 5, '#fff', 12);
+      g.line(sx, top - 6, sx, sy + 40, '#ffffff55', 1, [3, 3]);
+      g.txt(en ? 'same instant' : '同一個瞬間', sx, top - 14, { size: 12, color: C.text, align: 'center', weight: 700 });
+      // The I/Q plane.
+      const qx = n ? W / 2 : 668, qy = n ? H - 120 : H / 2 + 8, qr = n ? 90 : 104;
+      if (n) arrow(g, W / 2, sy + 46, W / 2, qy - qr - 12, C.acc); else arrow(g, L1 + 14, sy, qx - qr - 14, qy, C.acc);
+      g.txt(en ? 'as I/Q' : '換成 I/Q', n ? W / 2 + 10 : L1 + 30, n ? sy + 60 : (sy + qy) / 2 - 10, { size: 12, color: C.acc, weight: 700 });
+      g.line(qx - qr, qy, qx + qr, qy, C.line, 1); g.line(qx, qy - qr, qx, qy + qr, C.line, 1);
+      g.txt('I', qx + qr + 8, qy, { size: 13, color: C.dim, weight: 700, mono: true }); g.txt('Q', qx, qy - qr - 10, { size: 13, color: C.dim, align: 'center', weight: 700, mono: true });
+      const k = qr / 4.6, px = qx + I * k, py = qy - Q * k;
+      trail.push([px, py]); if (trail.length > 80) trail.shift();
+      trail.forEach(([x, y], i) => { ctx.globalAlpha = i / trail.length * 0.6; g.dot(x, y, 2, C.acc); }); ctx.globalAlpha = 1;
+      g.dot(px, py, 6, '#fff', 14);
+      g.txt(en ? 'one sample = (I, Q)' : '一個樣本 = (I, Q)', qx, qy + qr + 18, { size: 13, color: C.acc, align: 'center', weight: 700 });
+      g.txt(en ? 'I = the sum above · Q = the same sum a quarter-turn later' : 'I＝上面的總和・Q＝同一個總和轉 90° 的分量', qx, qy + qr + 38, { size: 11, color: C.dim, align: 'center' });
+    }, { h: 380, nh: 680 });
+  }
+
+  // 08: the 1 ms deadline. Blocks arrive every 1 ms; each must be computed before the next one is due. Measured times on the
+  // entry laptop: CPU with 16 channels fits, CPU with 32 does not and the signal breaks, the GPU with 32 has room to spare.
+  {
+    const LANES = [
+      { zh: 'CPU・16 通道', en: 'CPU · 16 channels', us: 790.1, col: C.bds },
+      { zh: 'CPU・32 通道', en: 'CPU · 32 channels', us: 1591.7, col: '#ff8f8f' },
+      { zh: 'GPU・32 通道', en: 'GPU · 32 channels', us: 280.4, col: C.acc },
+    ];
+    const hash = i => { const s = Math.sin(i * 91.7) * 43758.5453; return s - Math.floor(s); };
+    scene('po-load-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      const x0 = n ? 14 : 170, x1 = W - 14, slot = n ? 70 : 110, speed = 0.55;
+      g.txt(en ? 'Every 1 ms a new block is due. Miss one deadline and the signal breaks.' : '每 1 ms 就有一個區塊到期；只要一次沒趕上，訊號就斷。', 14, 22, { size: n ? 12.5 : 15, color: C.text, weight: 700 });
+      LANES.forEach((ln, li) => {
+        const y = (n ? 72 : 76) + li * (n ? 92 : 86), hgt = n ? 30 : 34;
+        if (n) g.txt(en ? ln.en : ln.zh, x0, y - 22, { size: 12, color: ln.col, weight: 700 });
+        else { g.txt(en ? ln.en : ln.zh, 14, y + 4, { size: 13.5, color: ln.col, weight: 700 }); g.txt(`${ln.us.toFixed(0)} μs / 1 ms`, 14, y + 22, { size: 11, color: C.dim, mono: true }); }
+        ctx.save(); ctx.beginPath(); ctx.rect(x0, y - 8, x1 - x0, hgt + 16); ctx.clip();
+        const off = (t * speed * slot) % slot, first = Math.floor(t * speed);
+        for (let k = -1; k < (x1 - x0) / slot + 2; k++) {
+          const bx = x0 + k * slot - off, idx = first + k;
+          ctx.strokeStyle = '#2f5577'; ctx.lineWidth = 1; ctx.strokeRect(bx + 2, y, slot - 4, hgt);
+          const need = ln.us * (1 + (hash(idx + li * 7) - 0.5) * 0.06), w = (slot - 4) * Math.min(1, need / 1000);
+          const late = need > 1000;
+          ctx.fillStyle = late ? '#ff8f8f' : ln.col + 'cc'; ctx.fillRect(bx + 2, y, w, hgt);
+          if (late) { ctx.fillStyle = '#ff8f8f55'; ctx.fillRect(bx + slot - 2, y, (slot - 4) * Math.min(1, need / 1000 - 1), hgt); }
+        }
+        ctx.restore();
+        g.txt(ln.us > 1000 ? (en ? 'over 1 ms → gap → receiver loses lock' : '超過 1 ms → 斷訊 → 接收機失鎖') : ln.us > 600 ? (en ? 'fits, but little margin' : '來得及，但餘裕很少') : (en ? 'plenty of margin' : '餘裕充足'),
+          x1, y + hgt + (n ? 16 : 18), { size: 12, color: ln.us > 1000 ? '#ff8f8f' : ln.us > 600 ? C.bds : C.acc, align: 'right', weight: 700 });
+      });
+      g.txt(en ? 'Each box = 1 ms. Measured on the entry laptop (i5-10300H / GTX 1650 Ti), 20.8 Msps.' : '每一格＝1 ms。入門筆電（i5-10300H／GTX 1650 Ti）實測，20.8 Msps。', 14, H - 14, { size: n ? 10.5 : 12, color: C.dim });
+    }, { h: 340, nh: 380 });
+  }
+
+  // 01: where GeoTrust stands. A qualitative map: equipment needed × how controllable; circle size = systems and bands.
+  scene('po-pos-cv', (g, t, en) => {
+    const { ctx, W, H, n } = g;
+    const x0 = n ? 46 : 80, x1 = W - 24, y0 = H - (n ? 56 : 50), y1 = 26;
+    const X = v => x0 + (x1 - x0) * v, Y = v => y0 - (y0 - y1) * v;
+    arrow(g, x0, y0, x1, y0, C.line); arrow(g, x0, y0, x0, y1, C.line);
+    g.txt(en ? 'Equipment needed: less → more' : '需要的設備：少 → 多', (x0 + x1) / 2, y0 + 26, { size: 13, color: C.dim, align: 'center', weight: 700 });
+    ctx.save(); ctx.translate(x0 - (n ? 26 : 34), (y0 + y1) / 2); ctx.rotate(-Math.PI / 2);
+    g.txt(en ? 'Controllable & repeatable: low → high' : '可控與可重現：低 → 高', 0, 0, { size: 13, color: C.dim, align: 'center', weight: 700 }); ctx.restore();
+    const cyc = t;                                     // points appear once and stay
+    const pts = [
+      [0.16, 0.16, n ? 40 : 58, '#9fb4c8', en ? 'Outdoor test' : '戶外實測', 0.3],
+      [0.8, 0.8, n ? 40 : 58, C.gps, en ? 'Hardware simulator' : '傳統硬體模擬器', 1.2],
+      [0.2, 0.8, n ? 22 : 30, C.acc, 'GeoTrust', 2.2],
+    ];
+    pts.forEach(([vx, vy, r, col, name, at], i) => {
+      const a = Math.min(1, Math.max(0, (cyc - at) / 0.8));
+      if (a <= 0) return;
+      let px = X(vx), py = Y(vy);
+      if (i === 2) { const e = 1 - (1 - a) ** 3; px = X(0.08 + (vx - 0.08) * e); py = Y(0.08 + (vy - 0.08) * e); }
+      ctx.globalAlpha = a;
+      ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fillStyle = col + '22'; ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = i === 2 ? 2 : 1.2; ctx.stroke();
+      if (i === 2) { const p = (t * 0.6) % 1; ctx.beginPath(); ctx.arc(px, py, r + p * 26, 0, Math.PI * 2); ctx.strokeStyle = `rgba(138,255,221,${0.5 * (1 - p)})`; ctx.stroke(); }
+      g.txt(name, px, py + r + 16, { size: i === 2 ? 15 : 13, color: col, align: 'center', weight: 700 });
+      ctx.globalAlpha = 1;
+    });
+    if (cyc > 3.2) {
+      ctx.globalAlpha = Math.min(1, (cyc - 3.2) / 0.8);
+      const gx = X(0.2) + (n ? 30 : 44), gy = Y(0.8);
+      g.txt(en ? '← low equipment, high control' : '← 設備門檻低，可控程度高', gx, gy - 6, { size: 13, color: C.acc, weight: 700 });
+      g.txt(en ? 'smaller circle: GPS L1 + BeiDou B1I only' : '圓較小：只涵蓋 GPS L1＋北斗 B1I', gx + 18, gy + 16, { size: 12, color: C.dim });
+      ctx.globalAlpha = 1;
+    }
+  }, { h: 360, nh: 440 });
+
+  // 08: measured compute time per 1 ms block (20.8 Msps, 16 channels) and the most channels each part manages within 1 ms.
+  {
+    const M = [
+      { zh: '入門筆電', en: 'Entry laptop', cpu: 'i5-10300H', gpu: 'GTX 1650 Ti', tc: 790.1, tg: 149.8, nc: 18, ng: 112 },
+      { zh: '高階筆電', en: 'High-end laptop', cpu: 'i9-9880H', gpu: 'RTX 2070', tc: 629.7, tg: 82.1, nc: 24, ng: 235 },
+      { zh: '高階桌機', en: 'High-end desktop', cpu: 'i7-14700F', gpu: 'RTX 4070', tc: 341.0, tg: 40.1, nc: 67, ng: 465 },
+      { zh: '次世代桌機', en: 'Next-gen desktop', cpu: 'Ryzen 7 9700X', gpu: 'RTX 5070 Ti', tc: 313.2, tg: 23.6, nc: 45, ng: 744 },
+    ];
+    let m = 0, start = 0, now = 0, auto = !reduced.matches;
+    const tabs = [...document.querySelectorAll('.pb-tabs [data-m]')];
+    const render = () => tabs.forEach((b, i) => b.setAttribute('aria-selected', String(i === m)));
+    tabs.forEach((b, i) => b.addEventListener('click', () => { m = i; start = now; auto = false; render(); }));
+    render();
+    scene('po-bench-cv', (g, t, en) => {
+      const { ctx, W, H, n } = g;
+      now = t;
+      if (auto && t - start > 7) { m = (m + 1) % M.length; start = t; render(); }
+      const d = M[m], grow = Math.min(1, (t - start) / 1.6), e = 1 - (1 - grow) ** 3;
+      const x0 = n ? 16 : 150, x1 = W - (n ? 16 : 40);
+      const X = us => x0 + (x1 - x0) * us / 1000;
+      g.txt(en ? 'One 1 ms block · time budget 1,000 μs' : '一個 1 ms 區塊・時間預算 1,000 μs', n ? 16 : 14, 22, { size: 14, color: C.text, weight: 700 });
+      const lanes = [['CPU', d.cpu, d.tc, C.bds, n ? 64 : 62], ['GPU', d.gpu, d.tg, C.acc, n ? 134 : 122]];
+      lanes.forEach(([k, name, us, col, y]) => {
+        if (n) g.txt(`${k} · ${name}`, 16, y - 18, { size: 12, color: col, weight: 700 });
+        else { g.txt(k, 14, y - 7, { size: 15, color: col, weight: 700, mono: true }); g.txt(name, 14, y + 13, { size: 11.5, color: C.dim }); }
+        ctx.fillStyle = '#ffffff0c'; ctx.fillRect(x0, y - 14, x1 - x0, 28);
+        ctx.fillStyle = col; ctx.fillRect(x0, y - 14, (X(us) - x0) * e, 28);
+        const pct = Math.round(us / 10);
+        const inside = us > 450;
+        g.txt(`${us.toFixed(1)} μs · ${pct}%`, inside ? x0 + 10 : X(us) + 10, y, { size: n ? 12 : 14, color: inside ? '#1a1206' : C.text, weight: 700, mono: true });
+      });
+      // Budget line.
+      g.line(x1, 36, x1, n ? 156 : 142, '#ff8f8f', 2);
+      g.txt('1 ms', x1, n ? 168 : 154, { size: 12, color: '#ff8f8f', align: n ? 'right' : 'center', weight: 700, mono: true });
+      // Capacity within 1 ms.
+      const cy = n ? 220 : 200;
+      g.txt(en ? 'Most channels finished within 1 ms (20.8 Msps)' : '1 ms 內最多能算幾個通道（20.8 Msps）', n ? 16 : 14, cy, { size: 14, color: C.text, weight: 700 });
+      const cx0 = x0, cx1 = x1, MAXN = 760, CX = v => cx0 + (cx1 - cx0) * v / MAXN;
+      [['CPU', d.nc, C.bds, cy + (n ? 40 : 40)], ['GPU', d.ng, C.acc, cy + (n ? 96 : 84)]].forEach(([k, v, col, y]) => {
+        if (n) g.txt(k, 16, y - 18, { size: 12, color: col, weight: 700, mono: true }); else g.txt(k, 14, y, { size: 15, color: col, weight: 700, mono: true });
+        ctx.fillStyle = '#ffffff0c'; ctx.fillRect(cx0, y - 11, cx1 - cx0, 22);
+        ctx.fillStyle = col; ctx.fillRect(cx0, y - 11, (CX(v) - cx0) * e, 22);
+        g.txt(en ? `${v} channels` : `${v} 個通道`, Math.min(CX(v) * 1 + 10, cx1 - 90), y, { size: 13, color: C.text, weight: 700, mono: true });
+      });
+      const dx = CX(16);
+      g.line(dx, cy + 18, dx, cy + (n ? 112 : 100), '#ffffffaa', 1.2, [3, 3]);
+      g.txt(en ? 'default 16' : '預設 16', dx + 4, cy + (n ? 122 : 112), { size: 11.5, color: '#ffffffcc', weight: 700 });
+    }, { h: 330, nh: 360 });
+  }
 
   // Diagrams, tables and formula lists reveal on scroll; CSS does the motion, this only flags visibility.
   document.documentElement.classList.add('po-js');
   const io = new IntersectionObserver(entries => entries.forEach(en => {
     if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); }
   }), { threshold: 0.12 });
-  document.querySelectorAll('.po-sys, .po-table-wrap, .po-eqs, .po-grid4, .po-step-more, .po-bounds, .po-stations').forEach(el => io.observe(el));
+  document.querySelectorAll('.po-table-wrap, .po-eqs, .po-bounds, .po-levels, .po-cmp, .po-steps, .po-stats').forEach(el => io.observe(el));
 })();
 
 // Formulas: typeset with KaTeX, again after each language switch (the swap restores the raw TeX).
@@ -556,7 +995,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       katex.render(el.dataset.tex, el, { throwOnError: false });
     });
     if (window.renderMathInElement) renderMathInElement(document.querySelector('main'), {
-      delimiters: [{ left: '\(', right: '\)', display: false }], ignoredClasses: ['po-tex'], throwOnError: false,
+      delimiters: [{ left: '\\(', right: '\\)', display: false }], ignoredClasses: ['po-tex'], throwOnError: false,
     });
   };
   render();

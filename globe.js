@@ -442,11 +442,18 @@
   const placeCache = new Map();
   const place = () => state.site.custom ? placeCache.get(placeKey()) || null : null;
   const placeKey = () => `${state.site.lat.toFixed(4)},${state.site.lon.toFixed(4)},${lang()}`;
+  let lookupTimer = 0, lastLookup = 0;
   function lookupPlace() {
+    clearTimeout(lookupTimer);
+    if (!state.site.custom || placeCache.has(placeKey())) return;
+    lookupTimer = setTimeout(fetchPlace, Math.max(600, 1100 - (Date.now() - lastLookup)));
+  }
+  function fetchPlace() {
     if (!state.site.custom) return;
     const key = placeKey();
     if (placeCache.has(key)) return;
     placeCache.set(key, null);
+    lastLookup = Date.now();
     const { lat, lon } = state.site;
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&accept-language=${lang() === 'en' ? 'en' : 'zh-TW,zh'}`;
     fetch(url).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(data => {

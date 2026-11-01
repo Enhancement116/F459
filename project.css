@@ -687,3 +687,9 @@ html:has(main.po){scroll-padding-top:0}
 
 /* The hero globe sits on its own dark space so background stars never show through it. */
 .po-hero-real canvas{background:radial-gradient(ellipse 70% 75% at 50% 62%,#06101e 0,#06101ef0 55%,#06101e00 100%)}
+
+/* Capability cards: a +/− corner mark says the card opens and shows its state. */
+.hero-specs>div[role=button]{cursor:pointer}
+.hero-specs>div[role=button]::after{content:'+';position:absolute;top:8px;right:10px;font:600 16px/1 'JetBrains Mono',Consolas,monospace;color:#8affdd99;transition:transform .3s,color .3s}
+.hero-specs>div[aria-expanded=true]::after{content:'−';color:#8affdd}
+.hero-specs>div[role=button]:hover::after{color:#8affdd;transform:scale(1.2)}

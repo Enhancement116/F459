@@ -718,9 +718,11 @@
     return new Promise((resolve, reject) => {
       const css = document.createElement('link');
       css.rel = 'stylesheet'; css.href = LEAFLET + 'leaflet.min.css';
+      css.integrity = 'sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb'; css.crossOrigin = 'anonymous';
       document.head.append(css);
       const js = document.createElement('script');
       js.src = LEAFLET + 'leaflet.min.js'; js.onload = resolve; js.onerror = reject;
+      js.integrity = 'sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO'; js.crossOrigin = 'anonymous';
       document.head.append(js);
     });
   }
@@ -769,7 +771,7 @@
     if (ground.pin) { ground.map.removeLayer(ground.pin); ground.pin = null; }
     if (!state.site.custom) return;
     ground.pin = L.circleMarker([state.site.lat, state.site.lon], { radius: 8, color: '#ffd27a', weight: 3, fillColor: '#fff3d6', fillOpacity: 0.95 })
-      .addTo(ground.map).bindTooltip(`PIN · ${place() ? placeLine() : coordText()}`, { permanent: true, direction: 'right', className: 'nkust-tip pin-tip' });
+      .addTo(ground.map).bindTooltip(esc(`PIN · ${place() ? placeLine() : coordText()}`), { permanent: true, direction: 'right', className: 'nkust-tip pin-tip' });
   }
   function setGroundLayer(name) {
     if (!ground || ground.current === name) return;

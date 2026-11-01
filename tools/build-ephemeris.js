@@ -1,11 +1,15 @@
-// Merges a day of RINEX navigation files into the compact JSON used by the homepage globe.
+// Merges a day of RINEX navigation files into the compact JSON used by the site, and points
+// data/latest.json at it so every page (globe, project hero, running example, sky) switches to that day.
 // Usage: node tools/build-ephemeris.js --date 2026-09-22 --out data/gnss-2026-265.json file1.rnx file2.rnx ...
+//        add --keep-latest to build a file without making it the current day.
 const fs = require('fs');
 const path = require('path');
 const { parseRinex, toRecord, FIELDS } = require('../gnss-orbit.js');
 
 const args = process.argv.slice(2);
 const opt = name => { const i = args.indexOf(name); return i >= 0 ? args.splice(i, 2)[1] : null; };
+const keepLatest = args.includes('--keep-latest');
+if (keepLatest) args.splice(args.indexOf('--keep-latest'), 1);
 const date = opt('--date'), out = opt('--out');
 if (!date || !out || !args.length) {
   console.error('Usage: node tools/build-ephemeris.js --date YYYY-MM-DD --out data/file.json nav1.rnx [nav2.rnx ...]');
@@ -41,6 +45,11 @@ const data = {
   sats: Object.fromEntries(Object.entries(sats).sort(([a], [b]) => a.localeCompare(b)))
 };
 fs.writeFileSync(out, JSON.stringify(data));
+if (!keepLatest) {
+  const manifest = path.join(path.dirname(out), 'latest.json');
+  fs.writeFileSync(manifest, JSON.stringify({ file: path.basename(out), date, doy }));
+  console.log(`${manifest} now points to ${path.basename(out)}`);
+}
 const ids = Object.keys(sats);
 console.log(`${out}: ${ids.filter(s => s[0] === 'G').length} GPS + ${ids.filter(s => s[0] === 'C').length} BDS satellites, ` +
   `${seen.size} unique ephemerides from ${total} records (${unhealthy} unhealthy skipped), ${fs.statSync(out).size} bytes`);

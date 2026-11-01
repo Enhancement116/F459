@@ -709,7 +709,7 @@
 
   function resize() {
     const r = canvas.getBoundingClientRect();
-    dpr = Math.min(devicePixelRatio || 1, 2);
+    dpr = Math.min(devicePixelRatio || 1, LOW ? 1.5 : 2);
     // Narrow stages use a taller virtual canvas so labels stay legible.
     W = r.width < 560 ? 360 : 800;
     H = r.width < 560 ? 510 : 500;
@@ -737,7 +737,7 @@
     step = (i + steps.length) % steps.length;
     // Reduced motion shows each scene in its finished state.
     t = reduced.matches ? STEP_S[step] - 1 : 0;
-    canvas.style.cursor = step === 1 ? 'grab' : '';
+    canvas.classList.toggle('sat-cursor', step === 1);
     canvas.tabIndex = step === 1 ? 0 : -1;
     steps.forEach((b, k) => {
       b.setAttribute('aria-expanded', String(k === step));
@@ -757,10 +757,10 @@
   }
   canvas.addEventListener('pointerdown', e => {
     if (step !== 1) return;
-    dragging = true; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; setTheta(e.clientX);
+    dragging = true; canvas.setPointerCapture(e.pointerId); canvas.classList.add('is-grabbing'); setTheta(e.clientX);
   });
   canvas.addEventListener('pointermove', e => { if (dragging) setTheta(e.clientX); });
-  const endDrag = () => { dragging = false; if (step === 1) canvas.style.cursor = 'grab'; };
+  const endDrag = () => { dragging = false; canvas.classList.remove('is-grabbing'); };
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
   canvas.addEventListener('keydown', e => {
@@ -793,7 +793,10 @@
   new ResizeObserver(() => root.style.setProperty('--hf-h', stage.offsetHeight + 'px')).observe(stage);
 
   ['pointerdown', 'keydown', 'wheel'].forEach(ev => root.addEventListener(ev, () => { lastTouch = performance.now(); }, { passive: true }));
+  // Phones, tablets and low-end machines draw at most 30 frames per second at a lower pixel ratio.
+  const LOW = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
   function frame(now) {
+    if (now - last < (LOW ? 33 : 28)) { requestAnimationFrame(frame); return; }
     const dt = Math.min((now - last) / 1000, 0.1); last = now;
     if (!playing && visible && !reduced.matches && now - lastTouch > IDLE_MS) { playing = true; labels(); }
     if (visible && !document.hidden && !reduced.matches) {

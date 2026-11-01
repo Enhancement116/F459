@@ -2,9 +2,28 @@
 @property --fx-a{syntax:'<angle>';inherits:false;initial-value:0deg}
 
 /* Star field behind everything, cursor glow above the background */
-.fx-sky{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+.fx-skywrap{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;transition:opacity .6s ease,transform .9s ease-out;will-change:transform,opacity}
+.fx-skywrap{opacity:.6}
+.fx-skywrap.is-scrolling{opacity:.22}
+.fx-skywrap.is-switching{opacity:0;transition:opacity .45s ease}
+.is-south .fx-skyrot{animation-name:fx-skyspin-s}
+.is-south .fx-skylabel{animation-name:fx-skylabel-s}
+@keyframes fx-skyspin-s{from{transform:rotate(var(--rot0,0deg))}to{transform:rotate(calc(var(--rot0,0deg) + 360deg))}}
+@keyframes fx-skylabel-s{from{transform:translateY(-50%) rotate(calc(-1 * var(--rot0,0deg)))}to{transform:translateY(-50%) rotate(calc(-1 * var(--rot0,0deg) - 360deg))}}
+.fx-skysite{position:absolute;left:16px;bottom:12px;font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.5px;color:rgba(160,195,230,.45)}
+.fx-skysite b{font-weight:700;color:rgba(138,255,221,.55);margin-right:4px}
+.fx-skyrot{position:absolute;transform:rotate(var(--rot0,0deg));animation:fx-skyspin 300s linear infinite;will-change:transform}
+@keyframes fx-skyspin{from{transform:rotate(var(--rot0,0deg))}to{transform:rotate(calc(var(--rot0,0deg) - 360deg))}}
+.fx-sky{position:absolute;inset:0;width:100%;height:100%}
+.fx-skylabel{position:absolute;display:grid;gap:1px;transform-origin:0 50%;transform:translateY(-50%) rotate(calc(-1 * var(--rot0,0deg)));animation:fx-skylabel 300s linear infinite;white-space:nowrap;line-height:1.3}
+@keyframes fx-skylabel{from{transform:translateY(-50%) rotate(calc(-1 * var(--rot0,0deg)))}to{transform:translateY(-50%) rotate(calc(-1 * var(--rot0,0deg) + 360deg))}}
+.fx-skylabel b{font:600 11px 'Noto Sans TC',sans-serif;color:rgba(170,205,240,.42)}
+.fx-skylabel small{font:500 10px 'Noto Sans TC',sans-serif;color:rgba(170,205,240,.28)}
+/* Reading column stays calm: a soft dark veil over the centre, stars and orbits remain at the edges */
+.fx-veil{position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,transparent 0,#07090cb3 9%,#07090ccc 50%,#07090cb3 91%,transparent 100%)}
+.fx-sat{position:fixed;left:0;top:var(--y);z-index:0;width:90px;height:2px;pointer-events:none;background:linear-gradient(90deg,transparent,#8affdd99,#e6fff8);border-radius:2px;animation:fx-sat 22s linear infinite;animation-delay:var(--d,0s);will-change:transform;opacity:.55}
+@keyframes fx-sat{from{transform:translate3d(-120px,0,0) rotate(-4deg)}55%{transform:translate3d(110vw,-6vh,0) rotate(-4deg)}to{transform:translate3d(110vw,-6vh,0) rotate(-4deg)}}
 .fx-on main,.fx-on footer{position:relative;z-index:1}
-.fx-glow{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(420px circle at var(--x,-999px) var(--y,-999px),#8affdd10,transparent 60%);mix-blend-mode:screen}
 
 /* Entrances (fx.js): one distinct effect per kind of content, played once. Animations, not transitions,
    so they never fight the hover tilt once they finish. */
@@ -50,8 +69,8 @@
 /* Rotating light running around key panels */
 .fx-ring{position:absolute;inset:-1px;pointer-events:none;border-radius:inherit;padding:1px;z-index:3;
   background:conic-gradient(from var(--fx-a),transparent 0 62%,#70b7ff 74%,#8affdd 82%,transparent 94%);
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
-  animation:fx-spin 7s linear infinite;filter:drop-shadow(0 0 6px #8affdd88)}
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7}
+:hover > .fx-ring{animation:fx-spin 5s linear infinite}
 @keyframes fx-spin{to{--fx-a:360deg}}
 
 /* Tilt with glare */
@@ -62,7 +81,8 @@
 
 @media(prefers-reduced-motion:reduce){
   .fx-ring{animation:none}
-  .fx-glow{display:none}
+  .fx-sat{display:none}
+  .fx-skyrot,.fx-skylabel{animation:none}
 }
 
 /* Homepage sections let the star field show through */

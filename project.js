@@ -1,3 +1,6 @@
+// Phones, tablets and low-end machines draw at most 30 frames per second at a lower pixel ratio.
+const PO_LOW = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+
 // Project overview page: pipeline stepper, signal-layer waveform and scroll reveals.
 (() => {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -93,7 +96,7 @@
 
     function resize() {
       const r = canvas.getBoundingClientRect();
-      dpr = Math.min(devicePixelRatio || 1, 2);
+      dpr = Math.min(devicePixelRatio || 1, PO_LOW ? 1.5 : 2);
       w = r.width; h = r.height;
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     }
@@ -143,6 +146,7 @@
       ctx.fillText('+1', 8, mid - amp - 6); ctx.fillText('−1', 8, mid + amp + 16);
     }
     function frame(now) {
+      if (now - last < 33) { requestAnimationFrame(frame); return; }
       const dt = Math.min((now - last) / 1000, 0.1); last = now;
       if (visible && !reduced.matches && !document.hidden) phase += dt * 40;
       if (visible) draw();
@@ -154,6 +158,7 @@
       texts.forEach(a => { a.hidden = a.dataset.layerDetail !== layer; });
       draw();
     }));
+    texts.forEach(a => { a.hidden = a.dataset.layerDetail !== layer; });
     new ResizeObserver(() => { resize(); draw(); }).observe(canvas);
     onScreen(canvas, v => { visible = v; });
     resize(); draw();
@@ -186,6 +191,10 @@
   chip.addEventListener('click', () => chip.setAttribute('aria-expanded', String(rail.classList.toggle('is-open'))));
   links.forEach(a => a.addEventListener('click', close));
   document.addEventListener('click', e => { if (!rail.contains(e.target)) close(); });
+  // Anchor jumps clear the header plus, on narrow screens, the fixed chapter bar.
+  const setOffset = () => document.documentElement.style.setProperty('--hud-h', (innerWidth <= 1180 ? chip.offsetHeight + 2 : 0) + 'px');
+  addEventListener('resize', setOffset);
+  setOffset();
   function update() {
     const line = innerHeight * 0.35;
     let current = 0;
@@ -206,6 +215,9 @@
   document.addEventListener('languagechange', () => setTimeout(update));
   update();
 })();
+
+// Without JavaScript every 'go deeper' section and capability panel stays open; with it they start collapsed.
+document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false; });
 
 // Core features spotlight: highlight each spec cell in turn; hovering a cell holds it.
 // Clicking (or Enter/Space) opens that cell's explanation below the row and pins the highlight.
@@ -232,6 +244,7 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(open === i ? -1 : i); }
     });
   });
+  setOpen(-1);
   panel.querySelector('.sd-close').addEventListener('click', () => { const i = open; setOpen(-1); cells[i]?.focus(); });
   setInterval(() => {
     if (held || open >= 0 || reduced.matches || document.hidden) return;
@@ -292,7 +305,7 @@
     };
     function resize() {
       const r = cv.getBoundingClientRect();
-      dpr = Math.min(devicePixelRatio || 1, 2);
+      dpr = Math.min(devicePixelRatio || 1, PO_LOW ? 1.5 : 2);
       W = r.width < 560 ? 400 : 800; H = r.width < 560 ? 440 : 320;
       cv.style.aspectRatio = `${W} / ${H}`;
       k = r.width / W;
@@ -307,6 +320,7 @@
       draw(g, reduced.matches ? 2 : t, isEn());
     }
     function frame(now) {
+      if (now - last < 33) { requestAnimationFrame(frame); return; }
       const dt = Math.min((now - last) / 1000, 0.1); last = now;
       if (visible && !document.hidden) { if (!reduced.matches) t += dt; paint(); }
       requestAnimationFrame(frame);
@@ -321,8 +335,8 @@
   // 04 Time: GPST and BDT clocks, the receiver's sample axis, and each satellite's transmit time behind it.
   scene('po-time-cv', (g, t, en) => {
     const { W, n } = g;
-    const sow = 172800 + t, cw = n ? (W - 36) / 2 : 250;
-    [[en ? 'GPS Time (GPST)' : 'GPS 時間（GPST）', 2437, sow, C.gps], [en ? 'BeiDou Time (BDT)' : '北斗時間（BDT）', 1081, sow - 14, C.bds]].forEach(([lab, wk, s0, c], i) => {
+    const E = window.GT_EPH || {}, sow = (E.sow ?? 187200) + t, cw = n ? (W - 36) / 2 : 250;
+    [[en ? 'GPS Time (GPST)' : 'GPS 時間（GPST）', E.gpsWeek ?? 2437, sow, C.gps], [en ? 'BeiDou Time (BDT)' : '北斗時間（BDT）', E.bdsWeek ?? 1081, sow - 14, C.bds]].forEach(([lab, wk, s0, c], i) => {
       const x = 12 + i * (cw + 12), y = 12;
       g.box(x, y, cw, 62, c + '99');
       g.txt(lab, x + 12, y + 18, { size: 12, color: c, weight: 700 });
@@ -343,7 +357,7 @@
     g.txt(en ? 'receive time of this sample' : '這個樣本的接收時刻', cx, ay - 26, { size: 12, color: C.acc, align: 'right', weight: 700 });
     // Two satellites, each transmitted earlier by its own travel time.
     const scale = n ? 3.6 : 6;
-    [['G05', 67.3, C.gps], ['C21', 75.2, C.bds]].forEach(([id, tau, c], i) => {
+    [[E.prn || 'G13', +(E.ms ?? 72.2).toFixed(1), C.gps], [E.bds || 'C24', +(E.bdsMs ?? 73.3).toFixed(1), C.bds]].forEach(([id, tau, c], i) => {
       const y = ay + (n ? 80 : 74) + i * (n ? 86 : 70), tx = cx - tau * scale;
       g.txt(`${id} ${en ? 'transmits' : '發射'}`, x0, y - 22, { size: 12, color: c, weight: 700 });
       g.line(x0, y, W - 10, y, c + '55', 2);
@@ -443,27 +457,28 @@
       rx, ry + lh * 4 + (n ? 0 : 4), { size: 13, color: fd >= 0 ? C.gps : C.bds, weight: 700 });
   });
 
-  // 02 Journey: G05 travels start → six stations → receiver; bands show who runs each station.
+  // 02 Journey: G13 travels start → six stations → receiver; bands show who runs each station.
   scene('po-journey-cv', (g, t, en) => {
     const { ctx, W, n } = g;
+    const E = window.GT_EPH || {}, P = E.prn || 'G13', KM = (E.km ?? 21641).toLocaleString('en-US'), MS = (E.ms ?? 72.2).toFixed(1);
     const NODES = en ? [
       ['Start', 'ephemeris + settings', 'Starting from the real broadcast ephemeris, a start time and the NKUST site.'],
-      ['Time', 'transmit time', 'Fix each sample’s receive time, then step back by G05’s flight time to when G05 transmitted.'],
-      ['Orbit', 'satellite position', 'Feed that moment into G05’s ephemeris: where G05 was in space, and its clock error.'],
-      ['Propagation', 'delay · Doppler', 'G05 is about 21,670 km away: a 72.3 ms flight, and the frequency is slightly high as it rises.'],
-      ['Signal', 'one satellite’s signal', 'G05’s navigation data × its own PRN code, placed on the carrier.'],
-      ['Combine', 'I/Q', 'G05 and the other visible satellites are computed together and added into one I/Q stream.'],
+      ['Time', 'transmit time', `Fix each sample’s receive time, then step back by ${P}’s flight time to when ${P} transmitted.`],
+      ['Orbit', 'satellite position', `Feed that moment into ${P}’s ephemeris: where ${P} was in space, and its clock error.`],
+      ['Propagation', 'delay · Doppler', `${P} is ${KM} km away: a ${MS} ms flight, and the frequency is slightly high as it rises.`],
+      ['Signal', 'one satellite’s signal', `${P}’s navigation data × its own PRN code, placed on the carrier.`],
+      ['Combine', 'I/Q', `${P} and the other visible satellites are computed together and added into one I/Q stream.`],
       ['Real-time', 'RF signal', 'Computed and sent as it goes: each 1 ms is handed to the SDR within 1 ms.'],
-      ['Receiver', 'position · time', 'The receiver finds G05 by its PRN code and, with the others, solves a position.'],
+      ['Receiver', 'position · time', `The receiver finds ${P} by its PRN code and, with the others, solves a position.`],
     ] : [
       ['起點', '星曆＋設定', '從真實廣播星曆、起始時刻與高科大的接收位置出發。'],
-      ['時間', '發射時刻', '確定接收端每個樣本的時刻，再扣掉 G05 的飛行時間，得到 G05 發出訊號的時刻。'],
-      ['軌道', '衛星位置', '把這個時刻代入 G05 的星曆，算出 G05 當時在太空中的位置與時鐘誤差。'],
-      ['傳播', '延遲・頻率偏移', 'G05 距離約 21,670 km：訊號飛 72.3 ms，而且正在升起，頻率略為偏高。'],
-      ['訊號', '一顆衛星的訊號', '把 G05 的導航電文乘上它專屬的 PRN 碼，放到載波上。'],
-      ['合成', 'I/Q', 'G05 和其他看得到的衛星一起計算，相加成一路 I/Q。'],
+      ['時間', '發射時刻', `確定接收端每個樣本的時刻，再扣掉 ${P} 的飛行時間，得到 ${P} 發出訊號的時刻。`],
+      ['軌道', '衛星位置', `把這個時刻代入 ${P} 的星曆，算出 ${P} 當時在太空中的位置與時鐘誤差。`],
+      ['傳播', '延遲・頻率偏移', `${P} 距離 ${KM} km：訊號飛 ${MS} ms，而且正在升起，頻率略為偏高。`],
+      ['訊號', '一顆衛星的訊號', `把 ${P} 的導航電文乘上它專屬的 PRN 碼，放到載波上。`],
+      ['合成', 'I/Q', `${P} 和其他看得到的衛星一起計算，相加成一路 I/Q。`],
       ['即時發射', '射頻訊號', '邊算邊發：每 1 ms 的訊號在 1 ms 內算完，即時送進 SDR。'],
-      ['接收機', '位置・時間', '接收機用 G05 的 PRN 碼找到它，和其他衛星一起算出位置。'],
+      ['接收機', '位置・時間', `接收機用 ${P} 的 PRN 碼找到它，和其他衛星一起算出位置。`],
     ];
     const HW = [[1, 3, 'CPU', C.gps], [4, 5, 'GPU · CUDA', C.pur], [6, 6, 'SDR · USRP', C.acc]];
     const per = 2.4, dwell = 1.7;
@@ -473,10 +488,10 @@
     if (!n) {
       const xs = NODES.map((_, i) => 50 + i * 100), y = 150;
       HW.forEach(([a, b, lab, c]) => {
-        ctx.fillStyle = c + '22'; ctx.fillRect(xs[a] - 44, 56, xs[b] - xs[a] + 88, 28);
-        ctx.strokeStyle = c + '88'; ctx.lineWidth = 1; ctx.strokeRect(xs[a] - 44, 56, xs[b] - xs[a] + 88, 28);
-        g.txt(lab, (xs[a] + xs[b]) / 2, 70, { size: 12, color: c, align: 'center', weight: 700 });
-        for (let i = a; i <= b; i++) g.line(xs[i], 84, xs[i], y - 26, c + '55', 1, [3, 4]);
+        ctx.fillStyle = c + '22'; ctx.fillRect(xs[a] - 44, 18, xs[b] - xs[a] + 88, 26);
+        ctx.strokeStyle = c + '88'; ctx.lineWidth = 1; ctx.strokeRect(xs[a] - 44, 18, xs[b] - xs[a] + 88, 26);
+        g.txt(lab, (xs[a] + xs[b]) / 2, 31, { size: 12, color: c, align: 'center', weight: 700 });
+        for (let i = a; i <= b; i++) g.line(xs[i], 44, xs[i], 74, c + '44', 1, [3, 4]);
       });
       g.line(xs[0], y, xs[xs.length - 1], y, C.line, 3);
       g.line(xs[0], y, xs[k] + (moving ? (xs[k + 1] - xs[k]) * ease(q) : 0), y, C.acc, 3);
@@ -489,11 +504,11 @@
         if (cur) { ctx.shadowColor = C.acc; ctx.shadowBlur = 18; ctx.stroke(); ctx.shadowBlur = 0; }
         g.txt(i === 0 ? '▶' : i === NODES.length - 1 ? 'RX' : String(i), xs[i], y + 1, { size: 14, color: cur ? '#06231f' : C.text, align: 'center', weight: 700, mono: true });
         g.txt(name, xs[i], y + 42, { size: 14, color: cur ? '#fff' : C.text, align: 'center', weight: 700 });
-        g.txt(out, xs[i], y + 62, { size: 11, color: C.dim, align: 'center' });
+        g.txt(out, xs[i], y + 62, { size: 10, color: C.dim, align: 'center' });
       });
       const tx = xs[k] + (moving ? (xs[k + 1] - xs[k]) * ease(q) : 0);
-      g.sat(tx, y - 44, C.gps);
-      g.txt('G05', tx, y - 62 + 0, { size: 11, color: C.gps, align: 'center', weight: 700, mono: true });
+      g.sat(tx, y - 40, C.gps);
+      g.txt(P, tx + 30, y - 40, { size: 11, color: C.gps, align: 'left', weight: 700, mono: true });
       const [name, , desc] = NODES[k];
       g.box(20, 236, W - 40, 70, C.line);
       g.txt(k === 0 ? (en ? 'Start' : '起點') : k === NODES.length - 1 ? (en ? 'Arrival' : '抵達') : `${en ? 'Station' : '第'} ${k}${en ? '' : ' 站'} · ${name}`, 38, 256, { size: 13, color: C.acc, weight: 700 });

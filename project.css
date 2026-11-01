@@ -639,3 +639,51 @@
   .po-ring-steps{grid-column:1 / -1;flex-direction:row}
   .po-ring-steps a{flex:1;min-width:0}
 }
+
+/* ---------- v8: station track (replaces the ring gauges) ---------- */
+.po-trk{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(0,1.6fr);align-items:center;gap:28px;margin:-4px 0 26px;padding:20px 26px;border:1px solid #1d3650;border-left:3px solid #8affdd;background:linear-gradient(90deg,#8affdd12,#0a1624 40%,#0a162499)}
+.po-trk-head{display:grid;gap:4px}
+.po-trk-head em{font:700 12px Orbitron,sans-serif;font-style:normal;letter-spacing:2px;color:#8affdd}
+.po-trk-head strong{font-size:28px;line-height:1.2;color:#fff;letter-spacing:1px}
+.po .po-trk-head .po-from--in{margin:4px 0 0;padding:0;border:0;background:none;font-size:15px;line-height:1.7;color:#a9bdd2}
+.po .po-trk-head .po-from--in::before{content:none}
+.po-trk-line{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:relative}
+.po-trk-line::before,.po-trk-line::after{content:"";position:absolute;top:24px;height:2px;left:calc(100% / 12)}
+.po-trk-line::before{right:calc(100% / 12);background:#24435c}
+.po-trk-line::after{width:calc((100% - 100% / 6) * var(--k) / 5);background:linear-gradient(90deg,#3f8a80,#8affdd);box-shadow:0 0 10px #8affdd88}
+.po-trk-line a{position:relative;display:grid;justify-items:center;gap:6px;padding-top:17px;text-decoration:none;color:#7f9bb8;transition:color .2s}
+.po-trk-line a:hover{color:#fff}
+.po-trk-line i{position:relative;z-index:1;width:16px;height:16px;border-radius:50%;border:2px solid #2f5577;background:#07101e;transition:transform .2s}
+.po-trk-line a:hover i{transform:scale(1.2);border-color:#8affdd}
+.po-trk-line b{font:700 11px Orbitron,sans-serif;color:#5d7f9f}
+.po-trk-line span{font-size:14px;white-space:nowrap}
+.po-trk-line .is-done i{background:#3f8a80;border-color:#8affdd88}
+.po-trk-line .is-done b{color:#8affdd99}
+.po-trk-line .is-current a{color:#fff}
+.po-trk-line .is-current i{width:24px;height:24px;margin-top:-4px;background:#8affdd;border-color:#e6fff8;box-shadow:0 0 0 6px #8affdd22,0 0 18px #8affdd;animation:po-trk-pulse 1.8s ease-in-out infinite}
+.po-trk-line .is-current b{color:#8affdd}
+.po-trk-line .is-current span{font-weight:700}
+/* A small satellite rides above the current station. */
+.po-trk-line .is-current a::before{content:"";position:absolute;top:-6px;width:10px;height:7px;background:#e6fff8;box-shadow:-10px 0 0 -1px #70b7ff,10px 0 0 -1px #70b7ff,0 0 10px #8affdd;animation:po-trk-bob 2.4s ease-in-out infinite}
+@keyframes po-trk-pulse{50%{box-shadow:0 0 0 10px #8affdd14,0 0 26px #8affdd}}
+@keyframes po-trk-bob{50%{transform:translateY(-4px)}}
+@media(max-width:900px){
+  .po-trk{grid-template-columns:minmax(0,1fr);gap:16px;padding:16px}
+  .po-trk-head strong{font-size:22px}
+  .po-trk-line span{display:none}
+  .po-trk-line .is-current span{display:block;font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){.po-trk-line .is-current i,.po-trk-line .is-current a::before{animation:none}}
+
+/* Anchor jumps: land just below the header (and the chapter bar on narrow screens), never under them. */
+html:has(main.po){scroll-padding-top:0}
+.po .po-sec,.po .po-features,.po .po-hero{scroll-margin-top:calc(var(--header-h,86px) + var(--hud-h,0px) + 18px)}
+
+/* Hero: the real Earth with real satellites (po-hero.js) */
+.po-hero-real{margin:0;display:grid;gap:8px}
+.po-hero-real canvas{display:block;width:100%;aspect-ratio:600/420;max-height:400px}
+.po-hero-real figcaption{font-size:13px;line-height:1.6;color:#7f9bb8}
+@media(max-width:900px){.po-hero-real canvas{max-height:300px}}
+
+/* The hero globe sits on its own dark space so background stars never show through it. */
+.po-hero-real canvas{background:radial-gradient(ellipse 70% 75% at 50% 62%,#06101e 0,#06101ef0 55%,#06101e00 100%)}

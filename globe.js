@@ -11,7 +11,9 @@
   const skyCtx = sky.getContext('2d');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
-  const EPHEMERIS_URL = 'data/gnss-2026-265.json';
+  // Which day's ephemerides to show is decided by data/latest.json (written by tools/build-ephemeris.js).
+  const MANIFEST_URL = 'data/latest.json';
+  const EPH = { date: '', doy: '' };
   const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';
   const RE = 6378137;
   const LAT0 = 22.75843215402263, LON0 = 120.33823886027615; // NKUST
@@ -76,13 +78,13 @@
       },
       teachData: n => `教學模型 · ${n} 顆`,
       live: (g, i, m) => `GEO ${g} · IGSO ${i} · MEO ${m}`, liveOne: n => `${n} 顆（仰角 ≥ 10°）`,
-      dataSource: (g, c) => `GPS ${g} 顆 · 北斗 ${c} 顆（2026-09-22）`, dataMeo: (g, c) => `GPS ${g} 顆 · 北斗 ${c} 顆`,
+      dataSource: (g, c) => `GPS ${g} 顆 · 北斗 ${c} 顆（${EPH.date}）`, dataMeo: (g, c) => `GPS ${g} 顆 · 北斗 ${c} 顆`,
       cardMeta: { all: 'GPS＋北斗', GEO: '35,786 km', IGSO: '傾角 55°', MEO: '約 2 萬 km' }, cardCount: n => `${n} 顆`,
       customSite: '自訂觀測點', sea: '海域',
-      heroLive: (time, site, n, g, c) => `2026-09-22 UTC ${time}　${site} 上空可見 ${n} 顆衛星（GPS ${g}・北斗 ${c}）`,
+      heroLive: (time, site, n, g, c) => `${EPH.date} UTC ${time}　${site} 上空可見 ${n} 顆衛星（GPS ${g}・北斗 ${c}）`,
       heroTeach: n => `教學示意　可見 ${n} 顆衛星`, visibleTitle: name => `${name} 可見衛星`,
       bds: n => `北斗 ${n}`, gps: n => `GPS ${n}`, site: '國立高雄科技大學 · 台灣',
-      sourceReal: (g, c) => `廣播星曆 2026-09-22（DOY 265）· GPS ${g} 顆＋北斗 ${c} 顆`,
+      sourceReal: (g, c) => `廣播星曆 ${EPH.date}（DOY ${EPH.doy}）· GPS ${g} 顆＋北斗 ${c} 顆`,
       sourceTeach: '理想化星座 · GPS＋北斗',
       noteReal: '地球：Natural Earth 國界與海陸。衛星：每個時刻選用參考時間最接近的廣播星曆（GPS 每 2 小時、北斗每小時更新），方向依星曆計算，高度經壓縮顯示。夜側依當下太陽位置繪製。',
       noteTeach: '教學示意：軌道平面、衛星數量與速度皆為理想化，非即時星曆；高度經壓縮顯示。',
@@ -121,13 +123,13 @@
       },
       teachData: n => `Teaching model · ${n} satellites`,
       live: (g, i, m) => `GEO ${g} · IGSO ${i} · MEO ${m}`, liveOne: n => `${n} (elevation ≥ 10°)`,
-      dataSource: (g, c) => `${g} GPS · ${c} BeiDou (2026-09-22)`, dataMeo: (g, c) => `${g} GPS · ${c} BeiDou`,
+      dataSource: (g, c) => `${g} GPS · ${c} BeiDou (${EPH.date})`, dataMeo: (g, c) => `${g} GPS · ${c} BeiDou`,
       cardMeta: { all: 'GPS + BeiDou', GEO: '35,786 km', IGSO: '55° incl.', MEO: '~20,000 km' }, cardCount: n => `${n} sats`,
       customSite: 'Custom site', sea: 'Open sea',
-      heroLive: (time, site, n, g, c) => `2026-09-22 UTC ${time} · ${n} satellites above ${site} (GPS ${g} · BeiDou ${c})`,
+      heroLive: (time, site, n, g, c) => `${EPH.date} UTC ${time} · ${n} satellites above ${site} (GPS ${g} · BeiDou ${c})`,
       heroTeach: n => `Teaching model · ${n} satellites visible`, visibleTitle: name => `Visible from ${name}`,
       bds: n => `BeiDou ${n}`, gps: n => `GPS ${n}`, site: 'Kaohsiung, Taiwan',
-      sourceReal: (g, c) => `Broadcast ephemerides 2026-09-22 (DOY 265) · ${g} GPS + ${c} BeiDou`,
+      sourceReal: (g, c) => `Broadcast ephemerides ${EPH.date} (DOY ${EPH.doy}) · ${g} GPS + ${c} BeiDou`,
       sourceTeach: 'Idealized constellation · GPS + BeiDou',
       noteReal: 'Earth: Natural Earth borders, land and ocean. Satellites: each moment uses the broadcast ephemeris with the nearest reference time (GPS every 2 h, BeiDou hourly); directions follow the ephemeris, altitude is compressed. Night side follows the Sun.',
       noteTeach: 'Teaching model: planes, counts and speeds are idealized, not live ephemerides; altitude is compressed.',
@@ -236,7 +238,7 @@
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    state.dpr = Math.min(devicePixelRatio || 1, 2);
+    state.dpr = Math.min(devicePixelRatio || 1, matchMedia('(pointer: coarse)').matches ? 1.5 : 2);
     state.w = rect.width; state.h = rect.height;
     for (const c of [canvas, bg, earth]) { c.width = Math.round(state.w * state.dpr); c.height = Math.round(state.h * state.dpr); }
     state.baseR = Math.min(state.w / (state.w < 500 ? 3.8 : 4.5), state.h / 3.9);
@@ -471,6 +473,8 @@
     SITE_ENU = enu(state.site.lat, state.site.lon);
     SITE = SITE_ENU.up.map(v => v * RE);
     root.classList.toggle('is-custom-site', custom);
+    // The page background shows the sky over the same site (fx.js).
+    document.dispatchEvent(new CustomEvent('gt-site', { detail: { lat: state.site.lat, lon: state.site.lon, custom } }));
     lookupPlace();
     markChanged();
     updateGroundSite();
@@ -550,8 +554,12 @@
     }
   }
 
+  // Phones, tablets and low-end machines draw at most 30 frames per second at a lower pixel ratio.
+  const LOW = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
   let lastPanel = 0;
   function frame(now) {
+    // Nothing is drawn while the globe is off screen or the tab is hidden.
+    if (!state.visible || document.hidden || now - state.last < 33) { if (!state.visible || document.hidden) state.last = now; requestAnimationFrame(frame); return; }
     const dt = Math.min((now - state.last) / 1000, 0.25);
     state.last = now;
     if (state.playing && state.visible && !document.hidden) {
@@ -868,7 +876,8 @@
   });
 
   // ---------- Data ----------
-  fetch(EPHEMERIS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
+  fetch(MANIFEST_URL).then(r => r.json()).then(m => fetch('data/' + m.file)).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
+    EPH.date = data.date; EPH.doy = data.doy;
     state.sats = Object.entries(data.sats).map(([prn, list]) => {
       const sys = prn[0], prnNum = Number(prn.slice(1));
       const recs = list.map(([rel, ...values]) => ({ rel, eph: GnssOrbit.fromRecord(sys, prnNum, values) }));

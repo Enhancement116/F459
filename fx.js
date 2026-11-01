@@ -1,81 +1,175 @@
-// Site-wide visual effects: a live star field with passing satellites, a cursor glow, one distinct entrance
-// per kind of content, cards that tilt toward the pointer and a rotating light on the main visuals.
+// Site-wide visual effects: a static star field with satellites crossing, one distinct entrance per kind of
+// content, cards that tilt toward the pointer and a light border on the main visuals. Built to cost almost nothing
+// per frame: nothing here repaints continuously.
 // Everything is decorative and switches off for reduced motion.
 (() => {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer = matchMedia('(pointer: fine)').matches;
+  // Lighter on phones, tablets and low-end machines; no star field at all when the device asks to save data.
+  const LOW = !finePointer || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  const NO_SKY = (navigator.connection && navigator.connection.saveData) || (navigator.deviceMemory || 8) <= 2;
   document.documentElement.classList.add('fx-on');
 
-  // ---------- Star field with constellation lines and satellites crossing ----------
+  // ---------- The real sky over the observation site: drawn once, turned by the GPU ----------
+  // All 88 constellation figures (d3-celestial catalogue) and, on capable devices, the naked-eye stars, placed
+  // around the observer's visible celestial pole. Only stars that ever rise at that latitude are drawn, and the
+  // layer starts at the site's real sidereal time, then turns around the pole the way the sky does there.
+  // Default site: NKUST. When the homepage globe moves the observation site, the sky crossfades to that place.
+  // Scrolling dims the sky and lets it drift, so it never competes with the text being read.
+  const CAT = 'https://cdn.jsdelivr.net/npm/d3-celestial@0.7.35/data/';
+  const NKUST = { lat: 22.758, lon: 120.338, name: 'NKUST' };
+  // Only a few names: the sky is a backdrop, not something to read.
+  const LABELLED = new Set(['Ori', 'Sco', 'Cru', 'Cas']);
+  const DIPPER = [[165.93, 61.75], [165.46, 56.38], [178.46, 53.69], [183.86, 57.03], [193.51, 55.96], [200.98, 54.93], [206.89, 49.31]];
+  let site = NKUST, lines = null, names = null, stars = null;
+  const isEn = () => document.documentElement.lang === 'en';
+  const lstDeg = lon => { const d = Date.now() / 86400000 + 2440587.5 - 2451545; return ((280.46061837 + 360.98564736629 * d + lon) % 360 + 360) % 360; };
+  const wrap = document.createElement('div');
+  wrap.className = 'fx-skywrap';
+  wrap.setAttribute('aria-hidden', 'true');
+  const rot = document.createElement('div');
+  rot.className = 'fx-skyrot';
   const sky = document.createElement('canvas');
   sky.className = 'fx-sky';
-  sky.setAttribute('aria-hidden', 'true');
-  document.body.prepend(sky);
-  const ctx = sky.getContext('2d');
-  let W = 0, H = 0, dpr = 1, mx = 0, my = 0, tmx = 0, tmy = 0;
-  const stars = [], sats = [];
-  function resize() {
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
-    sky.width = W * dpr; sky.height = H * dpr;
-    stars.length = 0;
-    const n = Math.min(220, Math.round(W * H / 7000));
-    for (let i = 0; i < n; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, z: 0.25 + Math.random() * 0.75, ph: Math.random() * 6.28 });
+  rot.append(sky); wrap.append(rot);
+  if (!NO_SKY) document.body.prepend(wrap);
+  const bvColor = bv => { const b = Math.max(-0.4, Math.min(2, +bv || 0.6)); return b < 0 ? '#cfe0ff' : b < 0.5 ? '#eef4ff' : b < 1 ? '#fff1d6' : b < 1.5 ? '#ffd2a1' : '#ffb07a'; };
+  function label(x, y, zh, en, zh2 = '', en2 = '') {
+    const lb = document.createElement('span');
+    lb.className = 'fx-skylabel';
+    lb.style.left = x + 'px'; lb.style.top = y + 'px';
+    lb.innerHTML = `<b data-zh="${zh}" data-en="${en}">${isEn() ? en : zh}</b>` + (zh2 ? `<small data-zh="${zh2}" data-en="${en2}">${isEn() ? en2 : zh2}</small>` : '');
+    rot.append(lb);
   }
-  function spawnSat() {
-    const fromLeft = Math.random() < 0.5;
-    sats.push({ x: fromLeft ? -40 : W + 40, y: H * (0.1 + Math.random() * 0.6), vx: (fromLeft ? 1 : -1) * (60 + Math.random() * 60), vy: (Math.random() - 0.5) * 20, life: 0 });
-  }
-  let last = performance.now(), nextSat = 1.5;
-  function frame(now) {
-    const dt = Math.min((now - last) / 1000, 0.05); last = now;
-    mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    const sc = scrollY * 0.04, t = now / 1000;
-    const pts = stars.map(s => {
-      const x = (s.x + mx * 18 * s.z + W) % W, y = ((s.y - sc * s.z + my * 18 * s.z) % H + H) % H;
-      return [x, y, s];
-    });
-    // Constellation lines between near, bright stars.
-    ctx.lineWidth = 0.6;
-    for (let i = 0; i < pts.length; i += 2) for (let j = i + 2; j < pts.length; j += 2) {
-      const dx = pts[i][0] - pts[j][0], dy = pts[i][1] - pts[j][1], d = dx * dx + dy * dy;
-      if (d < 9000) { ctx.strokeStyle = `rgba(112,183,255,${(1 - d / 9000) * 0.16})`; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[j][0], pts[j][1]); ctx.stroke(); }
+  function paintSky() {
+    const W = innerWidth, H = innerHeight, narrow = W < 760;
+    const south = site.lat < 0, s = south ? -1 : 1, latA = Math.abs(site.lat);
+    const px = narrow ? W * 0.5 : W * 0.13, py = narrow ? H * 0.07 : H * 0.3;      // visible pole on screen
+    const R = Math.ceil(Math.hypot(Math.max(px, W - px), Math.max(py, H - py))) + 60;
+    const reach = Math.min(178, 180 - latA + 2);                                   // degrees from the pole that ever rise here
+    const k = R / Math.max(120, reach);
+    sky.width = sky.height = R * 2;
+    Object.assign(rot.style, { width: R * 2 + 'px', height: R * 2 + 'px', left: px - R + 'px', top: py - R + 'px' });
+    rot.style.setProperty('--rot0', (90 - s * lstDeg(site.lon)) + 'deg');
+    wrap.classList.toggle('is-south', south);
+    rot.querySelectorAll('.fx-skylabel').forEach(n => n.remove());
+    const ctx = sky.getContext('2d'), c0 = R;
+    // RA/Dec in degrees → layer pixels; south mirrors so figures keep their true handedness.
+    const P = (ra, dec) => { const th = 90 - s * dec; if (th > reach) return null; const a = s * ra * Math.PI / 180; return [c0 + th * k * Math.cos(a), c0 + th * k * Math.sin(a)]; };
+    const rnd = (() => { let x = 20260922; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+    // Milky Way along the galactic plane.
+    const NGP_RA = 192.85948 * Math.PI / 180, NGP_DE = 27.12825 * Math.PI / 180, L_NCP = 122.93192 * Math.PI / 180;
+    const gal = (l, b) => {
+      const sd = Math.sin(NGP_DE) * Math.sin(b) + Math.cos(NGP_DE) * Math.cos(b) * Math.cos(L_NCP - l);
+      const ra = NGP_RA + Math.atan2(Math.cos(b) * Math.sin(L_NCP - l), Math.cos(NGP_DE) * Math.sin(b) - Math.sin(NGP_DE) * Math.cos(b) * Math.cos(L_NCP - l));
+      return [(ra * 180 / Math.PI + 360) % 360, Math.asin(sd) * 180 / Math.PI];
+    };
+    for (let l = 0; l < 360; l += 1.5) {
+      const q = P(...gal(l * Math.PI / 180, 0));
+      if (!q) continue;
+      const g = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], 6 * k);
+      g.addColorStop(0, 'rgba(130,155,215,.018)'); g.addColorStop(1, 'rgba(130,155,215,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q[0], q[1], 6 * k, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < (LOW ? 2 : 6); i++) {
+        const d = P(...gal((l + rnd() * 1.5) * Math.PI / 180, (rnd() + rnd() - 1) * 7 * Math.PI / 180));
+        if (d) { ctx.fillStyle = `rgba(205,218,255,${0.1 + rnd() * 0.25})`; ctx.fillRect(d[0], d[1], 0.9, 0.9); }
+      }
     }
-    pts.forEach(([x, y, s]) => {
-      const a = 0.35 + 0.45 * s.z * (0.6 + 0.4 * Math.sin(t * 1.4 + s.ph));
-      ctx.fillStyle = s.z > 0.85 ? `rgba(138,255,221,${a})` : `rgba(210,228,255,${a})`;
-      ctx.fillRect(x, y, s.z * 1.8, s.z * 1.8);
+    // Stars: the real catalogue when loaded, otherwise a faint stand-in field.
+    if (stars) stars.forEach(([ra, dec, mag, col]) => {
+      const q = P(ra, dec); if (!q) return;
+      const r = Math.max(0.45, 2.6 - mag * 0.42);
+      if (mag < 2.2) {
+        const g = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], r * 3.5);
+        g.addColorStop(0, col + 'aa'); g.addColorStop(0.25, col + '33'); g.addColorStop(1, col + '00');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q[0], q[1], r * 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = Math.min(0.8, 0.25 + (6 - mag) * 0.1);
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
     });
-    // Satellites with a fading trail.
-    nextSat -= dt;
-    if (nextSat <= 0) { spawnSat(); nextSat = 4 + Math.random() * 5; }
-    for (let i = sats.length - 1; i >= 0; i--) {
-      const s = sats[i]; s.x += s.vx * dt; s.y += s.vy * dt; s.life += dt;
-      const g = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 0.9, s.y - s.vy * 0.9);
-      g.addColorStop(0, 'rgba(138,255,221,.7)'); g.addColorStop(1, 'rgba(138,255,221,0)');
-      ctx.strokeStyle = g; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 0.9, s.y - s.vy * 0.9); ctx.stroke();
-      ctx.fillStyle = '#e6fff8'; ctx.shadowColor = '#8affdd'; ctx.shadowBlur = 10;
-      ctx.fillRect(s.x - 1.5, s.y - 1.5, 3, 3); ctx.shadowBlur = 0;
-      if (s.x < -80 || s.x > W + 80) sats.splice(i, 1);
+    else for (let i = 0, n = LOW ? 500 : 1100; i < n; i++) {
+      const q = P(rnd() * 360, Math.asin(rnd() * 2 - 1) * 180 / Math.PI); if (!q) continue;
+      const m = Math.pow(rnd(), 3);
+      ctx.fillStyle = `rgba(220,232,255,${0.2 + m * 0.6})`; ctx.fillRect(q[0], q[1], 0.6 + m * 1.4, 0.6 + m * 1.4);
     }
-    if (!document.hidden) requestAnimationFrame(frame); else setTimeout(() => requestAnimationFrame(frame), 500);
-  }
-  resize();
-  addEventListener('resize', resize);
-  if (reduced) { last = performance.now(); nextSat = 1e9; frame(last); }
-  else requestAnimationFrame(frame);
+    // All constellation figures.
+    if (lines) {
+      ctx.strokeStyle = 'rgba(138,200,255,.08)'; ctx.lineWidth = 0.7;
+      lines.forEach(f => f.geometry.coordinates.forEach(seg => {
+        ctx.beginPath(); let pen = false;
+        seg.forEach(([lon, lat]) => { const q = P((lon + 360) % 360, lat); if (!q) { pen = false; return; } pen ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; });
+        ctx.stroke();
+        if (!stars) seg.forEach(([lon, lat]) => { const q = P((lon + 360) % 360, lat); if (q) { ctx.fillStyle = '#e6eeff'; ctx.beginPath(); ctx.arc(q[0], q[1], 1.3, 0, Math.PI * 2); ctx.fill(); } });
+      }));
+      // The Big Dipper is traced brighter: BeiDou is named after it.
+      ctx.strokeStyle = 'rgba(138,255,221,.22)'; ctx.lineWidth = 1; ctx.beginPath();
+      [[0, 1], [1, 2], [2, 3], [3, 0], [3, 4], [4, 5], [5, 6]].forEach(([a, b]) => {
+        const qa = P(...DIPPER[a]), qb = P(...DIPPER[b]); if (qa && qb) { ctx.moveTo(qa[0], qa[1]); ctx.lineTo(qb[0], qb[1]); }
+      });
+      ctx.stroke();
+    }
+    // Labels: main constellations, the Big Dipper, and the visible pole with its height above this horizon.
+    if (names) names.forEach(f => {
+      if (!LABELLED.has(f.id) || f.id === 'UMi') return;
+      const [lon, lat] = f.geometry.coordinates, q = P((lon + 360) % 360, lat); if (!q) return;
+      const extra = f.id === 'Cru' && !south ? ['此地低空可見', 'low in this sky'] : ['', ''];
+      label(q[0], q[1], f.properties.zh || f.properties.name, f.properties.en || f.properties.name, ...extra);
+    });
+    const dq = P(186, 56);
+    if (dq) label(dq[0] + 40, dq[1] - 30, '北斗七星', 'Big Dipper', '北斗衛星系統之名', 'BeiDou is named after it');
+    label(c0 + 6, c0, south ? '南天極' : '北極星', south ? 'South celestial pole' : 'Polaris', `在此地仰角約 ${latA.toFixed(1)}°`, `${latA.toFixed(1)}° above this horizon`);
 
-  // ---------- Cursor glow ----------
-  const glow = document.createElement('div');
-  glow.className = 'fx-glow';
-  glow.setAttribute('aria-hidden', 'true');
-  document.body.append(glow);
-  addEventListener('pointermove', e => {
-    tmx = e.clientX / innerWidth - 0.5; tmy = e.clientY / innerHeight - 0.5;
-    glow.style.setProperty('--x', e.clientX + 'px'); glow.style.setProperty('--y', e.clientY + 'px');
-  }, { passive: true });
+  }
+  // Catalogue: lines and names for everyone; naked-eye stars only where the device can afford it.
+  function loadCatalogue() {
+    Promise.all([fetch(CAT + 'constellations.lines.json').then(r => r.json()), fetch(CAT + 'constellations.json').then(r => r.json())])
+      .then(([l, n]) => { lines = l.features; names = n.features; paintSky(); }).catch(() => {});
+    if (!LOW) fetch(CAT + 'stars.6.json').then(r => r.json()).then(d => {
+      stars = d.features.filter(f => f.properties.mag <= 5.2).map(f => [(f.geometry.coordinates[0] + 360) % 360, f.geometry.coordinates[1], f.properties.mag, bvColor(f.properties.bv)]);
+      paintSky();
+    }).catch(() => {});
+  }
+  // The homepage globe announces a new observation site; crossfade the sky to it.
+  document.addEventListener('gt-site', e => {
+    const { lat, lon, custom } = e.detail;
+    site = custom ? { lat, lon, name: '' } : NKUST;
+    wrap.classList.add('is-switching');
+    setTimeout(() => { paintSky(); wrap.classList.remove('is-switching'); }, 450);
+  });
+  if (!NO_SKY) {
+    const veil = document.createElement('div');
+    veil.className = 'fx-veil';
+    veil.setAttribute('aria-hidden', 'true');
+    document.body.prepend(veil);
+    paintSky();
+    loadCatalogue();
+    let rt = 0;
+    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(paintSky, 250); });
+    document.addEventListener('languagechange', () => setTimeout(() => {
+      wrap.querySelectorAll('[data-zh]').forEach(n => { n.textContent = isEn() ? n.dataset.en : n.dataset.zh; });
+    }));
+    if (!reduced) {
+      // Two satellites cross the sky on long CSS loops.
+      for (let i = 0; i < 2; i++) {
+        const sat = document.createElement('span');
+        sat.className = 'fx-sat';
+        sat.style.setProperty('--y', (18 + i * 34) + 'vh');
+        sat.style.setProperty('--d', (i * -11) + 's');
+        sat.setAttribute('aria-hidden', 'true');
+        document.body.prepend(sat);
+      }
+      // While the page scrolls, the sky dims and drifts with it; it settles back once scrolling stops.
+      let st = 0, queued = false;
+      addEventListener('scroll', () => {
+        wrap.classList.add('is-scrolling');
+        clearTimeout(st); st = setTimeout(() => wrap.classList.remove('is-scrolling'), 450);
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; wrap.style.transform = `translate3d(0, ${(-Math.sin(scrollY / 1400) * 40).toFixed(1)}px, 0)`; });
+      }, { passive: true });
+    }
+  }
 
   // ---------- Entrances: each kind of content has its own, played once when it scrolls in ----------
   // Titles are wiped in with an underline sweep; key points slide with a light pass; card groups flip up
@@ -86,7 +180,7 @@
     ['fx-bar', '.po-point, .home-lead, .wh-mission'],
     ['fx-flip', '.po-why, .wh-uses, .wh-steps, .po-stations, .po-grid4, .po-sys, .po-rt-facts'],
     ['fx-scan', '.po-viz, .hf-stage, .po-arch, .po-rt-stage, .po-anatomy, .po-pipe, #globe-console'],
-    ['fx-slide', '.po-trace, .po-ring-nav, .hf-steps'],
+    ['fx-slide', '.po-trace, .po-trk, .hf-steps'],
     ['fx-fade', '.po-sec > .po-from, .po-note, .po-deep, .po-bridge-next'],
   ];
   const io = new IntersectionObserver(entries => entries.forEach(en => {

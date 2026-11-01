@@ -1206,3 +1206,11 @@ html.pcn-locked{overflow:hidden}
 .ga-hero .po-hero-art,.ga-hero canvas{min-width:0;max-width:100%}
 .po-hero>*{min-width:0;max-width:100%}
 .po-hero .po-hero-art{margin:0}
+
+/* Key specifications */
+.po-specs{padding:clamp(48px,6vw,80px) 0 8px;scroll-margin-top:calc(var(--header-h,78px) + var(--hud-h,0px) + 12px)}
+.po-specs .po-feat-head{margin-bottom:24px}
+.po .po-table--spec th[scope=row]{width:22%;color:var(--gold);white-space:normal}
+.po .po-table--spec th[scope=row] small{display:block;margin-top:2px;font:500 13px 'JetBrains Mono',Consolas,monospace;color:#9fb4c8}
+.po .po-table--spec td{font-size:16px}
+.po .po-table--spec td:last-child{color:#a5b8cb}

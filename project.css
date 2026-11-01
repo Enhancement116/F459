@@ -401,3 +401,241 @@
 /* "Go deeper" bullets: a label, then one sentence. */
 .po .po-deep li b{display:inline-block;margin-right:4px;color:var(--mint);font-weight:700}
 .po .po-rt-facts + .po-note{margin-top:12px}
+
+/* ---------- Eleven chapters: rail sized by --n ---------- */
+.po-rail ol{grid-template-columns:repeat(var(--n,7),minmax(0,1fr))}
+.po-rail ol::before{left:calc(100% / (2 * var(--n,7)));right:calc(100% / (2 * var(--n,7)))}
+.po-rail-fill{left:calc(100% / (2 * var(--n,7)))}
+.po-rail small{font-size:11px}
+@media(max-width:1200px){.po-rail small{display:none}}
+
+/* Sub-headings inside a chapter */
+.po .po-sub{margin:30px 0 12px;font-size:19px;color:#eef6ff;display:flex;align-items:center;gap:10px}
+.po .po-sub::before{content:"";width:4px;height:18px;background:var(--mint)}
+
+/* Tables */
+.po-table-wrap{overflow-x:auto;border:1px solid var(--line);background:#0a1a2b;scrollbar-width:thin}
+.po-table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.6}
+.po-table th,.po-table td{padding:11px 16px;text-align:left;vertical-align:top;border-bottom:1px solid #1d3650}
+.po-table thead th{font-size:13px;letter-spacing:.5px;color:#8affdd;background:#0d2134;white-space:nowrap}
+.po-table tbody th{color:#eef6ff;font-weight:700;white-space:nowrap}
+.po-table td{color:#c1d1e2}
+.po-table tbody tr:last-child th,.po-table tbody tr:last-child td{border-bottom:0}
+.po-table tbody tr:hover{background:#8affdd08}
+.po-table--compare td,.po-table--compare thead th{text-align:center}
+.po-table--compare thead th:last-child,.po-table--compare td:last-child{background:#8affdd0d;color:#eef6ff;font-weight:600}
+
+/* Formula lists */
+.po-eqs{list-style:none;margin:0;padding:0;counter-reset:eq;display:grid;gap:8px}
+.po-eqs li{counter-increment:eq;display:grid;grid-template-columns:auto minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center;padding:12px 16px;border:1px solid var(--line);background:#0a1a2b}
+.po-eqs li::before{content:counter(eq,decimal-leading-zero);font:700 13px Orbitron,sans-serif;color:#5d7f9f}
+.po-eqs code{font:600 15px/1.6 'JetBrains Mono',Consolas,monospace;color:#8affdd;overflow-wrap:anywhere}
+.po-eqs span{font-size:15px;line-height:1.65;color:#c1d1e2}
+
+/* System diagram */
+.po-sys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr) auto) minmax(0,1fr);align-items:stretch;gap:10px}
+.po-sys-box{padding:16px;border:1px solid var(--line);background:#0a1a2b}
+.po-sys-box--hl{border-color:#8affdd88;background:linear-gradient(180deg,#8affdd12,#0a1a2b)}
+.po-sys-box em{display:block;font:700 11px/1 Orbitron,sans-serif;letter-spacing:1px;font-style:normal;color:#8affdd}
+.po-sys-box h3{margin:8px 0 10px;font-size:18px;color:#eef6ff}
+.po-sys-box ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.po-sys-box li{position:relative;padding-left:12px;font-size:14px;line-height:1.5;color:#c1d1e2}
+.po-sys-box li::before{content:"";position:absolute;left:0;top:.6em;width:5px;height:5px;background:#8affdd99}
+.po-sys-arrow{align-self:center;font-style:normal;font-size:20px;color:#8affdd}
+
+/* Four-card grid and the extra step details */
+.po-grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.po-step-more{margin:14px 0 0;padding:12px 0 0;list-style:none;display:grid;gap:6px;border-top:1px dashed #2f5577}
+.po-step-more li{position:relative;padding-left:14px;font-size:14.5px;line-height:1.6;color:#a9bdd2}
+.po-step-more li::before{content:"›";position:absolute;left:0;color:#8affdd}
+.po .po-note{margin-top:10px}
+
+@media(max-width:1100px){
+  .po-sys{grid-template-columns:minmax(0,1fr)}
+  .po-sys-arrow{justify-self:center;transform:rotate(90deg)}
+}
+@media(max-width:760px){
+  .po-grid4{grid-template-columns:minmax(0,1fr)}
+  .po-eqs li{grid-template-columns:auto minmax(0,1fr);gap:6px 12px}
+  .po-eqs li span{grid-column:2}
+  .po-table{font-size:14px}
+  .po-table th,.po-table td{padding:9px 12px}
+}
+
+/* ---------- Chapter hand-offs ---------- */
+.po .po-from{margin:-12px 0 24px;padding:10px 14px;font-size:15px;line-height:1.7;color:#a9bdd2;border:1px dashed #2f5577;background:#0a1624}
+.po .po-from::before{content:"↳ ";color:var(--mint);font-weight:700}
+.po-bridge-next .pbn-why{grid-column:2;font-size:14px;line-height:1.6;color:#9bb3c9}
+@media(max-width:760px){.po-bridge-next .pbn-why{grid-column:1}}
+
+/* ---------- Animated figures ---------- */
+.po-viz{margin:0 0 22px;border:1px solid var(--line);background:linear-gradient(180deg,#0a1726,#071120)}
+.po-viz-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid #1d3650}
+.po-viz-bar span{font-size:15px;font-weight:700;color:#eef6ff}
+.po-viz-bar em{font:600 11px Orbitron,sans-serif;letter-spacing:1px;font-style:normal;color:#7f9bb8}
+.po-cv{display:block;width:100%;aspect-ratio:800/320}
+.po-viz figcaption{padding:10px 16px 12px;font-size:14px;line-height:1.65;color:#8fa6bd;border-top:1px solid #1d3650}
+
+/* ---------- System diagram: data flows box to box ---------- */
+.po-sys-box{position:relative;transition:border-color .3s}
+.po-sys.is-in .po-sys-box{animation:po-sys-step 6s ease-in-out infinite}
+.po-sys.is-in .po-sys-box:nth-child(1){animation-delay:0s}
+.po-sys.is-in .po-sys-box:nth-child(3){animation-delay:1.2s}
+.po-sys.is-in .po-sys-box:nth-child(5){animation-delay:2.4s}
+.po-sys.is-in .po-sys-box:nth-child(7){animation-delay:3.6s}
+.po-sys.is-in .po-sys-box:nth-child(9){animation-delay:4.8s}
+@keyframes po-sys-step{0%,18%{box-shadow:0 0 0 1px #8affdd,0 0 18px #8affdd55}26%,100%{box-shadow:none}}
+.po-sys-arrow{position:relative}
+.po-sys.is-in .po-sys-arrow{animation:po-sys-arrow 6s linear infinite}
+.po-sys.is-in .po-sys-arrow:nth-child(2){animation-delay:.6s}
+.po-sys.is-in .po-sys-arrow:nth-child(4){animation-delay:1.8s}
+.po-sys.is-in .po-sys-arrow:nth-child(6){animation-delay:3s}
+.po-sys.is-in .po-sys-arrow:nth-child(8){animation-delay:4.2s}
+@keyframes po-sys-arrow{0%,14%{color:#fff;text-shadow:0 0 10px #8affdd}24%,100%{color:#8affdd;text-shadow:none}}
+
+/* ---------- Reveal on scroll (only when JS runs) ---------- */
+.po-js .po-table-wrap tbody tr,.po-js .po-eqs li,.po-js .po-sys > *,.po-js .po-grid4 > *,.po-js .po-step-more li,.po-js .po-bounds li,.po-js .po-stations > *{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+.po-js .is-in tbody tr,.po-js .po-eqs.is-in li,.po-js .po-sys.is-in > *,.po-js .po-grid4.is-in > *,.po-js .po-step-more.is-in li,.po-js .po-bounds.is-in li,.po-js .po-stations.is-in > *{opacity:1;transform:none}
+.po-js .is-in tbody tr:nth-child(2),.po-js .is-in > li:nth-child(2),.po-js .is-in > *:nth-child(2){transition-delay:.08s}
+.po-js .is-in tbody tr:nth-child(3),.po-js .is-in > li:nth-child(3),.po-js .is-in > *:nth-child(3){transition-delay:.16s}
+.po-js .is-in tbody tr:nth-child(4),.po-js .is-in > li:nth-child(4),.po-js .is-in > *:nth-child(4){transition-delay:.24s}
+.po-js .is-in tbody tr:nth-child(5),.po-js .is-in > li:nth-child(5),.po-js .is-in > *:nth-child(5){transition-delay:.32s}
+.po-js .is-in tbody tr:nth-child(6),.po-js .is-in > li:nth-child(6),.po-js .is-in > *:nth-child(6){transition-delay:.4s}
+.po-js .is-in tbody tr:nth-child(7),.po-js .is-in > li:nth-child(7),.po-js .is-in > *:nth-child(7){transition-delay:.48s}
+.po-js .is-in tbody tr:nth-child(n+8),.po-js .is-in > li:nth-child(n+8),.po-js .is-in > *:nth-child(n+8){transition-delay:.56s}
+@media(prefers-reduced-motion:reduce){
+  .po-js .po-table-wrap tbody tr,.po-js .po-eqs li,.po-js .po-sys > *,.po-js .po-grid4 > *,.po-js .po-step-more li,.po-js .po-bounds li{opacity:1;transform:none;transition:none}
+  .po-sys.is-in .po-sys-box,.po-sys.is-in .po-sys-arrow{animation:none}
+}
+
+/* ---------- v3: running example, technical details, typeset formulas ---------- */
+.po-trace{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;margin:22px 0 0;padding:16px 18px;border:1px solid #70b7ff66;background:linear-gradient(90deg,#70b7ff14,#0a1624 70%)}
+.po-trace b{font:700 12px/1.9 Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:#06192b;background:#70b7ff;padding:0 10px;white-space:nowrap}
+.po-trace p{margin:0;font-size:16px;line-height:1.75;color:#dbe8f6}
+@media(max-width:760px){.po-trace{grid-template-columns:minmax(0,1fr);gap:8px}.po-trace b{justify-self:start}}
+.po-deep-tech{padding:0 18px 18px}
+.po-deep-tech .po-sub:first-child{margin-top:6px}
+.po-eqs .po-tex{color:#8affdd;font-size:17px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.po-eqs .po-tex .katex{font-size:1.08em}
+.po .katex{color:inherit}
+.po-deep li .katex{color:#8affdd}
+.po-why + .po-trace,.po-viz + .po-why{margin-top:18px}
+/* Formula rows inside "go deeper" keep their own numbering, not the bullet style. */
+.po-deep .po-eqs li{padding:12px 16px;font-size:inherit}
+.po-deep .po-eqs li::before{content:counter(eq,decimal-leading-zero);position:static;width:auto;height:auto;background:none;font:700 13px Orbitron,sans-serif;color:#5d7f9f}
+.po-eqs .po-tex .katex{color:#eef6ff}
+
+/* ---------- v4: journey stations and the "you are here" bar ---------- */
+.po-stations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:18px}
+.po-station{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:14px;row-gap:6px;padding:16px 18px;text-decoration:none;border:1px solid var(--line);background:#0a1a2b;transition:border-color .2s,background .2s}
+.po-station:hover{border-color:var(--mint);background:#8affdd0a}
+.po-station b{grid-row:span 3;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;border:2px solid var(--mint);font:700 16px Orbitron,sans-serif;color:var(--mint)}
+.po-station h3{margin:0;font-size:18px;color:#eef6ff}
+.po-station p{margin:0;font-size:15px;line-height:1.65;color:#c1d1e2}
+.po-station em{font-style:normal;font-size:13px;font-weight:700;color:var(--mint)}
+.po-station-hw{position:absolute;top:14px;right:14px;font:700 11px Orbitron,sans-serif;letter-spacing:1px;padding:2px 8px;border:1px solid currentColor}
+.po-station[data-hw="CPU"] .po-station-hw{color:#70b7ff}
+.po-station[data-hw="GPU"] .po-station-hw{color:#bd9aff}
+.po-station[data-hw="SDR"] .po-station-hw{color:#8affdd}
+@media(max-width:1000px){.po-stations{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.po-stations{grid-template-columns:minmax(0,1fr)}}
+
+.po-stn{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;margin:-10px 0 16px}
+.po-stn > span{font:700 13px Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:var(--mint)}
+.po-stn ol{list-style:none;margin:0;padding:0;display:flex;align-items:center;gap:0}
+.po-stn li{display:flex;align-items:center}
+.po-stn li + li::before{content:"";width:18px;height:2px;background:#2f5577}
+.po-stn li.is-done + li::before,.po-stn li.is-current::before{background:var(--mint)}
+.po-stn a{display:flex;align-items:center;gap:6px;padding:4px 8px;text-decoration:none;border:1px solid #2f5577;background:#0a1624;color:#9bb3c9}
+.po-stn a b{font:700 12px Orbitron,sans-serif}
+.po-stn a em{font-style:normal;font-size:13px}
+.po-stn li.is-done a{border-color:#4f8f86;color:#b5eee6}
+.po-stn li.is-current a{border-color:var(--mint);background:var(--mint);color:#06231f;font-weight:700}
+.po-stn a:hover{border-color:var(--mint)}
+@media(max-width:760px){.po-stn a em{display:none}.po-stn li + li::before{width:10px}}
+
+/* ---------- v6: chapter HUD (replaces the horizontal rail) ---------- */
+.po-rail-fill{display:none!important}
+.po-hud-chip{display:none}
+.po .po-sec{scroll-margin-top:calc(var(--header-h,78px) + 56px)}
+@media(min-width:1181px){
+  html .po .po-rail{position:fixed!important;top:50%!important;right:18px;left:auto;transform:translateY(-50%)!important;margin:0!important;padding:0!important;background:none!important;border:0!important;backdrop-filter:none!important;z-index:40;width:auto!important}
+  .po-rail ol{display:flex!important;flex-direction:column;align-items:flex-end;gap:16px;padding:4px 0!important;position:relative}
+  .po-rail ol::before{left:auto!important;right:13px!important;top:14px!important;bottom:14px;width:2px;height:auto!important;background:#24435c!important}
+  .po-rail ol::after{content:"";position:absolute;right:13px;top:14px;width:2px;height:calc((100% - 28px) * var(--p,0));background:linear-gradient(#8affdd,#70b7ff);box-shadow:0 0 10px #8affdd;transition:height .15s linear}
+  .po-rail a{display:flex!important;flex-direction:row-reverse;align-items:center;gap:10px;padding:0!important}
+  .po-rail a::after{display:none}
+  .po-rail b{width:28px;height:28px;font-size:10px}
+  .po-rail small{display:none!important}
+  .po-rail .pr-title{margin:0!important;font-size:13px;padding:3px 10px;background:#07101ef0;border:1px solid #2f5577;color:#dbe8f4;opacity:0;transform:translateX(8px);transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+  .po-rail:hover .pr-title,.po-rail a:focus-visible .pr-title{opacity:1;transform:none}
+  .po-rail a.is-current .pr-title{opacity:1;transform:none;border-color:#8affdd;color:#fff}
+  .po-rail:not(:hover) a:not(.is-current) .pr-title{opacity:0}
+  .po-hud-sat{position:absolute;right:7px;top:calc(14px + (100% - 28px) * var(--p,0));width:14px;height:14px;margin-top:-7px;border:2px solid #8affdd;background:#06231f;transform:rotate(45deg);box-shadow:0 0 14px #8affdd;transition:top .15s linear;pointer-events:none;animation:po-hud-pulse 1.6s ease-in-out infinite}
+  .po main,.po{padding-right:max(clamp(16px,4vw,40px),72px)}
+}
+@keyframes po-hud-pulse{50%{box-shadow:0 0 22px #8affdd,0 0 0 5px #8affdd22}}
+@media(max-width:1180px){
+  html .po .po-rail{position:fixed!important;top:var(--header-h,72px)!important;left:0;right:0;transform:none!important;margin:0!important;padding:0!important;background:#07101ef2!important;border-bottom:1px solid var(--line)!important;z-index:40}
+  .po-rail::after{content:"";position:absolute;left:0;bottom:-1px;height:2px;width:calc(var(--p,0) * 100%);background:linear-gradient(90deg,#8affdd,#70b7ff);box-shadow:0 0 8px #8affdd}
+  .po-hud-chip{display:flex;align-items:center;gap:10px;width:100%;padding:9px 16px;background:none;border:0;color:#eef6ff;font-size:15px;text-align:left;cursor:pointer}
+  .po-hud-chip b{font:700 12px Orbitron,sans-serif;color:#06231f;background:#8affdd;padding:2px 7px}
+  .po-hud-chip i{margin-left:auto;font-style:normal;color:#8affdd;transition:transform .2s}
+  .po-rail.is-open .po-hud-chip i{transform:rotate(180deg)}
+  .po-rail ol{display:none!important}
+  .po-rail.is-open ol{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:6px 12px 12px!important}
+  .po-rail.is-open ol::before{display:none}
+  .po-rail.is-open a{display:flex!important;align-items:center;gap:8px;padding:8px!important;border:1px solid #1d3650;justify-items:start}
+  .po-rail.is-open a::after{display:none}
+  .po-rail.is-open .pr-title{display:inline!important;margin:0!important;font-size:14px}
+  .po-rail.is-open small{display:none!important}
+  .po-hud-sat{display:none}
+  .po-hero{padding-top:60px}
+}
+
+/* ---------- v6: station ring gauge (replaces the station bar) ---------- */
+.po-ring-nav{display:flex;align-items:center;gap:18px;margin:-6px 0 20px;padding:12px 18px 12px 12px;border:1px solid #1d3650;background:linear-gradient(90deg,#8affdd0d,#0a1624 60%);width:fit-content;max-width:100%}
+.po-ring{position:relative;width:84px;height:84px;flex:none}
+.po-ring svg{width:100%;height:100%;overflow:visible}
+.po-ring .orbit{fill:none;stroke:#2f5577;stroke-width:1;stroke-dasharray:2 4}
+.po-ring .seg{fill:none;stroke:#1f3a54;stroke-width:7;stroke-linecap:round}
+.po-ring .seg.is-done{stroke:#3f8a80}
+.po-ring .seg.is-current{stroke:#8affdd;filter:drop-shadow(0 0 6px #8affdd);animation:po-seg 1.8s ease-in-out infinite}
+@keyframes po-seg{50%{stroke-width:9;filter:drop-shadow(0 0 12px #8affdd)}}
+.po-ring .sat{transform-origin:40px 40px;animation:po-ring-orbit 6s linear infinite}
+.po-ring .sat circle{fill:#e6fff8;filter:drop-shadow(0 0 4px #8affdd)}
+@keyframes po-ring-orbit{to{transform:rotate(360deg)}}
+.po-ring-c{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;line-height:1}
+.po-ring-c b{font:700 26px Orbitron,sans-serif;color:#eef6ff;text-shadow:0 0 14px #8affdd88}
+.po-ring-c small{font:600 10px Orbitron,sans-serif;color:#7f9bb8;margin-top:3px}
+.po-ring-info{display:grid;gap:2px}
+.po-ring-info em{font-style:normal;font:700 12px Orbitron,'Noto Sans TC',sans-serif;letter-spacing:1px;color:#8affdd}
+.po-ring-info strong{font-size:24px;color:#fff;letter-spacing:1px}
+.po-ring-steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.po-ring-steps a{font-size:13px;color:#9bb3c9;text-decoration:none;padding:2px 10px;border:1px solid #2f5577}
+.po-ring-steps a:hover{border-color:#8affdd;color:#fff}
+@media(prefers-reduced-motion:reduce){.po-ring .sat,.po-ring .seg.is-current,.po-hud-sat{animation:none}}
+/* Card groups now enter through fx.js (flip); keep only the row-by-row entrance for tables, formulas and lists. */
+.po-js .po-sys > *,.po-js .po-grid4 > *,.po-js .po-stations > *{opacity:1;transform:none;transition:none}
+
+/* ---------- v7: station gauge as one full-width header row (ring · where we are · steps) ---------- */
+.po-ring-nav{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px;width:auto;max-width:none;margin:-4px 0 26px;padding:16px 22px;border:1px solid #1d3650;border-left:3px solid #8affdd;background:linear-gradient(90deg,#8affdd12,#0a1624 45%,#0a162499);position:relative}
+.po-ring{width:78px;height:78px}
+.po-ring .ring-orbit{fill:none;stroke:#2f5577;stroke-width:1;stroke-dasharray:2 4}
+.po-ring .sat{transform-box:view-box;transform-origin:40px 40px}
+.po-ring-info{gap:4px}
+.po-ring-info em{font-size:12px}
+.po-ring-info strong{font-size:26px;line-height:1.2}
+.po .po-ring-info .po-from--in{margin:2px 0 0;padding:0;border:0;background:none;font-size:15px;line-height:1.7;color:#a9bdd2}
+.po .po-ring-info .po-from--in::before{content:none}
+.po-ring-steps{display:flex;flex-direction:column;gap:8px;margin:0;align-self:center}
+.po-ring-steps a{display:flex;align-items:center;justify-content:center;min-width:112px;padding:8px 14px;font-size:14px;color:#dbe8f6;border:1px solid #2f5577;background:#0b1b2c;text-decoration:none;transition:border-color .2s,color .2s,background .2s}
+.po-ring-steps a:hover{border-color:#8affdd;color:#fff;background:#8affdd14}
+@media(max-width:760px){
+  .po-ring-nav{grid-template-columns:auto minmax(0,1fr);gap:14px;padding:14px}
+  .po-ring{width:64px;height:64px}
+  .po-ring-c b{font-size:22px}
+  .po-ring-info strong{font-size:21px}
+  .po-ring-steps{grid-column:1 / -1;flex-direction:row}
+  .po-ring-steps a{flex:1;min-width:0}
+}

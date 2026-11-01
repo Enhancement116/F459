@@ -1,0 +1,71 @@
+/* Site-wide visual effects (see fx.js). Decorative only; reduced motion turns the motion off. */
+@property --fx-a{syntax:'<angle>';inherits:false;initial-value:0deg}
+
+/* Star field behind everything, cursor glow above the background */
+.fx-sky{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+.fx-on main,.fx-on footer{position:relative;z-index:1}
+.fx-glow{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(420px circle at var(--x,-999px) var(--y,-999px),#8affdd10,transparent 60%);mix-blend-mode:screen}
+
+/* Entrances (fx.js): one distinct effect per kind of content, played once. Animations, not transitions,
+   so they never fight the hover tilt once they finish. */
+.fx-wipe:not(.fx-in),.fx-bar:not(.fx-in),.fx-scan:not(.fx-in),.fx-slide:not(.fx-in),.fx-fade:not(.fx-in),.fx-flip:not(.fx-in) > *{opacity:0}
+
+/* Titles: revealed left to right, a short light line runs underneath */
+.fx-wipe{position:relative}
+.fx-wipe.fx-in{animation:fx-wipe .9s cubic-bezier(.6,0,.2,1) both}
+.fx-wipe.fx-in::after{content:"";position:absolute;left:0;bottom:-6px;height:2px;width:72px;background:linear-gradient(90deg,#8affdd,transparent);animation:fx-underline 1.4s .3s ease both}
+@keyframes fx-wipe{from{clip-path:inset(-12px 100% -12px 0)}to{clip-path:inset(-12px 0 -12px 0)}}
+@keyframes fx-underline{from{transform:scaleX(0);transform-origin:left;opacity:1}60%{transform:scaleX(1);opacity:1}to{transform:scaleX(1);opacity:.5}}
+
+/* Key points: slide in, then a band of light passes over once */
+.fx-bar{overflow:hidden}
+.fx-bar.fx-in{animation:fx-bar .7s ease both}
+.fx-sweep{position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,transparent 30%,#8affdd22 50%,transparent 70%);transform:translateX(-100%)}
+.fx-bar.fx-in .fx-sweep{animation:fx-sweep 1.3s .5s ease both}
+@keyframes fx-bar{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes fx-sweep{to{transform:translateX(100%)}}
+
+/* Card groups: each card flips up from below, one after another */
+.fx-flip.fx-in > *{animation:fx-flip .7s cubic-bezier(.2,.7,.2,1) backwards}
+.fx-flip.fx-in > :nth-child(2){animation-delay:.09s}
+.fx-flip.fx-in > :nth-child(3){animation-delay:.18s}
+.fx-flip.fx-in > :nth-child(4){animation-delay:.27s}
+.fx-flip.fx-in > :nth-child(5){animation-delay:.36s}
+.fx-flip.fx-in > :nth-child(6){animation-delay:.45s}
+.fx-flip.fx-in > :nth-child(n+7){animation-delay:.54s}
+@keyframes fx-flip{from{opacity:0;transform:perspective(900px) rotateX(48deg) translateY(24px);transform-origin:top}to{opacity:1;transform:none}}
+
+/* Big visuals: scanned in from the top, brightening as they land */
+.fx-scan.fx-in{animation:fx-scan 1s cubic-bezier(.5,0,.2,1) both}
+@keyframes fx-scan{from{clip-path:inset(0 0 100% 0);opacity:.4;filter:brightness(1.6)}to{clip-path:inset(0 0 0 0);opacity:1;filter:none}}
+
+/* The G05 example, station gauge and step list: slide from the left with a brief blue edge */
+.fx-slide.fx-in{animation:fx-slide .8s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fx-slide{from{opacity:0;transform:translateX(-40px);box-shadow:-6px 0 0 #70b7ff}to{opacity:1;transform:none;box-shadow:none}}
+
+/* Hand-off lines, notes, details: a plain fade */
+.fx-fade.fx-in{animation:fx-fade .8s ease both}
+@keyframes fx-fade{from{opacity:0}to{opacity:1}}
+
+/* Rotating light running around key panels */
+.fx-ring{position:absolute;inset:-1px;pointer-events:none;border-radius:inherit;padding:1px;z-index:3;
+  background:conic-gradient(from var(--fx-a),transparent 0 62%,#70b7ff 74%,#8affdd 82%,transparent 94%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:fx-spin 7s linear infinite;filter:drop-shadow(0 0 6px #8affdd88)}
+@keyframes fx-spin{to{--fx-a:360deg}}
+
+/* Tilt with glare */
+.fx-tilt{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;transform-style:preserve-3d;position:relative;overflow:hidden}
+.fx-tilt:hover{box-shadow:0 18px 40px #00000066,0 0 0 1px #8affdd55,0 0 28px #8affdd22}
+.fx-glare{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(260px circle at var(--gx,50%) var(--gy,50%),#ffffff1c,transparent 60%)}
+.fx-tilt:hover .fx-glare{opacity:1}
+
+@media(prefers-reduced-motion:reduce){
+  .fx-ring{animation:none}
+  .fx-glow{display:none}
+}
+
+/* Homepage sections let the star field show through */
+.fx-on .why-home,.fx-on .mission-invite{background:linear-gradient(180deg,#07101ecc,#07101e99)!important}
+.fx-on .orbit-sec{background:radial-gradient(ellipse at 70% 30%,#13365b44,transparent 60%),#070e18bb!important}
+.fx-on .hero.hero--intro{background:transparent!important}

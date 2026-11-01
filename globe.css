@@ -391,3 +391,14 @@ html[lang=en] .hero-stage--globe .hero-text h1{max-width:100%;text-wrap:balance}
 .hf-nav:hover,.hf-play:hover{border-color:#8affdd;color:#fff}
 .hf-nav:focus-visible,.hf-play:focus-visible{outline:2px solid #8affdd;outline-offset:2px}
 @media(max-width:700px){.hf-count{margin-right:auto}.hf-play{margin-left:0}.hf-nav,.hf-play{padding:7px 9px;font-size:14px}}
+
+/* HOW: both columns share one fixed height; the open step scrolls inside instead of growing the row. */
+@media(min-width:1001px){
+  .how-flow{align-items:start}
+  .hf-steps{height:var(--hf-h,auto);overflow:hidden}
+  .hf-steps li{flex:none}
+  .hf-steps li.is-active{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .hf-steps li.is-active .hf-step{flex:none}
+  .hf-steps li.is-active .hf-body{flex:1 1 auto;min-height:0}
+  .hf-steps li.is-active .hf-body > div{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2f5577 transparent}
+}

@@ -17,16 +17,31 @@
   const STEP_S = [15, 14, 15, 30, 15];
   const C = { grid: '#17304a', text: '#dbe8f6', dim: '#7f9bb8', gps: '#70b7ff', bds: '#f6c775', acc: '#8affdd', pur: '#bd9aff', earth: '#123a5c' };
 
-  let step = 0, playing = false, visible = false, t = 0, T = 0, last = 0;
+  let step = 0, playing = !reduced.matches, visible = false, t = 0, T = 0, last = 0;
+  // After this long without any interaction, a paused tour resumes playing on its own.
+  const IDLE_MS = 20000;
+  let lastTouch = performance.now();
   let W = 800, H = 500, scale = 1, dpr = 1;
 
   // ---------- drawing helpers (virtual W×H space) ----------
   const fs = () => narrow() ? 1.15 : 1.2;
   function txt(s, x, y, { size = 15, color = C.text, align = 'left', weight = 500, mono = false } = {}) {
     size *= fs();
-    ctx.font = `${weight} ${size}px ${mono ? "'JetBrains Mono',Consolas,monospace" : "'Noto Sans TC',sans-serif"}`;
-    ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle';
-    ctx.fillText(s, x, y);
+    ctx.fillStyle = color; ctx.textBaseline = 'middle';
+    if (!s.includes('_{')) {
+      ctx.font = `${weight} ${size}px ${mono ? "'JetBrains Mono',Consolas,monospace" : "'Noto Sans TC',sans-serif"}`;
+      ctx.textAlign = align; ctx.fillText(s, x, y); return;
+    }
+    // Formulas: "_{…}" is drawn as a real subscript in a math face, never as an underscore.
+    const parts = []; let i = 0;
+    for (const m of s.matchAll(/_\{([^}]*)\}/g)) { if (m.index > i) parts.push([s.slice(i, m.index), false]); parts.push([m[1], true]); i = m.index + m[0].length; }
+    if (i < s.length) parts.push([s.slice(i), false]);
+    const font = low => `${weight} ${low ? size * 0.7 : size}px 'Cambria Math','STIX Two Math','Times New Roman',serif`;
+    const widths = parts.map(([p, low]) => { ctx.font = font(low); return ctx.measureText(p).width; });
+    const total = widths.reduce((a, b) => a + b, 0);
+    let cx = align === 'right' ? x - total : align === 'center' ? x - total / 2 : x;
+    ctx.textAlign = 'left';
+    parts.forEach(([p, low], k) => { ctx.font = font(low); ctx.fillText(p, cx, low ? y + size * 0.3 : y); cx += widths[k]; });
   }
   function box(x, y, w, h, stroke, fill = '#0b1b2c', r = 10) {
     ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
@@ -126,26 +141,23 @@
         // The computation itself: orbit position from Kepler's equation, clock offset from a polynomial.
         const k = revealAt(2);
         ctx.save(); ctx.globalAlpha *= k;
-        txt(en ? 'Orbit equations · IS-GPS-200 / BDS ICD' : '軌道公式 · IS-GPS-200 / 北斗 ICD', cx + 16, cy + (n ? 16 : 24), { size: n ? 12 : 14, color: C.gps, weight: 700 });
-        const eqs = [
-          ['n = √(μ / A³) + Δn', en ? 'mean motion: how fast it goes round' : '平均角速度：繞一圈有多快'],
-          ['M = M₀ + n · tₖ', en ? 'where it is on the orbit now' : '此刻走到軌道上的哪裡'],
-          ['M = E − e · sin E', en ? 'Kepler’s equation, solved for E' : '克卜勒方程，反覆求解 E'],
-          ['(x, y, z) ← A, e, E, ω, i, Ω', en ? 'rotate into Earth coordinates' : '轉換到地球座標'],
-          ['δt = af₀ + af₁Δt + af₂Δt²', en ? 'satellite clock offset' : '衛星時鐘偏差'],
-        ];
-        (n ? eqs.slice(1) : eqs).forEach(([f, d], i) => {
-          if (n) { txt(f, cx + 16, cy + 38 + i * 18, { size: 11, color: C.text, weight: 700, mono: true }); return; }
-          const y = cy + 60 + i * 44;
-          txt(f, cx + 18, y, { size: 15, color: C.text, weight: 700, mono: true });
-          txt(d, cx + 18, y + 19, { size: 12, color: C.dim });
+        txt(en ? 'How the position is worked out' : '怎麼算出位置', cx + 16, cy + (n ? 16 : 24), { size: n ? 12 : 14, color: C.gps, weight: 700 });
+        const steps4 = en
+          ? [['1', 'Time since the reference', 'how long since the ephemeris was issued'], ['2', 'Where on the orbit', 'how far round the satellite has gone'], ['3', 'Position in space', 'turned into Earth coordinates (x, y, z)'], ['4', 'Clock correction', 'the satellite clock’s small error']]
+          : [['1', '距離參考時刻多久', '星曆發布之後過了多少時間'], ['2', '在軌道上走到哪', '衛星繞了多遠'], ['3', '換成太空中的位置', '轉成地球座標 (x, y, z)'], ['4', '時鐘修正', '補上衛星時鐘的小誤差']];
+        steps4.forEach(([k2, a, b], i) => {
+          if (n) { txt(`${k2}. ${a}`, cx + 16, cy + 38 + i * 18, { size: 11, color: C.text, weight: 700 }); return; }
+          const y = cy + 62 + i * 52;
+          txt(k2, cx + 22, y + 8, { size: 18, color: C.acc, weight: 700, mono: true, align: 'center' });
+          txt(a, cx + 44, y, { size: 15, color: C.text, weight: 700 });
+          txt(b, cx + 44, y + 21, { size: 12, color: C.dim });
         });
         ctx.restore();
       }
       if (beat === 1) txt(en ? 'Broadcast ephemeris · RINEX · G05' : '廣播星曆 · RINEX · G05', cx + 16, cy + (n ? 16 : 24), { size: n ? 12 : 14, color: C.gps, weight: 700 });
       const params = en
-        ? [['√A', 'orbit size'], ['e', 'eccentricity'], ['i₀', 'inclination'], ['Ω₀', 'ascending node'], ['ω', 'perigee'], ['M₀', 'position on orbit'], ['af₀', 'clock offset']]
-        : [['√A', '軌道大小'], ['e', '橢圓程度'], ['i₀', '軌道傾角'], ['Ω₀', '升交點'], ['ω', '近地點方向'], ['M₀', '在軌道上的位置'], ['af₀', '時鐘偏差']];
+        ? [['•', 'orbit size'], ['•', 'orbit shape'], ['•', 'orbit tilt'], ['•', 'orbit direction'], ['•', 'perigee direction'], ['•', 'position on orbit'], ['•', 'clock correction']]
+        : [['•', '軌道大小'], ['•', '橢圓程度'], ['•', '軌道傾角'], ['•', '軌道方向'], ['•', '近地點方向'], ['•', '在軌道上的位置'], ['•', '時鐘修正量']];
       const shown = Math.min(params.length, Math.floor((t - BEAT[1]) * 2) + 1);
       if (beat === 1) params.slice(0, shown).forEach(([k, v], i) => {
         if (n) {
@@ -164,7 +176,7 @@
         const k = revealAt(2), oy = cy + ch - (n ? 12 : 22);
         ctx.save(); ctx.globalAlpha *= k;
         line(cx + 12, oy - (n ? 12 : 20), cx + cw - 12, oy - (n ? 12 : 20), '#2f5577');
-        txt(en ? '→ position (x, y, z) · clock δt' : '→ 算出：位置 (x, y, z) · 時鐘 δt', cx + 16, oy, { size: n ? 12 : 15, color: C.acc, weight: 700 });
+        txt(en ? '→ position (x, y, z) and clock error' : '→ 算出：位置 (x, y, z) 與時鐘誤差', cx + 16, oy, { size: n ? 12 : 15, color: C.acc, weight: 700 });
         line(h.x, h.y, n ? cx + cw / 2 : cx, n ? cy : oy, C.acc + '99', 1.2, [4, 5]);
         ctx.restore();
       }
@@ -173,11 +185,11 @@
     caption(beat, en ? [
       'Dozens of GPS and BeiDou satellites move along their orbits. To simulate their signals, we first need to know where each one is.',
       'Satellites broadcast their own ephemeris: parameters describing orbit and clock. GeoTrust reads real broadcast ephemeris files (RINEX).',
-      'Into the orbit equations: find where the satellite is on its orbit, solve Kepler’s equation, rotate into Earth coordinates; a polynomial gives the clock offset.',
+      'Put the parameters into the standard calculation: find how far round its orbit the satellite has gone, turn that into a position in space, and correct its clock.',
     ] : [
       '天上有數十顆 GPS 與北斗衛星沿著軌道運行。要模擬訊號，第一步是知道每顆衛星此刻在哪裡。',
       '衛星會廣播自己的「星曆」：一組描述軌道與時鐘的參數。GeoTrust 讀取真實的廣播星曆檔（RINEX）。',
-      '把參數代入軌道公式：先算出衛星走到軌道上的哪裡、解克卜勒方程，再轉成地球座標；時鐘偏差則用多項式修正。',
+      '把參數代入標準計算：先算出衛星在軌道上走到哪裡，再換成太空中的位置，最後修正衛星時鐘的誤差。',
     ], en ? 'Next → how far is it from the receiver?' : '下一步 → 衛星離接收機多遠？');
   }
 
@@ -260,50 +272,37 @@
     const fmt = v => Math.round(v).toLocaleString('en-US');
     const sign = p.fd >= 0 ? '+' : '−', fdc = p.fd >= 0 ? C.gps : C.bds;
     const v = VMAX * Math.cos(p.el * Math.PI / 180), lambda = LIGHT * 1000 / L1;
-    // Formulas are written out step by step with the current numbers substituted.
-    const tauLine = `= ${fmt(p.range)} km ÷ 299,792 km/s`;
-    const fdLine = `= ${sign}${fmt(v)} m/s ÷ ${lambda.toFixed(3)} m`;
     const tauVal = `${p.tau.toFixed(1)} ms`, fdVal = `${sign}${Math.abs(p.fd / 1000).toFixed(1)} kHz`;
+    const rows = [
+      [en ? 'Elevation' : '仰角', `${Math.round(p.el)}°`, C.text],
+      [en ? 'Distance' : '距離', `${fmt(p.range)} km`, C.text],
+      [en ? 'Flight time' : '飛行時間', tauVal, C.acc],
+      [en ? 'Frequency shift (Doppler)' : '頻率偏移（都卜勒）', fdVal, fdc],
+    ];
     if (n) {
-      const px = 12, pw = W - 24, py = H * 0.56, ph = H - py - 8, x = px + 14, xr = px + pw - 14;
+      const px = 12, pw = W - 24, py = H * 0.56, ph = H - py - 8, x = px + 14;
       box(px, py, pw, ph, '#2f5577');
-      [[en ? 'Elevation' : '仰角', `${Math.round(p.el)}°`], [en ? 'Range ρ' : '距離 ρ', `${fmt(p.range)} km`]].forEach(([k, val], i) => {
-        txt(k, x + i * pw / 2, py + 20, { size: 12, color: C.dim });
-        txt(val, x + i * pw / 2, py + 42, { size: 16, color: C.text, weight: 700, mono: true });
+      rows.forEach(([k, val, c], i) => {
+        const xx = x + (i % 2) * pw / 2, yy = py + 22 + Math.floor(i / 2) * 58;
+        txt(k, xx, yy, { size: 12, color: C.dim });
+        txt(val, xx, yy + 24, { size: 17, color: c, weight: 700, mono: true });
       });
-      txt(en ? 'Delay  τ = ρ ÷ c' : '延遲  τ = ρ ÷ c', x, py + 76, { size: 13, color: C.text, weight: 700 });
-      txt(tauVal, xr, py + 76, { size: 16, color: C.acc, align: 'right', weight: 700, mono: true });
-      txt(tauLine, x, py + 98, { size: 12, color: C.dim, mono: true });
-      txt(en ? 'Doppler  f_D = v ÷ λ' : '都卜勒  f_D = v ÷ λ', x, py + 128, { size: 13, color: C.text, weight: 700 });
-      txt(fdVal, xr, py + 128, { size: 16, color: fdc, align: 'right', weight: 700, mono: true });
-      txt(fdLine, x, py + 150, { size: 12, color: C.dim, mono: true });
-      txt(status[0], x, py + 180, { size: 12, color: status[1], weight: 700 });
+      txt(status[0], x, py + 150, { size: 12, color: status[1], weight: 700 });
       return;
     }
     const px = W * 0.53, pw = W * 0.45, py = H * 0.05, ph = H * 0.9, x = px + 18, xr = px + pw - 18;
     box(px, py, pw, ph, '#2f5577');
-    [[en ? 'Elevation' : '仰角', `${Math.round(p.el)}°`], [en ? 'Range ρ' : '距離 ρ', `${fmt(p.range)} km`]].forEach(([k, val], i) => {
-      txt(k, x + i * pw * 0.4, py + 24, { size: 13, color: C.dim });
-      txt(val, x + i * pw * 0.4, py + 50, { size: 19, color: C.text, weight: 700, mono: true });
+    rows.forEach(([k, val, c], i) => {
+      const y = py + 32 + i * 54;
+      txt(k, x, y, { size: 14, color: C.dim });
+      txt(val, xr, y + 22, { size: 21, color: c, align: 'right', weight: 700, mono: true });
+      if (i < 3) line(x, y + 40, xr, y + 40, '#24425e');
     });
-    line(x, py + 76, xr, py + 76, '#24425e');
-    // Delay: τ = ρ ÷ c.
-    txt(en ? 'Delay' : '傳播延遲', x, py + 100, { size: 13, color: C.dim });
-    txt('τ = ρ ÷ c', x, py + 126, { size: 17, color: C.text, weight: 700, mono: true });
-    txt(tauVal, xr, py + 126, { size: 19, color: C.acc, align: 'right', weight: 700, mono: true });
-    txt(tauLine, x, py + 150, { size: 13, color: C.dim, mono: true });
-    line(x, py + 172, xr, py + 172, '#24425e');
-    // Doppler: f_D = v ÷ λ, with v the speed toward the receiver and λ the L1 wavelength.
-    txt(en ? 'Doppler shift' : '都卜勒頻移', x, py + 196, { size: 13, color: C.dim });
-    txt('f_D = v ÷ λ', x, py + 222, { size: 17, color: C.text, weight: 700, mono: true });
-    txt(fdVal, xr, py + 222, { size: 19, color: fdc, align: 'right', weight: 700, mono: true });
-    txt(fdLine, x, py + 246, { size: 13, color: C.dim, mono: true });
-    txt(en ? 'v: speed toward receiver · λ: L1 wavelength' : 'v：衛星朝接收機的速度 · λ：L1 波長', x, py + 268, { size: 11, color: C.dim });
-    txt(status[0], x, py + 298, { size: 13, color: status[1], weight: 700 });
+    txt(status[0], x, py + 250, { size: 13, color: status[1], weight: 700 });
     // Transmit vs receive ticks: the gap grows with the delay.
-    const ty = py + 334, gw = pw - 36, gap = (p.tau - 64) / 24 * gw * 0.32, period = gw * 0.34;
+    const ty = py + 300, gw = pw - 36, gap = (p.tau - 64) / 24 * gw * 0.32, period = gw * 0.34;
     [en ? 'sent' : '發射', en ? 'received' : '收到'].forEach((l, r) => {
-      const yy = ty + r * 30;
+      const yy = ty + r * 34;
       txt(l, x, yy, { size: 11, color: C.dim });
       line(x + 52, yy + 6, x + gw, yy + 6, '#2f5577');
       for (let xx = ((T * 30) % period) + (r ? gap : 0) - period; xx < gw - 52; xx += period) {
@@ -789,9 +788,14 @@
   reduced.addEventListener('change', () => { if (reduced.matches) playing = false; go(step); });
   new IntersectionObserver(e => { visible = e[0].isIntersecting; }, { threshold: 0.2 }).observe(canvas);
   new ResizeObserver(() => { resize(); draw(); }).observe(canvas);
+  // Side by side, the step list is held to the stage's height so long text never stretches the stage.
+  const stage = root.querySelector('.hf-stage');
+  new ResizeObserver(() => root.style.setProperty('--hf-h', stage.offsetHeight + 'px')).observe(stage);
 
+  ['pointerdown', 'keydown', 'wheel'].forEach(ev => root.addEventListener(ev, () => { lastTouch = performance.now(); }, { passive: true }));
   function frame(now) {
     const dt = Math.min((now - last) / 1000, 0.1); last = now;
+    if (!playing && visible && !reduced.matches && now - lastTouch > IDLE_MS) { playing = true; labels(); }
     if (visible && !document.hidden && !reduced.matches) {
       T += dt;
       if (playing) {

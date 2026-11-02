@@ -856,13 +856,12 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     }, { h: 380, nh: 680 });
   }
 
-  // 08: the 1 ms deadline. Blocks arrive every 1 ms; each must be computed before the next one is due. Measured times on the
-  // entry laptop: CPU with 16 channels fits, CPU with 32 does not and the signal breaks, the GPU with 32 has room to spare.
+  // 08: the 1 ms deadline, as an illustration. Blocks arrive every 1 ms; each must be computed before the next one is due.
   {
     const LANES = [
-      { zh: 'CPU・16 通道', en: 'CPU · 16 channels', us: 790.1, col: C.bds },
-      { zh: 'CPU・32 通道', en: 'CPU · 32 channels', us: 1591.7, col: '#ff8f8f' },
-      { zh: 'GPU・32 通道', en: 'GPU · 32 channels', us: 280.4, col: C.acc },
+      { zh: '一個一個算・衛星少', en: 'One by one · few satellites', us: 780, col: C.bds },
+      { zh: '一個一個算・衛星多', en: 'One by one · many satellites', us: 1560, col: '#ff8f8f' },
+      { zh: 'GPU 平行算・衛星多', en: 'GPU in parallel · many satellites', us: 280, col: C.acc },
     ];
     const hash = i => { const s = Math.sin(i * 91.7) * 43758.5453; return s - Math.floor(s); };
     scene('po-load-cv', (g, t, en) => {
@@ -872,7 +871,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       LANES.forEach((ln, li) => {
         const y = (n ? 72 : 76) + li * (n ? 92 : 86), hgt = n ? 30 : 34;
         if (n) g.txt(en ? ln.en : ln.zh, x0, y - 22, { size: 12, color: ln.col, weight: 700 });
-        else { g.txt(en ? ln.en : ln.zh, 14, y + 4, { size: 13.5, color: ln.col, weight: 700 }); g.txt(`${ln.us.toFixed(0)} μs / 1 ms`, 14, y + 22, { size: 11, color: C.dim, mono: true }); }
+        else g.txt(en ? ln.en : ln.zh, 14, y + 10, { size: 13.5, color: ln.col, weight: 700 });
         ctx.save(); ctx.beginPath(); ctx.rect(x0, y - 8, x1 - x0, hgt + 16); ctx.clip();
         const off = (t * speed * slot) % slot, first = Math.floor(t * speed);
         for (let k = -1; k < (x1 - x0) / slot + 2; k++) {
@@ -887,7 +886,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         g.txt(ln.us > 1000 ? (en ? 'over 1 ms → gap → receiver loses lock' : '超過 1 ms → 斷訊 → 接收機失鎖') : ln.us > 600 ? (en ? 'fits, but little margin' : '來得及，但餘裕很少') : (en ? 'plenty of margin' : '餘裕充足'),
           x1, y + hgt + (n ? 16 : 18), { size: 12, color: ln.us > 1000 ? '#ff8f8f' : ln.us > 600 ? C.bds : C.acc, align: 'right', weight: 700 });
       });
-      g.txt(en ? 'Each box = 1 ms. Measured on the entry laptop (i5-10300H / GTX 1650 Ti), 20.8 Msps.' : '每一格＝1 ms。入門筆電（i5-10300H／GTX 1650 Ti）實測，20.8 Msps。', 14, H - 14, { size: n ? 10.5 : 12, color: C.dim });
+      g.txt(en ? 'Each box = 1 ms (illustration).' : '每一格＝1 ms（示意）。', 14, H - 14, { size: n ? 10.5 : 12, color: C.dim });
     }, { h: 340, nh: 380 });
   }
 
@@ -927,55 +926,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     }
   }, { h: 360, nh: 440 });
 
-  // 08: measured compute time per 1 ms block (20.8 Msps, 16 channels) and the most channels each part manages within 1 ms.
-  {
-    const M = [
-      { zh: '入門筆電', en: 'Entry laptop', cpu: 'i5-10300H', gpu: 'GTX 1650 Ti', tc: 790.1, tg: 149.8, nc: 18, ng: 112 },
-      { zh: '高階筆電', en: 'High-end laptop', cpu: 'i9-9880H', gpu: 'RTX 2070', tc: 629.7, tg: 82.1, nc: 24, ng: 235 },
-      { zh: '高階桌機', en: 'High-end desktop', cpu: 'i7-14700F', gpu: 'RTX 4070', tc: 341.0, tg: 40.1, nc: 67, ng: 465 },
-      { zh: '次世代桌機', en: 'Next-gen desktop', cpu: 'Ryzen 7 9700X', gpu: 'RTX 5070 Ti', tc: 313.2, tg: 23.6, nc: 45, ng: 744 },
-    ];
-    let m = 0, start = 0, now = 0, auto = !reduced.matches;
-    const tabs = [...document.querySelectorAll('.pb-tabs [data-m]')];
-    const render = () => tabs.forEach((b, i) => b.setAttribute('aria-selected', String(i === m)));
-    tabs.forEach((b, i) => b.addEventListener('click', () => { m = i; start = now; auto = false; render(); }));
-    render();
-    scene('po-bench-cv', (g, t, en) => {
-      const { ctx, W, H, n } = g;
-      now = t;
-      if (auto && t - start > 7) { m = (m + 1) % M.length; start = t; render(); }
-      const d = M[m], grow = Math.min(1, (t - start) / 1.6), e = 1 - (1 - grow) ** 3;
-      const x0 = n ? 16 : 150, x1 = W - (n ? 16 : 40);
-      const X = us => x0 + (x1 - x0) * us / 1000;
-      g.txt(en ? 'One 1 ms block · time budget 1,000 μs' : '一個 1 ms 區塊・時間預算 1,000 μs', n ? 16 : 14, 22, { size: 14, color: C.text, weight: 700 });
-      const lanes = [['CPU', d.cpu, d.tc, C.bds, n ? 64 : 62], ['GPU', d.gpu, d.tg, C.acc, n ? 134 : 122]];
-      lanes.forEach(([k, name, us, col, y]) => {
-        if (n) g.txt(`${k} · ${name}`, 16, y - 18, { size: 12, color: col, weight: 700 });
-        else { g.txt(k, 14, y - 7, { size: 15, color: col, weight: 700, mono: true }); g.txt(name, 14, y + 13, { size: 11.5, color: C.dim }); }
-        ctx.fillStyle = '#ffffff0c'; ctx.fillRect(x0, y - 14, x1 - x0, 28);
-        ctx.fillStyle = col; ctx.fillRect(x0, y - 14, (X(us) - x0) * e, 28);
-        const pct = Math.round(us / 10);
-        const inside = us > 450;
-        g.txt(`${us.toFixed(1)} μs · ${pct}%`, inside ? x0 + 10 : X(us) + 10, y, { size: n ? 12 : 14, color: inside ? '#1a1206' : C.text, weight: 700, mono: true });
-      });
-      // Budget line.
-      g.line(x1, 36, x1, n ? 156 : 142, '#ff8f8f', 2);
-      g.txt('1 ms', x1, n ? 168 : 154, { size: 12, color: '#ff8f8f', align: n ? 'right' : 'center', weight: 700, mono: true });
-      // Capacity within 1 ms.
-      const cy = n ? 220 : 200;
-      g.txt(en ? 'Most channels finished within 1 ms (20.8 Msps)' : '1 ms 內最多能算幾個通道（20.8 Msps）', n ? 16 : 14, cy, { size: 14, color: C.text, weight: 700 });
-      const cx0 = x0, cx1 = x1, MAXN = 760, CX = v => cx0 + (cx1 - cx0) * v / MAXN;
-      [['CPU', d.nc, C.bds, cy + (n ? 40 : 40)], ['GPU', d.ng, C.acc, cy + (n ? 96 : 84)]].forEach(([k, v, col, y]) => {
-        if (n) g.txt(k, 16, y - 18, { size: 12, color: col, weight: 700, mono: true }); else g.txt(k, 14, y, { size: 15, color: col, weight: 700, mono: true });
-        ctx.fillStyle = '#ffffff0c'; ctx.fillRect(cx0, y - 11, cx1 - cx0, 22);
-        ctx.fillStyle = col; ctx.fillRect(cx0, y - 11, (CX(v) - cx0) * e, 22);
-        g.txt(en ? `${v} channels` : `${v} 個通道`, Math.min(CX(v) * 1 + 10, cx1 - 90), y, { size: 13, color: C.text, weight: 700, mono: true });
-      });
-      const dx = CX(16);
-      g.line(dx, cy + 18, dx, cy + (n ? 112 : 100), '#ffffffaa', 1.2, [3, 3]);
-      g.txt(en ? 'default 16' : '預設 16', dx + 4, cy + (n ? 122 : 112), { size: 11.5, color: '#ffffffcc', weight: 700 });
-    }, { h: 330, nh: 360 });
-  }
+
 
   // Diagrams, tables and formula lists reveal on scroll; CSS does the motion, this only flags visibility.
   document.documentElement.classList.add('po-js');

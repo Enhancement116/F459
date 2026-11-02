@@ -66,9 +66,9 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     g.txt(en ? 'receive time of this sample' : '這個樣本的接收時刻', cx, ay - 26, { size: 12, color: C.acc, align: 'right', weight: 700 });
     // Two satellites, each transmitted earlier by its own travel time.
     const scale = n ? 3.6 : 6;
-    [[E.prn || 'G13', +(E.ms ?? 72.2).toFixed(1), C.gps], [E.bds || 'C24', +(E.bdsMs ?? 73.3).toFixed(1), C.bds]].forEach(([id, tau, c], i) => {
+    [[['GPS 衛星', 'GPS satellite'], +(E.ms ?? 72.2).toFixed(1), C.gps], [['北斗衛星', 'BeiDou satellite'], +(E.bdsMs ?? 73.3).toFixed(1), C.bds]].forEach(([id, tau, c], i) => {
       const y = ay + (n ? 80 : 74) + i * (n ? 86 : 70), tx = cx - tau * scale;
-      g.txt(`${id} ${en ? 'transmits' : '發射'}`, x0, y - 22, { size: 12, color: c, weight: 700 });
+      g.txt(en ? `${id[1]} transmits` : `${id[0]}發射`, x0, y - 22, { size: 12, color: c, weight: 700 });
       g.line(x0, y, W - 10, y, c + '55', 2);
       g.line(tx, y - 12, tx, y + 12, c, 2.5);
       g.line(cx, ay + 16, tx, y - 12, '#ffffff33', 1, [4, 4]);
@@ -284,7 +284,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     const p = t % 11, BAD = 2, THR = 0.6;
     const bias = p < 2 ? 0 : p < 5 ? (p - 2) / 3 : p < 9.5 ? 1 : 0;
     const out = p >= 6 && p < 9.5, flagged = (p >= 2 && p < 6);
-    const sats = [['G05', 160], ['G13', 128], ['C23', 100], ['G21', 70], ['C32', 44], ['G27', 18]];
+    const sats = [['G', 160], ['G', 128], ['C', 100], ['G', 70], ['C', 44], ['G', 18]];
     // Sky.
     const rx = n ? W / 2 : 210, ry = n ? 214 : H - 40, R = n ? 150 : 200;
     ctx.beginPath(); ctx.arc(rx, ry, R, Math.PI, 0); ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); ctx.stroke(); ctx.setLineDash([]);
@@ -294,7 +294,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       const col = gone ? '#4b6680' : bad ? RED : id[0] === 'G' ? C.gps : C.bds;
       g.line(x, y, rx, ry, gone ? '#33475c' : bad ? RED : col + '77', bad ? 1.8 : 1.1, bad || gone ? [5, 5] : []);
       g.sat(x, y, col);
-      g.txt(id, x, y - 16, { size: n ? 10 : 11, color: col, align: 'center', weight: 700, mono: true });
+      g.txt(id === 'G' ? 'GPS' : (en ? 'BDS' : '北斗'), x, y - 16, { size: n ? 10 : 11, color: col, align: 'center', weight: 700 });
       if (bad && !gone) g.txt(en ? '+ range bias' : '＋偽距偏差', (x + rx) / 2 + 8, (y + ry) / 2, { size: n ? 10 : 11, color: RED, weight: 700 });
       if (gone) g.txt(en ? '✕ excluded' : '✕ 已剔除', x, y + 20, { size: n ? 10 : 11, color: '#9fb4c8', align: 'center', weight: 700 });
     });
@@ -396,17 +396,17 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
   }, { h: 340, nh: 560 });
 
   // 02: the six stations, told like the homepage walkthrough: one stage, a caption that explains it, and tabs, back,
-  // play and next. The stage shows what happens to G13 at the selected station; nothing has to be watched to the end.
+  // play and next. The stage shows what happens to one GPS satellite at the selected station; nothing has to be watched to the end.
   {
     const ST = [
-      { hw: 'CPU', zh: ['現在是幾點？', '接收端的樣本時刻是 04:00:00 GPS 時間（台灣約中午 12:00）。往回扣掉飛行時間，就是 G13 發出這段訊號的時刻。'],
-        en: ['What time is it?', 'The receiver sample time is 04:00:00 GPS time (about noon in Taiwan). Step back by the flight time to get when G13 sent this piece of signal.'], go: 'time' },
-      { hw: 'CPU', zh: ['那一刻，G13 在哪裡？', '把時刻代入 G13 的廣播星曆：它在高科大上空、仰角 {el}，正在升起。'],
-        en: ['Where is G13 at that moment?', 'Put the time into G13’s broadcast ephemeris: it is above NKUST at {el} elevation and rising.'], go: 'orbit' },
-      { hw: 'CPU', zh: ['訊號要飛多久？', '距離 {km}，訊號要飛 {ms}；G13 正在靠近，頻率略為偏高。'],
-        en: ['How long does the signal fly?', '{km} away, so it flies {ms}; G13 is approaching, so the frequency is slightly high.'], go: 'propagation' },
-      { hw: 'GPU', zh: ['G13 的訊號長什麼樣？', '導航電文 × G13 專屬的 PRN 碼 × 載波。延遲決定碼從哪裡開始，頻移決定載波轉多快。'],
-        en: ['What does G13’s signal look like?', 'Navigation data × G13’s own PRN code × the carrier. The delay sets where the code starts; the shift sets how fast the carrier turns.'], go: 'signal' },
+      { hw: 'CPU', zh: ['現在是幾點？', '接收端的樣本時刻是 04:00:00 GPS 時間（台灣約中午 12:00）。往回扣掉飛行時間，就是衛星發出這段訊號的時刻。'],
+        en: ['What time is it?', 'The receiver sample time is 04:00:00 GPS time (about noon in Taiwan). Step back by the flight time to get when the satellite sent this piece of signal.'], go: 'time' },
+      { hw: 'CPU', zh: ['那一刻，衛星在哪裡？', '把時刻代入它的廣播星曆：它在高科大上空、仰角 {el}，正在升起。'],
+        en: ['Where is the satellite at that moment?', 'Put the time into its broadcast ephemeris: it is above NKUST at {el} elevation and rising.'], go: 'orbit' },
+      { hw: 'CPU', zh: ['訊號要飛多久？', '距離 {km}，訊號要飛 {ms}；衛星正在靠近，頻率略為偏高。'],
+        en: ['How long does the signal fly?', '{km} away, so it flies {ms}; the satellite is approaching, so the frequency is slightly high.'], go: 'propagation' },
+      { hw: 'GPU', zh: ['它的訊號長什麼樣？', '導航電文 × 這顆衛星專屬的 PRN 碼 × 載波。延遲決定碼從哪裡開始，頻移決定載波轉多快。'],
+        en: ['What does its signal look like?', 'Navigation data × the satellite’s own PRN code × the carrier. The delay sets where the code starts; the shift sets how fast the carrier turns.'], go: 'signal' },
       { hw: 'GPU', zh: ['其他衛星呢？', '所有看得到的 GPS 與北斗衛星各占一個通道，在同一個瞬間相加成一路 I/Q。'],
         en: ['What about the other satellites?', 'Every visible GPS and BeiDou satellite gets a channel; all are added in the same instant into one I/Q stream.'], go: 'synthesis' },
       { hw: 'SDR', zh: ['怎麼不間斷地送出？', '每 1 ms 的樣本必須在 1 ms 內算完，經過緩衝準時送進 SDR，變成真正的電波。'],
@@ -471,7 +471,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       if (cur === 0) {
         // Two clocks, 72 ms apart.
         const r = n ? 42 : 50, cy = n ? 76 : H / 2 - 10, xs = n ? [W * 0.24, W * 0.76] : [W * 0.14, W * 0.46];
-        [[xs[0], en ? 'G13 sends' : 'G13 發射', C.gps, ms], [xs[1], en ? 'receiver gets it' : '接收機收到', C.acc, 0]].forEach(([x, lab, col, back]) => {
+        [[xs[0], en ? 'satellite sends' : '衛星發射', C.gps, ms], [xs[1], en ? 'receiver gets it' : '接收機收到', C.acc, 0]].forEach(([x, lab, col, back]) => {
           ctx.beginPath(); ctx.arc(x, cy, r, 0, Math.PI * 2); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
           for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; g.line(x + Math.cos(a) * r * 0.84, cy + Math.sin(a) * r * 0.84, x + Math.cos(a) * r, cy + Math.sin(a) * r, col + '88', 1.4); }
           const a = -Math.PI / 2 + ((t * 0.5 - back / 1000 * 30) % 1) * Math.PI * 2;
@@ -482,7 +482,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         g.txt(`${ms.toFixed(1)} ms`, (xs[0] + xs[1]) / 2, cy - 14, { size: 13, color: '#d9bf8c', align: 'center', weight: 700, mono: true });
         value('04:00:00', en ? 'GPS time of the sample' : '這個樣本的 GPS 時間');
       } else if (cur === 1) {
-        // Orbit, G13 moving into place, and the line of sight from NKUST.
+        // Orbit, the satellite moving into place, and the line of sight from NKUST.
         const R = n ? 40 : 46, ox = n ? W / 2 : W * 0.3, oy = n ? 100 : H / 2 + 12;
         ctx.beginPath(); ctx.ellipse(ox, oy, R * 2.6, R * 1.05, -0.3, 0, Math.PI * 2); ctx.strokeStyle = C.gps + '66'; ctx.lineWidth = 1.4; ctx.stroke();
         earth(ox, oy, R);
@@ -492,12 +492,12 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         g.line(nx, ny, sx, sy, '#8affdd88', 1.2, [4, 4]);
         g.dot(nx, ny, 4, C.acc, 8);
         g.txt('NKUST', nx + 10, ny + 4, { size: 12, color: C.acc, weight: 700 });
-        g.sat(sx, sy, C.gps); g.txt('G13', sx, sy - 16, { size: 12, color: C.gps, align: 'center', weight: 700, mono: true });
+        g.sat(sx, sy, C.gps); g.txt(en ? 'GPS satellite' : 'GPS 衛星', sx, sy - 16, { size: 12, color: C.gps, align: 'center', weight: 700 });
         value(`${el.toFixed(1)}°`, en ? 'elevation above NKUST, rising' : '高科大上空的仰角・正在升起');
       } else if (cur === 2) {
-        // A pulse crossing from G13 to the receiver.
+        // A pulse crossing from the satellite to the receiver.
         const sx = n ? W - 60 : W * 0.5, sy = 30, rx = n ? 50 : W * 0.08, ry = n ? 150 : H - 34;
-        g.sat(sx, sy, C.gps); g.txt('G13', sx + 28, sy, { size: 12, color: C.gps, weight: 700, mono: true });
+        g.sat(sx, sy, C.gps); g.txt(en ? 'GPS satellite' : 'GPS 衛星', sx + 28, sy, { size: 12, color: C.gps, weight: 700 });
         ctx.fillStyle = C.text; ctx.beginPath(); ctx.moveTo(rx - 10, ry + 8); ctx.lineTo(rx + 10, ry + 8); ctx.lineTo(rx, ry - 10); ctx.fill();
         g.txt(en ? 'receiver' : '接收機', rx + 18, ry + 2, { size: 13, color: C.dim, weight: 600 });
         g.line(sx, sy, rx, ry, '#ffffff33', 1.2, [4, 5]);
@@ -519,11 +519,11 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         if (!n) value(en ? 'BPSK' : '三層相乘', en ? 'data × code × carrier' : '電文 × 碼 × 載波');
       } else if (cur === 4) {
         // Satellites converge into one Σ.
-        const sats = [[0.06, C.gps, 'G13'], [0.18, C.gps, 'G05'], [0.3, C.bds, 'C23'], [0.42, C.gps, 'G21'], [0.54, C.bds, 'C32']];
+        const sats = [[0.06, C.gps, 'G'], [0.18, C.gps, 'G'], [0.3, C.bds, 'C'], [0.42, C.gps, 'G'], [0.54, C.bds, 'C']];
         const sx = n ? W / 2 : W * 0.3, sy = n ? 140 : H - 40, top = 34;
         sats.forEach(([fx, col, id], i) => {
           const x = n ? 30 + i * (W - 60) / 4 : W * fx, y = top;
-          g.sat(x, y, col); g.txt(id, x, y - 16, { size: 11, color: col, align: 'center', weight: 700, mono: true });
+          g.sat(x, y, col); g.txt(id === 'G' ? 'GPS' : (en ? 'BDS' : '北斗'), x, y - 16, { size: 11, color: col, align: 'center', weight: 700 });
           g.line(x, y + 8, sx, sy - 20, col + '55', 1.2);
           const p = ((t * 0.6) + i / 5) % 1; g.dot(x + (sx - x) * p, y + 8 + (sy - 20 - y - 8) * p, 3, col, 6);
         });
@@ -559,7 +559,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, SH); ctx.clip();
       stage(g, t, en, e, W, SH);
       ctx.restore();
-      // Caption: the station's question, its answer for G13, and who runs it.
+      // Caption: the station's question, its answer for the example satellite, and who runs it.
       const cx = n ? 12 : 20, cw = W - cx * 2, cy = SH + 8, ch = H - cy - 10;
       g.box(cx, cy, cw, ch, '#2f5577');
       for (let i = 0; i < 6; i++) g.dot(cx + 18 + i * 14, cy + 18, 4, i <= cur ? C.acc : '#2b4a66');
@@ -572,7 +572,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     }, { h: 330, nh: 480 });
   }
 
-  // 04: ephemeris → position → sky. Left: G13's real broadcast parameters. Middle: the time put in gives a point on the
+  // 04: ephemeris → position → sky. Left: the example satellite's real broadcast parameters. Middle: the time put in gives a point on the
   // orbit. Right: that point seen from NKUST, as a direction and a height. Every value comes from the same data file.
   {
     const RE = 6378137, D = Math.PI / 180, WE = 7.2921151467e-5;
@@ -616,7 +616,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       const cols = n ? [[0, 0, W, 250], [0, 280, W, 260], [0, 570, W, 330]] : [[0, 0, 250, H], [276, 0, 250, H], [552, 0, 248, H]];
       // Panel 1: the ephemeris.
       const [ax, ay, aw] = cols[0];
-      g.txt(en ? `① ${prn} broadcast ephemeris` : `① ${prn} 的廣播星曆`, ax + 14, ay + 22, { size: 14, color: C.text, weight: 700 });
+      g.txt(en ? '① Its broadcast ephemeris' : '① 這顆衛星的廣播星曆', ax + 14, ay + 22, { size: 14, color: C.text, weight: 700 });
       g.txt(date, ax + 14, ay + 42, { size: 11.5, color: C.dim, mono: true });
       if (eph) {
         const rows = [['√A', `${eph.sqrtA.toFixed(3)} m½`, en ? 'orbit size' : '軌道大小'], ['e', eph.e.toFixed(5), en ? 'shape' : '形狀（偏心率）'],
@@ -645,7 +645,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         ctx.beginPath(); orbit.forEach((p, i) => { const q = proj(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
         ctx.strokeStyle = C.gps + '88'; ctx.lineWidth = 1.4; ctx.stroke();
         const k = Math.round((secs + 43200) % 43200 / 600) % (orbit.length - 1), q = proj(orbit[k]);
-        g.sat(q[0], q[1], C.gps); g.txt(prn, q[0], q[1] - 16, { size: 12, color: C.gps, align: 'center', weight: 700, mono: true });
+        g.sat(q[0], q[1], C.gps); g.txt(en ? 'GPS satellite' : 'GPS 衛星', q[0], q[1] - 16, { size: 12, color: C.gps, align: 'center', weight: 700 });
         const p = hero[idx];
         g.txt(`x ${(p[0] / 1e3).toFixed(0)} km`, bx + 10, by + bh - (n ? 52 : 58), { size: 11.5, color: C.text, mono: true });
         g.txt(`y ${(p[1] / 1e3).toFixed(0)} km`, bx + 10, by + bh - (n ? 34 : 38), { size: 11.5, color: C.text, mono: true });
@@ -672,25 +672,25 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         const az = ((cur[0] / D) + 360) % 360;
         g.txt(en ? `azimuth ${az.toFixed(0)}°` : `方位 ${az.toFixed(0)}°`, cx0 + 10, sy + sr + 26, { size: 13, color: C.text, weight: 700, mono: true });
         g.txt(en ? `elevation ${cur[1].toFixed(1)}°` : `仰角 ${cur[1].toFixed(1)}°`, cx0 + cw - 10, sy + sr + 26, { size: 13, color: C.acc, align: 'right', weight: 700, mono: true });
-      } else if (tracks) g.txt(en ? `${prn} is below the horizon now` : `${prn} 此刻在地平線下`, sx, sy + sr + 26, { size: 12, color: C.dim, align: 'center' });
+      } else if (tracks) g.txt(en ? 'The satellite is below the horizon now' : '這顆衛星此刻在地平線下', sx, sy + sr + 26, { size: 12, color: C.dim, align: 'center' });
       if (!tracks) g.txt(en ? 'Loading the ephemeris…' : '載入星曆中…', W / 2, H / 2, { size: 13, color: C.dim, align: 'center' });
     }, { h: 380, nh: 900 });
   }
 
-  // 06: G13's signal, told in five beats like the homepage walkthrough: data, code, the multiplication rule, the carrier,
-  // and finally the receiver's side, where only G13's own code pulls a peak out of the noise and another code does not.
+  // 06: one satellite's signal, told in five beats like the homepage walkthrough: data, code, the multiplication rule, the carrier,
+  // and finally the receiver's side, where only that satellite's own code pulls a peak out of the noise and another code does not.
   {
     const CAPS = [
       ['① 導航電文：衛星要說的內容', '軌道、時鐘修正與時間等資訊，以 +1／−1 表示，每秒 50 個位元，每個位元持續 20 ms，變化得很慢。',
        '① Navigation data: what the satellite says', 'Orbit, clock corrections and time, sent as +1 / −1 at 50 bits a second; each bit lasts 20 ms and changes slowly.'],
-      ['② PRN 碼：G13 的指紋', '每顆衛星有一組專屬、快速跳動的 ±1 序列。一個電文位元裡塞了很多碼片：GPS 是 20,460 個，北斗 B1I 是 40,920 個。',
-       '② PRN code: G13’s fingerprint', 'Each satellite has its own fast ±1 sequence. One data bit holds many chips: 20,460 for GPS, 40,920 for BeiDou B1I.'],
+      ['② PRN 碼：衛星的指紋', '每顆衛星有一組專屬、快速跳動的 ±1 序列。一個電文位元裡塞了很多碼片：GPS 是 20,460 個，北斗 B1I 是 40,920 個。',
+       '② PRN code: the satellite’s fingerprint', 'Each satellite has its own fast ±1 sequence. One data bit holds many chips: 20,460 for GPS, 40,920 for BeiDou B1I.'],
       ['③ 相乘：電文決定碼要不要翻轉', '電文是 +1 時，碼維持原樣；電文是 −1 時，碼整段上下翻轉。這就是送出去的內容。',
        '③ Multiply: the data decides whether the code flips', 'Where the data is +1 the code passes unchanged; where it is −1 the code flips upside down. That is what gets sent.'],
       ['④ 放上載波：翻轉變成相位跳 180°', '載波是 1575.42 MHz（北斗 1561.098 MHz）的正弦波。相乘結果每翻一次，載波的相位就跳 180°，這叫 BPSK。',
        '④ Onto the carrier: a flip becomes a 180° phase jump', 'The carrier is a 1575.42 MHz sine (BeiDou 1561.098 MHz). Each flip of the product makes the carrier jump 180° in phase: BPSK.'],
-      ['⑤ 接收機：用對的碼，才找得到', '收到的訊號埋在雜訊下面。拿 G13 的碼去比對，會出現一個尖峰，位置就是延遲；拿 G05 的碼比對，什麼都沒有。',
-       '⑤ The receiver: only the right code finds it', 'The signal arrives buried under noise. Matching it with G13’s code raises one peak, at the delay; matching with G05’s code finds nothing.'],
+      ['⑤ 接收機：用對的碼，才找得到', '收到的訊號埋在雜訊下面。拿這顆衛星的碼去比對，會出現一個尖峰，位置就是延遲；拿另一顆衛星的碼比對，什麼都沒有。',
+       '⑤ The receiver: only the right code finds it', 'The signal arrives buried under noise. Matching it with this satellite’s code raises one peak, at the delay; matching with another satellite’s code finds nothing.'],
     ];
     const DATA = [1, -1, -1, 1, -1, 1, 1, -1], FLIP = '#ff8f7a', DUR = 8;
     const chip = (seed, k) => (Math.sin(k * 12.9898 + seed * 78.233) * 43758.5453 % 1 + 1) % 1 > 0.5 ? 1 : -1;
@@ -747,7 +747,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         windows.forEach(({ a, b, d }) => { if (b - a > 34) g.txt(d > 0 ? '+1' : '−1', (a + b) / 2, rows[0] - amp - 8, { size: 12, color: C.pur, align: 'center', weight: 700, mono: true }); });
         if (beat >= 1) {
           ctx.globalAlpha = beat === 1 ? rv : 1;
-          label(rows[1], 'G13 的 PRN 碼', 'G13’s PRN code', '1.023 Mcps', C.gps);
+          label(rows[1], '這顆衛星的 PRN 碼', 'The satellite’s PRN code', '1.023 Mcps', C.gps);
           trace(rows[1], x => code(x), C.gps);
           if (beat === 1) {
             const w = windows.find(w => w.b - w.a >= BIT - 1);
@@ -783,10 +783,10 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         label(y0, en ? 'What arrives' : '收到的訊號', 'What arrives', en ? 'under the noise' : '埋在雜訊下', '#9fb4c8');
         trace(y0, x => 0.25 * data(x) * code(x) + 0.9 * noise(Math.floor(x + shift)), '#9fb4c8aa', 1, amp * 1.2);
         const panels = n ? [[x0, 98, x1 - x0, (SH - 110) / 2 - 6], [x0, 98 + (SH - 110) / 2 + 6, x1 - x0, (SH - 110) / 2 - 6]] : [[x0, 96, (x1 - x0) / 2 - 10, SH - 108], [x0 + (x1 - x0) / 2 + 10, 96, (x1 - x0) / 2 - 10, SH - 108]];
-        [['G13', true], ['G05', false]].forEach(([id, ok], i) => {
+        [[['這顆衛星', 'this satellite'], true], [['另一顆衛星', 'another satellite'], false]].forEach(([id, ok], i) => {
           const [px, py, pw, ph] = panels[i], col = ok ? C.acc : FLIP;
           g.box(px, py, pw, ph, col + '88');
-          g.txt(en ? `match with ${id}’s code` : `用 ${id} 的碼比對`, px + 12, py + 18, { size: 13, color: col, weight: 700 });
+          g.txt(en ? `match with ${id[1]}’s code` : `用${id[0]}的碼比對`, px + 12, py + 18, { size: 13, color: col, weight: 700 });
           const by = py + ph - 14, top = py + 60, grow = Math.min(1, local / 1.6);
           g.line(px + 10, by, px + pw - 10, by, C.line, 1);
           ctx.beginPath();
@@ -815,7 +815,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
 
   // 07: every channel at the same instant, the summed waveform, and that sum as points on the I/Q plane.
   {
-    const CH7 = [['G13', C.gps, 1.0, 0.0, 0.9], ['G05', C.gps, 1.3, 1.2, 0.8], ['G21', C.gps, 0.8, 2.3, 0.7], ['C23', C.bds, 1.6, 0.6, 0.85], ['C32', C.bds, 1.15, 3.1, 0.75], ['C24', C.bds, 0.65, 4.2, 0.8]];
+    const CH7 = [['G', C.gps, 1.0, 0.0, 0.9], ['G', C.gps, 1.3, 1.2, 0.8], ['G', C.gps, 0.8, 2.3, 0.7], ['C', C.bds, 1.6, 0.6, 0.85], ['C', C.bds, 1.15, 3.1, 0.75], ['C', C.bds, 0.65, 4.2, 0.8]];
     const trail = [];
     scene('po-syn-cv', (g, t, en) => {
       const { ctx, W, H, n } = g;
@@ -824,7 +824,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       let I = 0, Q = 0;
       CH7.forEach(([id, col, f, ph, a], j) => {
         const y = top + j * rh + rh / 2;
-        g.txt(id, 10, y, { size: 12.5, color: col, weight: 700, mono: true });
+        g.txt(id === 'G' ? 'GPS' : (en ? 'BDS' : '北斗'), 10, y, { size: 12.5, color: col, weight: 700 });
         ctx.beginPath();
         for (let x = L0; x <= L1; x += 2) { const v = a * Math.cos(phase(x, f, ph)); x === L0 ? ctx.moveTo(x, y - v * amp) : ctx.lineTo(x, y - v * amp); }
         ctx.strokeStyle = col + 'bb'; ctx.lineWidth = 1.3; ctx.stroke();

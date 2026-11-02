@@ -1,7 +1,7 @@
 // The project page's running example, derived from whatever ephemeris data/latest.json points to.
 // At about noon Taiwan time (04:00 GPST) it picks the rising GPS satellite closest to 45° above NKUST and a
 // rising BeiDou MEO satellite, computes their real elevation, range and travel time, then rewrites the
-// example text (written for 2026-09-22 / G13) to match. Animations read the same values from window.GT_EPH.
+// example text (written for 2026-09-22) to match. Animations read the same values from window.GT_EPH.
 (() => {
   if (!window.GnssOrbit) return;
   const RE = 6378137, C = 299792458, D = Math.PI / 180;
@@ -42,7 +42,7 @@
     window.GT_DATA = data;   // the whole day, for the orbit chapter
     // Rewrite the example wherever it appears: text, both language attributes and labels.
     const swaps = [
-      ['2026-09-22', eph.date], ['G13', eph.prn], ['45.2°', eph.el.toFixed(1) + '°'],
+      ['2026-09-22', eph.date], ['45.2°', eph.el.toFixed(1) + '°'],
       ['約 45°', `約 ${Math.round(eph.el)}°`], ['about 45°', `about ${Math.round(eph.el)}°`],
       ['21,641 km', eph.km.toLocaleString('en-US') + ' km'], ['72.2 ms', eph.ms.toFixed(1) + ' ms'],
     ];

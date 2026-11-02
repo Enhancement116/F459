@@ -1,5 +1,5 @@
 // Homepage "HOW": five-step signal pipeline. A canvas stage draws one scene per step;
-// the step list beside it drives the tour (auto-advance, click to pin, play/pause).
+// the step list beside it drives the tour (auto-advance, jump to any step and keep playing, play/pause).
 (() => {
   const root = document.getElementById('how-flow');
   if (!root) return;
@@ -12,14 +12,14 @@
   const timer = root.querySelector('.hf-timer i');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const isEn = () => document.documentElement.lang === 'en';
-  // Each step holds until its last beat has been on screen for several seconds.
-  const BEAT = [0, 4, 8.5, 13.5, 18.5, 23.5];   // beats past index 2 are used only by step 04
-  const STEP_S = [15, 14, 15, 30, 15];
+  // Each step holds until its last beat has been on screen for a few seconds.
+  const BEAT = [0, 3.2, 6.6, 10, 13.4, 16.8];   // beats past index 2 are used only by step 04
+  const STEP_S = [10, 9, 11, 20, 10];
   const C = { grid: '#17304a', text: '#dbe8f6', dim: '#7f9bb8', gps: '#70b7ff', bds: '#f6c775', acc: '#8affdd', pur: '#bd9aff', earth: '#123a5c' };
 
   let step = 0, playing = !reduced.matches, visible = false, t = 0, T = 0, last = 0;
   // After this long without any interaction, a paused tour resumes playing on its own.
-  const IDLE_MS = 20000;
+  const IDLE_MS = 8000;
   let lastTouch = performance.now();
   let W = 800, H = 500, scale = 1, dpr = 1;
 
@@ -770,12 +770,12 @@
     if (!dragged) { dragged = true; playing = false; labels(); }
     draw();
   });
-  steps.forEach((b, i) => b.addEventListener('click', () => { playing = false; go(i); }));
+  // Picking a step jumps there and the tour carries on from it; only the pause button (or dragging in step 02) stops it.
+  steps.forEach((b, i) => b.addEventListener('click', () => go(i)));
   // Back / next walk beat by beat (crossing into the neighbouring step), so nothing has to be rewatched.
   const BEATS_N = [3, 1, 3, 6, 3];
   const beatNow = () => Math.min(BEATS_N[step] - 1, BEAT.reduce((b, s0, i) => t >= s0 ? i : b, 0));
   function seekBeat(dir) {
-    playing = false;
     let b = beatNow() + dir;
     if (b >= BEATS_N[step]) { go(step + 1); return; }
     if (b < 0) { go(step - 1); b = BEATS_N[step] - 1; }

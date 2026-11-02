@@ -111,3 +111,19 @@ body{overflow-x:clip}
 .hf-bar{flex-wrap:wrap}
 @media(max-width:700px){.hf-bar .sat-legend{order:9;flex:1 0 100%;margin:4px 0 0}}
 figure>.sat-legend{flex-wrap:wrap;max-width:100%}
+
+/* Homepage: where to go next, at the very bottom */
+.home-next{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(64px,8vw,110px) clamp(16px,4vw,40px) clamp(56px,7vw,90px)}
+.hn-kicker{margin:0 0 10px;font:700 13px/1 Orbitron,sans-serif;letter-spacing:3px;color:#d9bf8c}
+.home-next h2{margin:0 0 30px;font:700 clamp(26px,3.2vw,40px)/1.3 'Noto Serif TC',serif;color:#f1f6fb}
+.hn-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:18px}
+.hn-card{display:flex;flex-direction:column;gap:12px;padding:26px 24px;border:1px solid #2f5577;background:linear-gradient(160deg,#0f2338e6,#08131fe6);color:#dbe8f6;text-decoration:none;transition:border-color .25s,transform .25s}
+.hn-card:hover,.hn-card:focus-visible{border-color:#8affdd;transform:translateY(-3px)}
+.hn-card--main{border-color:#8affdd88;box-shadow:inset 0 2px 0 #8affdd}
+.hn-k{font:700 13px/1.2 'Noto Sans TC',sans-serif;letter-spacing:1px;color:#8affdd}
+.hn-card strong{font:700 clamp(19px,1.8vw,23px)/1.45 'Noto Serif TC',serif;color:#fff}
+.hn-card em{margin-top:auto;font-style:normal;font-weight:700;font-size:15.5px;color:#d9bf8c}
+.hn-flow{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px;padding:0;list-style:none}
+.hn-flow li{display:flex;align-items:baseline;gap:6px;padding:7px 11px;border:1px solid #2f5577;background:#0b1b2c;font-size:14.5px;color:#c1d1e2}
+.hn-flow b{font:700 13px Orbitron,sans-serif;color:#8affdd}
+@media (max-width:900px){.hn-grid{grid-template-columns:1fr}}

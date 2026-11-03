@@ -1432,3 +1432,13 @@ html[lang=en] main :is(h2,h3){line-height:1.25!important}
 .po-hero-tech:hover,.po-hero-tech:focus-visible{border-color:var(--gold);background:linear-gradient(120deg,#d9bf8c33,#d9bf8c12);transform:translateY(-2px)}
 .po-hero-tech:hover i,.po-hero-tech:focus-visible i{transform:translateX(6px)}
 @media(prefers-reduced-motion:reduce){.po-hero-cue i{animation:none}}
+/* Quieter: two text links in the same voice as the page, an underline that grows and an arrow that leans forward. */
+.po-hero-links{gap:12px 40px}
+.po-hero-cue,.po-hero-tech{position:relative;display:inline-flex;align-items:center;gap:10px;padding:6px 0;border:0;border-radius:0;background:none;font-size:clamp(17px,1.35vw,19px);font-weight:600;letter-spacing:.5px;text-decoration:none;transform:none}
+.po-hero-cue{color:var(--mint)}
+.po-hero-tech{color:var(--gold)}
+.po-hero-cue i{width:auto;height:auto;border:0;border-radius:0;background:none;box-shadow:none;font-size:19px;animation:po-bob 1.8s ease-in-out infinite}
+.po-hero-tech i{font-size:19px}
+.po-hero-cue::after,.po-hero-tech::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;opacity:.45;transform-origin:left;transform:scaleX(.35);transition:transform .35s ease,opacity .35s}
+.po-hero-cue:hover,.po-hero-cue:focus-visible,.po-hero-tech:hover,.po-hero-tech:focus-visible{background:none;border:0;transform:none}
+.po-hero-cue:hover::after,.po-hero-cue:focus-visible::after,.po-hero-tech:hover::after,.po-hero-tech:focus-visible::after{transform:scaleX(1);opacity:.9}

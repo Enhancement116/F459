@@ -1360,3 +1360,7 @@ html.pcn-locked{overflow:hidden}
 @media(max-width:1100px){.po-test2--4{grid-template-columns:repeat(2,minmax(0,1fr))}.po-test2--4 li:nth-child(2)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-24px;transform:translateX(-50%)}}
 #test .po-viz{margin-top:clamp(28px,3vw,40px)}
 #next .po-next{margin-top:clamp(36px,4vw,56px)}
+/* 03 points to the technical page once, after the six steps. */
+.po .po-more-tech{margin:22px 0 0;font-size:17px}
+.po-more-tech a{color:var(--gold);text-decoration:none}
+.po-more-tech a:hover,.po-more-tech a:focus-visible{text-decoration:underline}

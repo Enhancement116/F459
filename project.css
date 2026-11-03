@@ -1373,3 +1373,5 @@ html.pcn-locked{overflow:hidden}
 .po-six--3 li{grid-template-rows:auto auto 1fr}
 @media(max-width:900px){.po-six--3{grid-template-columns:1fr}}
 #test .po-report{margin-top:8px}
+/* The opening line is a full sentence: keep it on two lines. */
+.po-hero h1{font-size:clamp(30px,3.3vw,48px)}

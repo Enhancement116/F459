@@ -1369,3 +1369,7 @@ html.pcn-locked{overflow:hidden}
 /* 04: what the chip checks, why, and how GeoTrust gets it right. */
 .po-vs--chk .pvs-row{grid-template-columns:minmax(120px,.7fr) minmax(0,1fr) minmax(0,1.1fr)}
 @media(max-width:700px){.po-vs--chk .pvs-row{grid-template-columns:1fr}.po-vs--chk .pvs-hd{display:none}}
+.po-six--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.po-six--3 li{grid-template-rows:auto auto 1fr}
+@media(max-width:900px){.po-six--3{grid-template-columns:1fr}}
+#test .po-report{margin-top:8px}

@@ -1418,3 +1418,6 @@ html[lang=en] .po-hero:has(.po-hero-real) h1{line-height:1.18}
 /* English runs longer than Chinese; Latin text reads well with tighter leading, which brings both languages to about the same length without padding either. */
 html[lang=en] main :is(p,li,dd,dt,figcaption,small,.po-ch-lead){line-height:1.6!important}
 html[lang=en] main :is(h2,h3){line-height:1.25!important}
+/* Less empty space between one chapter and the next. */
+.po .po-sec.po-ch{padding-top:clamp(36px,4vw,56px)}
+.po .po-bridge-next{margin-top:clamp(28px,3vw,40px)}

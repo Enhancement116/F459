@@ -1411,3 +1411,7 @@ a.pspl:hover,a.pspl:focus-visible{border-color:var(--gold)}
 html[lang=en] .po-hero:has(.po-hero-real) h1{line-height:1.18}
 .po-hero:has(.po-hero-real) .po-hero-tag{font-size:clamp(18px,1.6vw,22px)}
 .po-hero-real figcaption{order:0;margin-bottom:0}
+/* The globe and its GPS/BeiDou legend share one box; the legend sits inside it, bottom left. */
+.po-globe{position:relative;flex:1 1 0;min-height:440px}
+.po-hero-real .po-globe canvas{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none}
+.po-globe .sat-legend{position:absolute;left:12px;bottom:10px;margin:0}

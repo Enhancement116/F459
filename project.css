@@ -1382,3 +1382,14 @@ html.pcn-locked{overflow:hidden}
 .po-hero-tech:hover,.po-hero-tech:focus-visible{border-bottom-color:var(--gold)}
 .po-hero-copy .po-hero-links{margin-top:clamp(12px,2vw,28px)}
 .po-next--tech{margin-top:clamp(24px,3vw,36px)}
+/* Which page answers which question: the technical page and the GNSS primer, side by side. */
+.po-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:clamp(14px,2vw,22px) 0 4px}
+.pspl{display:grid;align-content:start;gap:6px;padding:16px 18px;border:1px solid #2a4c6d;border-radius:12px;background:#0a1828;color:var(--body);text-decoration:none}
+.pspl.is-here{border-color:#8affdd88;background:linear-gradient(160deg,#8affdd12,#0a1828)}
+.pspl-k{font:600 13px/1.2 Orbitron,"Noto Sans TC",sans-serif;letter-spacing:1.5px;color:var(--gold)}
+.pspl.is-here .pspl-k{color:var(--mint)}
+.pspl h3{margin:0;font-size:clamp(18px,1.5vw,20px);color:var(--ink)}
+.pspl p{margin:0;font-size:15.5px;line-height:1.75}
+.pspl em{font-style:normal;font-size:15px;color:var(--gold)}
+a.pspl:hover,a.pspl:focus-visible{border-color:var(--gold)}
+@media(max-width:700px){.po-split{grid-template-columns:1fr}}

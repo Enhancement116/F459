@@ -1364,3 +1364,5 @@ html.pcn-locked{overflow:hidden}
 .po .po-more-tech{margin:22px 0 0;font-size:17px}
 .po-more-tech a{color:var(--gold);text-decoration:none}
 .po-more-tech a:hover,.po-more-tech a:focus-visible{text-decoration:underline}
+.po-cards--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){.po-cards--2{grid-template-columns:1fr}}

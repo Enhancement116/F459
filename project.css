@@ -1421,3 +1421,14 @@ html[lang=en] main :is(h2,h3){line-height:1.25!important}
 /* Less empty space between one chapter and the next. */
 .po .po-sec.po-ch{padding-top:clamp(36px,4vw,56px)}
 .po .po-bridge-next{margin-top:clamp(28px,3vw,40px)}
+/* The two ways forward from the opening are large and alive, not footnotes. */
+.po-hero-links{gap:16px 20px;margin-top:clamp(18px,2.4vw,32px)!important}
+.po-hero-cue{gap:14px;padding:10px 26px 10px 10px;border:1px solid #8affdd55;border-radius:999px;background:#8affdd0f;font-size:clamp(18px,1.5vw,20px);font-weight:700;transition:background .25s,border-color .25s,transform .25s}
+.po-hero-cue i{width:48px;height:48px;font-size:22px;border-color:#8affdd99;background:#8affdd1a;box-shadow:0 0 0 0 #8affdd55;animation:po-bob 1.6s ease-in-out infinite,po-ring 2.4s ease-out infinite}
+.po-hero-cue:hover,.po-hero-cue:focus-visible{background:#8affdd1f;border-color:var(--mint);transform:translateY(-2px)}
+@keyframes po-ring{0%{box-shadow:0 0 0 0 #8affdd55}100%{box-shadow:0 0 0 14px #8affdd00}}
+.po-hero-tech{display:inline-flex;align-items:center;gap:12px;padding:20px 28px;border:1px solid #d9bf8c88;border-radius:999px;background:linear-gradient(120deg,#d9bf8c1f,#d9bf8c08);font-size:clamp(18px,1.5vw,20px);font-weight:700;color:var(--gold);text-decoration:none;transition:background .25s,border-color .25s,transform .25s}
+.po-hero-tech i{font-style:normal;font-size:22px;transition:transform .25s}
+.po-hero-tech:hover,.po-hero-tech:focus-visible{border-color:var(--gold);background:linear-gradient(120deg,#d9bf8c33,#d9bf8c12);transform:translateY(-2px)}
+.po-hero-tech:hover i,.po-hero-tech:focus-visible i{transform:translateX(6px)}
+@media(prefers-reduced-motion:reduce){.po-hero-cue i{animation:none}}

@@ -1393,3 +1393,11 @@ html.pcn-locked{overflow:hidden}
 .pspl em{font-style:normal;font-size:15px;color:var(--gold)}
 a.pspl:hover,a.pspl:focus-visible{border-color:var(--gold)}
 @media(max-width:700px){.po-split{grid-template-columns:1fr}}
+.pspl-k i{margin-left:8px;padding:2px 8px;border-radius:10px;background:#8affdd22;font-style:normal;font-size:12px;letter-spacing:.5px;color:var(--mint)}
+.pspl.is-here .pspl-k{color:var(--gold)}
+/* Both cards share one style and one height; only the tag and the last line tell them apart. */
+.po-split{align-items:stretch}
+.pspl,.pspl.is-here{grid-template-rows:auto auto 1fr auto;height:100%;border-color:#2a4c6d;background:#0a1828}
+.pspl .pspl-k,.pspl.is-here .pspl-k{color:var(--gold)}
+.pspl.is-here em{color:#7f9bb8}
+.po-split--wide{margin:clamp(20px,3vw,32px) 0 0}

@@ -1318,3 +1318,10 @@ html.pcn-locked{overflow:hidden}
 @media(max-width:860px){.po-test2{grid-template-columns:1fr}.po-test2 li:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-24px;transform:translateX(-50%)}}
 #validation .po-sub{margin-top:clamp(40px,5vw,64px)}
 #boundaries .po-next2{margin-top:clamp(40px,5vw,64px)}
+
+/* v4 opening: one question, no spoilers; the figure beside it already shows where the answer comes from. */
+.po-hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(40px,4.8vw,68px);line-height:1.25}
+.po-hero-cue{display:inline-flex;align-items:center;gap:12px;margin-top:clamp(12px,2vw,28px);width:max-content;font-size:17px;color:var(--mint);text-decoration:none}
+.po-hero-cue i{display:grid;place-items:center;width:44px;height:44px;border:1px solid #8affdd66;border-radius:50%;font-style:normal;font-size:20px;animation:po-bob 1.6s ease-in-out infinite}
+.po-hero-cue:hover i,.po-hero-cue:focus-visible i{background:#8affdd1f}
+@media(max-width:560px){.po-hero h1{font-size:clamp(28px,8.6vw,36px);line-height:1.3}}

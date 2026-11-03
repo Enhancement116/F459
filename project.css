@@ -1331,3 +1331,32 @@ html.pcn-locked{overflow:hidden}
 /* 02 reads as one paragraph after another. */
 .po .po-prose{margin:0 0 1.2em;font-size:clamp(19px,1.6vw,22px);line-height:2;color:var(--ink)}
 .po .po-prose:last-of-type{margin-bottom:clamp(32px,4vw,48px);padding-left:20px;border-left:3px solid var(--gold);font-family:'Noto Serif TC',serif;font-weight:700}
+
+/* ---------- v6: the overview for everyone, the technical page for those who want it ---------- */
+.po-hero--tech{grid-template-columns:1fr!important}
+.po-hero--tech .po-trace{margin-top:8px}
+/* 02: the real satellite and GeoTrust, row by row. */
+.po-vs{display:grid;border:1px solid #2a4c6d;border-radius:12px;overflow:hidden;margin-bottom:8px}
+.pvs-row{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1fr) minmax(0,1fr);gap:16px;padding:16px 22px;border-top:1px solid #1d3a57;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--body)}
+.pvs-row:first-child{border-top:0}
+.pvs-hd{background:#0d2136}
+.pvs-hd b{font-size:18px;color:var(--ink)}
+.pvs-hd b:last-child,.pvs-gt{color:var(--mint)}
+.pvs-k{color:var(--ink);font-weight:700}
+@media(max-width:700px){.pvs-row{grid-template-columns:1fr 1fr;padding:14px 16px}.pvs-k{grid-column:1/-1}.pvs-hd span:first-child{display:none}}
+/* 03: six steps, one line and one number each. */
+.po-six{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.po-six li{display:grid;grid-template-rows:auto auto auto 1fr auto;gap:8px;padding:20px;border:1px solid #2a4c6d;border-radius:12px;background:linear-gradient(160deg,#0d2136,#081522)}
+.po-six b{font-size:24px;line-height:1;color:var(--gold)}
+.po-six h3{margin:4px 0 0;font-size:clamp(20px,1.7vw,23px);color:var(--ink)}
+.po .p6-num{margin:0;font:700 17px/1.3 'JetBrains Mono',Consolas,monospace;color:var(--mint)}
+.po-six p:not(.p6-num){margin:0;font-size:17px;line-height:1.8;color:var(--body)}
+.p6-more{justify-self:start;margin-top:6px;font-size:15px;color:var(--gold);text-decoration:none}
+.p6-more:hover,.p6-more:focus-visible{text-decoration:underline}
+@media(max-width:900px){.po-six{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.po-six{grid-template-columns:1fr}}
+/* 04: four steps in two rows. */
+.po-test2--4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1100px){.po-test2--4{grid-template-columns:repeat(2,minmax(0,1fr))}.po-test2--4 li:nth-child(2)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-24px;transform:translateX(-50%)}}
+#test .po-viz{margin-top:clamp(28px,3vw,40px)}
+#next .po-next{margin-top:clamp(36px,4vw,56px)}

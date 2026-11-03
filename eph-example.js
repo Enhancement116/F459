@@ -26,7 +26,8 @@
       return later.el > now.el && now.el > 15 ? { id, ...now } : null;
     }).filter(Boolean);
   }
-  const base = '../data/';
+  // Resolved from this script's own address, so pages at any depth find the same data folder.
+  const base = new URL('data/', document.currentScript?.src || location.href).href;
   fetch(base + 'latest.json').then(r => r.json()).then(m => fetch(base + m.file).then(r => r.json())).then(data => {
     const g = candidates(data, 'G').sort((a, b) => Math.abs(a.el - 45) - Math.abs(b.el - 45))[0];
     const c = candidates(data, 'C', ['MEO']).sort((a, b) => Math.abs(a.el - 60) - Math.abs(b.el - 60))[0];

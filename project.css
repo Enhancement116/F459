@@ -1325,3 +1325,5 @@ html.pcn-locked{overflow:hidden}
 .po-hero-cue i{display:grid;place-items:center;width:44px;height:44px;border:1px solid #8affdd66;border-radius:50%;font-style:normal;font-size:20px;animation:po-bob 1.6s ease-in-out infinite}
 .po-hero-cue:hover i,.po-hero-cue:focus-visible i{background:#8affdd1f}
 @media(max-width:560px){.po-hero h1{font-size:clamp(28px,8.6vw,36px);line-height:1.3}}
+/* Chapter subtitles run the full width of the content below them. */
+.po-ch-lead{max-width:none}

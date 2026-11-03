@@ -1375,3 +1375,10 @@ html.pcn-locked{overflow:hidden}
 #test .po-report{margin-top:8px}
 /* The opening line is a full sentence: keep it on two lines. */
 .po-hero h1{font-size:clamp(30px,3.3vw,48px)}
+/* The way to the technical page sits beside the opening cue and as a button in 04. */
+.po-hero-links{display:flex;flex-wrap:wrap;align-items:center;gap:14px 28px}
+.po-hero-links .po-hero-cue{margin-top:0}
+.po-hero-tech{font-size:17px;color:var(--gold);text-decoration:none;border-bottom:1px solid #d9bf8c66;padding-bottom:2px}
+.po-hero-tech:hover,.po-hero-tech:focus-visible{border-bottom-color:var(--gold)}
+.po-hero-copy .po-hero-links{margin-top:clamp(12px,2vw,28px)}
+.po-next--tech{margin-top:clamp(24px,3vw,36px)}

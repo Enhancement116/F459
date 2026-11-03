@@ -73,7 +73,7 @@
   function draw(now) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    if (earth) ctx.drawImage(earth, 0, 0, W, H);
+    if (earth && earth.width && earth.height) ctx.drawImage(earth, 0, 0, W, H);
     const nk = project(SITE);
     // Real satellites above NKUST now (simulated clock runs 120× on the ephemeris day).
     const t = (t0 + (reduced ? 0 : (now / 1000) * 120)) % 86400;

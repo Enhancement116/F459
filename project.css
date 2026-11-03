@@ -1270,3 +1270,51 @@ html.pcn-locked{overflow:hidden}
 .tm-site-card{display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;padding:20px;border:1px solid #d9bf8c55;background:linear-gradient(160deg,#d9bf8c14,#0a1828 60%)}
 .tm-site-card p:last-child{margin:0;font-size:16.5px;color:var(--ink)}
 @media(max-width:700px){.tm-aff2{grid-template-columns:1fr}.tm-flow{grid-template-columns:1fr}.tm-stage:last-child .tm-people{grid-template-columns:1fr}.tm-site-row{grid-template-columns:1fr}.tm-logo-img{height:120px}}
+
+/* ---------- v4: one story told through the signal ---------- */
+/* Chapter titles are the point of the chapter: short, large, set in the serif face; the subtitle carries the detail. */
+.po .po-ch-head h2{font-family:'Noto Serif TC',serif;font-size:clamp(40px,5.4vw,76px);line-height:1.12;letter-spacing:1px;font-weight:700;background:linear-gradient(100deg,#f3f8ff 30%,#bfe9dc 70%,#d9bf8c);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 12px #07101e)}
+.po-ch-kicker{letter-spacing:2.5px}
+.po-hero-tag{font-family:'Noto Serif TC',serif}
+
+/* 01: four beats down a single thread. */
+.po-story{list-style:none;margin:0 0 clamp(36px,4vw,56px);padding:0;position:relative}
+.po-story::before{content:"";position:absolute;left:27px;top:12px;bottom:12px;width:1px;background:linear-gradient(#8affdd,#70b7ff 60%,#d9bf8c)}
+.po-story li{display:grid;grid-template-columns:56px minmax(110px,170px) minmax(0,1fr);gap:8px 26px;align-items:start;padding:22px 0;border-bottom:1px solid #18324d}
+.po-story li:last-child{border-bottom:0}
+.pst-n{position:relative;z-index:1;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#071321;border:1px solid #3d6a91;font:700 16px/1 Orbitron,sans-serif;color:var(--mint)}
+.po .pst-big{margin:6px 0 0;font:700 clamp(26px,2.6vw,34px)/1.2 'Noto Serif TC',serif;color:var(--gold)}
+.po-story h3{margin:4px 0 8px;font-size:clamp(20px,1.8vw,24px);color:var(--ink)}
+.po-story p:not(.pst-big){margin:0;font-size:clamp(17px,1.35vw,19px);line-height:1.9;color:var(--body)}
+.po .po-term{margin:18px 0 0;padding:12px 16px;border:1px solid #23435f;border-radius:8px;background:#0a1828;font-size:16px;line-height:1.8;color:var(--dim,#9db3c9)}
+.po .po-thesis{margin:clamp(32px,4vw,52px) 0 0;padding:6px 0 6px 24px;border-left:3px solid var(--gold);font:700 clamp(22px,2.3vw,30px)/1.6 'Noto Serif TC',serif;color:var(--ink)}
+@media(max-width:700px){
+  .po-story::before{left:21px}
+  .po-story li{grid-template-columns:44px minmax(0,1fr);gap:4px 16px}
+  .pst-n{width:44px;height:44px;font-size:14px}
+  .po .pst-big{grid-column:2;margin:0}
+  .po-story li>div{grid-column:2}
+}
+
+/* 02: the four things, each a door to its chapter. */
+.po-four{list-style:none;margin:22px 0 clamp(36px,4vw,56px);padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.po-four a{display:grid;gap:10px;height:100%;padding:18px 18px 16px;border:1px solid #2a4c6d;border-radius:12px;background:linear-gradient(160deg,#0d2136,#081522);text-decoration:none;color:var(--ink);transition:border-color .2s,transform .2s}
+.po-four a:hover,.po-four a:focus-visible{border-color:var(--gold);transform:translateY(-2px)}
+.po-four b{font-size:26px;line-height:1;color:var(--gold)}
+.po-four strong{font-size:clamp(18px,1.5vw,21px);line-height:1.4}
+.po-four span{font-size:15px;color:var(--mint)}
+.po-four span i{font:700 14px Orbitron,sans-serif;font-style:normal;margin-right:6px}
+.po-four span em{font-style:normal}
+@media(max-width:860px){.po-four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 09: believe first, then change the conditions. */
+.po-test2{list-style:none;margin:0 0 8px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;counter-reset:t}
+.po-test2 li{position:relative;padding:22px 22px 20px;border:1px solid #2a4c6d;border-radius:12px;background:#0a1828}
+.po-test2 li:not(:last-child)::after{content:"→";position:absolute;right:-17px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--gold)}
+.po-test2 b{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);font:700 15px Orbitron,sans-serif;color:var(--gold)}
+.po-test2 h3{margin:14px 0 10px;font-size:clamp(19px,1.6vw,22px);color:var(--ink)}
+.po-test2 p{margin:0;font-size:17px;line-height:1.85;color:var(--body)}
+.po-test2 li:last-child{border-color:#d9bf8c88;background:linear-gradient(160deg,#d9bf8c12,#0a1828)}
+@media(max-width:860px){.po-test2{grid-template-columns:1fr}.po-test2 li:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-24px;transform:translateX(-50%)}}
+#validation .po-sub{margin-top:clamp(40px,5vw,64px)}
+#boundaries .po-next2{margin-top:clamp(40px,5vw,64px)}

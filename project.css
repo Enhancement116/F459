@@ -1461,3 +1461,11 @@ html[lang=en] main :is(h2,h3){line-height:1.25!important}
 .po-hero-cue i{font-size:16px;animation:none}
 .po-hero-cue::after{display:none}
 .po-hero-cue:hover,.po-hero-cue:focus-visible{color:var(--mint)}
+/* Reading on is the main action; Technical details is the quiet secondary link. */
+.po-hero-cue{gap:12px;padding:14px 26px;border:1px solid #8affdd99;border-radius:10px;background:#8affdd14;color:var(--mint);font-size:clamp(17px,1.4vw,19px);font-weight:700;letter-spacing:.5px;transition:box-shadow .3s,background .3s,border-color .3s}
+.po-hero-cue i{font-size:19px;animation:po-bob 1.8s ease-in-out infinite}
+.po-hero-cue:hover,.po-hero-cue:focus-visible{color:var(--mint);border-color:var(--mint);background:#8affdd24;box-shadow:0 0 18px #8affdd44,inset 0 0 12px #8affdd1a}
+.po-hero-tech{gap:8px;padding:4px 0;border:0;border-radius:0;background:none;color:#8ea6bf;font-size:16px;font-weight:500;letter-spacing:0;box-shadow:none}
+.po-hero-tech i{font-size:16px}
+.po-hero-tech:hover,.po-hero-tech:focus-visible{color:var(--mint);border:0;background:none;box-shadow:none}
+@media(prefers-reduced-motion:reduce){.po-hero-cue i{animation:none}}

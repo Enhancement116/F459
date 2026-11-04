@@ -127,3 +127,23 @@ figure>.sat-legend{flex-wrap:wrap;max-width:100%}
 .hn-flow li{display:flex;align-items:baseline;gap:6px;padding:7px 11px;border:1px solid #2f5577;background:#0b1b2c;font-size:14.5px;color:#c1d1e2}
 .hn-flow b{font:700 13px Orbitron,sans-serif;color:#8affdd}
 @media (max-width:900px){.hn-grid{grid-template-columns:1fr}}
+/* Satellite cursor (fx-cursor.js): a precise dot on the pointer, a lagging wireframe satellite, a short trail, lock-on. */
+html.sat-cursor-on,html.sat-cursor-on *{cursor:none!important}
+.sat-cursor{position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:0;transition:opacity .2s}
+.sat-cursor.is-on{opacity:1}
+.sat-cursor .sc-dot{position:fixed;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#8affdd;box-shadow:0 0 8px #8affdd}
+.sat-cursor .sc-sat{position:fixed;left:-10px;top:-10px;width:20px;height:20px;color:#8affdd;transition:filter .2s}
+.sat-cursor .sc-sat svg{display:block;width:100%;height:100%;transition:transform .25s}
+.sat-cursor .sc-sat b{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border:1px solid #8affdd;border-radius:50%;opacity:0}
+.sat-cursor .sc-trail{position:fixed;left:-1.5px;top:-1.5px;width:3px;height:3px;border-radius:50%;background:#8affdd;opacity:.55;animation:sc-fade .5s linear forwards}
+@keyframes sc-fade{to{opacity:0}}
+.sat-cursor .sc-tag{position:fixed;left:0;top:0;font:600 10.5px/1 'JetBrains Mono',Consolas,monospace;font-style:normal;letter-spacing:.5px;color:#8affdd;white-space:nowrap;opacity:0;transition:opacity .2s}
+.sat-cursor.is-locked .sc-tag{opacity:.9}
+.sat-cursor.is-locked .sc-sat{filter:drop-shadow(0 0 6px #8affdd)}
+.sat-cursor.is-locked .sc-sat svg{transform:scale(1.25)}
+.sat-cursor.is-locked .sc-sat b{animation:sc-wave 1s ease-out infinite}
+@keyframes sc-wave{0%{transform:scale(1);opacity:.8}100%{transform:scale(4);opacity:0}}
+.sat-cursor .sc-burst{position:fixed;width:10px;height:10px;margin:-5px 0 0 -5px;border:1.5px solid #8affdd;border-radius:50%;box-shadow:0 0 10px #8affdd;animation:sc-burst .55s ease-out forwards}
+@keyframes sc-burst{to{transform:scale(5);opacity:0}}
+html.egg-spoof .sat-cursor .sc-dot,html.egg-spoof .sat-cursor .sc-trail{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}
+html.egg-spoof .sat-cursor .sc-sat,html.egg-spoof .sat-cursor .sc-tag{color:#ff6b6b}

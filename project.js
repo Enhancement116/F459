@@ -972,3 +972,58 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
   render();
   document.addEventListener('languagechange', () => setTimeout(render, 30));
 })();
+
+// ---------- Overview 05: signal hijack. A device follows its planned route; a spoofing signal keys up, and the position
+// the device believes in swings, settles, then is pulled smoothly onto a diverging path. Illustration only: no measured data.
+(() => {
+  const { scene } = window.GTScene || {};
+  if (!scene || !document.getElementById('po-hijack-cv')) return;
+  const CYC = 13, HIT = 4.2;
+  let lastT = 0, t0 = 0;
+  const btn = document.getElementById('po-hijack-btn');
+  if (btn) btn.addEventListener('click', () => { t0 = lastT - HIT + 0.05; });
+  const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+  scene('po-hijack-cv', (g, t, en) => {
+    const { ctx, W, H, n } = g;
+    lastT = t;
+    const p = ((t - t0) % CYC + CYC) % CYC, u = p / CYC;
+    const x0 = W * 0.08, x1 = W * 0.92;
+    const route = v => [x0 + (x1 - x0) * v, H * 0.46 + Math.sin(v * Math.PI * 1.4) * H * 0.12];
+    const vHit = HIT / CYC;
+    const fake = v => { const [x, y] = route(v), d = ease((v - vHit) / (1 - vHit)); return [x - d * W * 0.06, y + d * H * (n ? 0.3 : 0.34)]; };
+    // Planned route (green, dashed) and the path the device is led onto (red), shown faintly ahead of time.
+    ctx.setLineDash([8, 7]); ctx.lineWidth = 2; ctx.strokeStyle = '#8affdd99'; ctx.beginPath();
+    for (let i = 0; i <= 80; i++) { const [x, y] = route(i / 80); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = '#ff8f8f33'; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i <= 80; i++) { const v = vHit + (1 - vHit) * i / 80, [x, y] = fake(v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+    g.txt(en ? 'planned route' : '原定航線', route(0.9)[0], route(0.9)[1] - 22, { size: 13, color: '#8affdd', align: 'center', weight: 700 });
+    g.txt(en ? 'path it is led onto' : '被帶往的偏航路徑', fake(0.92)[0], fake(0.92)[1] + 24, { size: 13, color: '#ff8f8f', align: 'center', weight: 700 });
+    // The spoofer: an antenna below the route, sending out arcs once it keys up.
+    const ax = route(vHit)[0] + W * 0.04, ay = H * 0.86;
+    g.line(ax, ay, ax, ay - 26, '#ff8f8f', 2); g.line(ax - 10, ay, ax, ay - 26, '#ff8f8f', 1.5); g.line(ax + 10, ay, ax, ay - 26, '#ff8f8f', 1.5);
+    g.txt(en ? 'spoofing signal' : '欺騙訊號', ax + 16, ay - 10, { size: 12.5, color: '#ff8f8f', weight: 700 });
+    const since = p - HIT;
+    if (since > 0 && since < 2.4) for (let k = 0; k < 3; k++) {
+      const s = since - k * 0.35; if (s < 0) continue;
+      ctx.globalAlpha = Math.max(0, 1 - s / 1.6); ctx.strokeStyle = '#ff8f8f'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(ax, ay - 26, 12 + s * 120, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    // The position the device believes in: on the route, then a damped swing, then pulled onto the diverging path.
+    const believed = v => {
+      const tt = v * CYC - HIT;
+      if (tt <= 0) return route(v);
+      const [rx, ry] = route(v), [fx, fy] = fake(v), k = ease(tt / 2.2), wob = Math.exp(-tt * 1.1) * Math.sin(tt * 7) * H * 0.05;
+      return [rx + (fx - rx) * k, ry + (fy - ry) * k + wob];
+    };
+    ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let i = 0; i <= 60; i++) { const v = u * i / 60, [x, y] = believed(v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = p > HIT ? '#ff8f8f' : '#8affdd'; ctx.stroke();
+    if (p > HIT) { const [gx, gy] = route(u); g.dot(gx, gy, 4, '#8affdd55'); }
+    const [bx, by] = believed(u);
+    g.dot(bx, by, 6, p > HIT ? '#ff8f8f' : '#8affdd', 14);
+    // Status line.
+    const hit = p > HIT;
+    g.txt(hit ? (en ? '● Following the fake signal' : '● 已被假訊號牽引') : (en ? '● Positioning on real satellites' : '● 跟著真實衛星正常定位'), 18, 24, { size: 14, color: hit ? '#ff8f8f' : '#8affdd', weight: 700 });
+    if (hit) g.txt(en ? 'faint dot: where it should be' : '淡色點：原本應在的位置', 18, 46, { size: 12, color: '#7f9bb8' });
+  }, { h: 360, nh: 420 });
+})();

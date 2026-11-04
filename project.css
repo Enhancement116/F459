@@ -1442,3 +1442,11 @@ html[lang=en] main :is(h2,h3){line-height:1.25!important}
 .po-hero-cue::after,.po-hero-tech::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;opacity:.45;transform-origin:left;transform:scaleX(.35);transition:transform .35s ease,opacity .35s}
 .po-hero-cue:hover,.po-hero-cue:focus-visible,.po-hero-tech:hover,.po-hero-tech:focus-visible{background:none;border:0;transform:none}
 .po-hero-cue:hover::after,.po-hero-cue:focus-visible::after,.po-hero-tech:hover::after,.po-hero-tech:focus-visible::after{transform:scaleX(1);opacity:.9}
+/* The opening text sits centred against the globe, so no empty block is left under it. */
+.po-hero:has(.po-hero-real) .po-hero-copy{align-content:center;padding-top:0}
+/* Read on leads; Technical details follows, smaller. */
+.po-hero-cue{font-size:clamp(20px,1.8vw,24px);font-weight:700;gap:12px}
+.po-hero-cue i{font-size:26px}
+.po-hero-tech{font-size:15px;font-weight:500;opacity:.9}
+.po-hero-tech i{font-size:15px}
+.po-hero-links{align-items:baseline}

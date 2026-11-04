@@ -127,23 +127,6 @@ figure>.sat-legend{flex-wrap:wrap;max-width:100%}
 .hn-flow li{display:flex;align-items:baseline;gap:6px;padding:7px 11px;border:1px solid #2f5577;background:#0b1b2c;font-size:14.5px;color:#c1d1e2}
 .hn-flow b{font:700 13px Orbitron,sans-serif;color:#8affdd}
 @media (max-width:900px){.hn-grid{grid-template-columns:1fr}}
-/* Satellite cursor (fx-cursor.js): a precise dot on the pointer, a lagging wireframe satellite, a short trail, lock-on. */
-html.sat-cursor-on,html.sat-cursor-on *{cursor:none!important}
-.sat-cursor{position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:0;transition:opacity .2s}
-.sat-cursor.is-on{opacity:1}
-.sat-cursor .sc-dot{position:fixed;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#8affdd;box-shadow:0 0 8px #8affdd}
-.sat-cursor .sc-sat{position:fixed;left:-10px;top:-10px;width:20px;height:20px;color:#8affdd;transition:filter .2s}
-.sat-cursor .sc-sat svg{display:block;width:100%;height:100%;transition:transform .25s}
-.sat-cursor .sc-sat b{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border:1px solid #8affdd;border-radius:50%;opacity:0}
-.sat-cursor .sc-trail{position:fixed;left:-1.5px;top:-1.5px;width:3px;height:3px;border-radius:50%;background:#8affdd;opacity:.55;animation:sc-fade .5s linear forwards}
-@keyframes sc-fade{to{opacity:0}}
-.sat-cursor .sc-tag{position:fixed;left:0;top:0;font:600 10.5px/1 'JetBrains Mono',Consolas,monospace;font-style:normal;letter-spacing:.5px;color:#8affdd;white-space:nowrap;opacity:0;transition:opacity .2s}
-.sat-cursor.is-locked .sc-tag{opacity:.9}
-.sat-cursor.is-locked .sc-sat{filter:drop-shadow(0 0 6px #8affdd)}
-.sat-cursor.is-locked .sc-sat svg{transform:scale(1.25)}
-.sat-cursor.is-locked .sc-sat b{animation:sc-wave 1s ease-out infinite}
-@keyframes sc-wave{0%{transform:scale(1);opacity:.8}100%{transform:scale(4);opacity:0}}
-.sat-cursor .sc-burst{position:fixed;width:10px;height:10px;margin:-5px 0 0 -5px;border:1.5px solid #8affdd;border-radius:50%;box-shadow:0 0 10px #8affdd;animation:sc-burst .55s ease-out forwards}
-@keyframes sc-burst{to{transform:scale(5);opacity:0}}
-html.egg-spoof .sat-cursor .sc-dot,html.egg-spoof .sat-cursor .sc-trail{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}
-html.egg-spoof .sat-cursor .sc-sat,html.egg-spoof .sat-cursor .sc-tag{color:#ff6b6b}
+
+/* The homepage globe's satellite cursor, everywhere: the plain satellite as the pointer, the ringed one over anything clickable. */
+@media (hover:hover) and (pointer:fine){html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Cg transform=%22rotate%28-30 16 16%29%22 stroke=%22%2306101e%22 stroke-width=%221%22%3E%3Crect x=%222%22 y=%2213%22 width=%229%22 height=%226%22 fill=%22%2370b7ff%22/%3E%3Crect x=%2221%22 y=%2213%22 width=%229%22 height=%226%22 fill=%22%2370b7ff%22/%3E%3Crect x=%2211%22 y=%2211.5%22 width=%2210%22 height=%229%22 rx=%221.5%22 fill=%22%23e6fff8%22/%3E%3Cline x1=%2216%22 y1=%2211.5%22 x2=%2216%22 y2=%227%22 stroke=%22%238affdd%22 stroke-width=%221.6%22/%3E%3C/g%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%221.6%22 fill=%22%2306101e%22/%3E%3C/svg%3E") 16 16,auto}a,button,summary,label,select,[role="button"],.pspl{cursor:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2213%22 fill=%22none%22 stroke=%22%238affdd%22 stroke-opacity=%22.55%22 stroke-width=%221.5%22/%3E%3Cg transform=%22rotate%28-30 16 16%29%22 stroke=%22%2306101e%22 stroke-width=%221%22%3E%3Crect x=%222%22 y=%2213%22 width=%229%22 height=%226%22 fill=%22%2370b7ff%22/%3E%3Crect x=%2221%22 y=%2213%22 width=%229%22 height=%226%22 fill=%22%2370b7ff%22/%3E%3Crect x=%2211%22 y=%2211.5%22 width=%2210%22 height=%229%22 rx=%221.5%22 fill=%22%23e6fff8%22/%3E%3Cline x1=%2216%22 y1=%2211.5%22 x2=%2216%22 y2=%227%22 stroke=%22%238affdd%22 stroke-width=%221.6%22/%3E%3C/g%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%221.6%22 fill=%22%2306101e%22/%3E%3C/svg%3E") 16 16,pointer}input[type=text],input[type=search],textarea{cursor:text}}

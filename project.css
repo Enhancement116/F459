@@ -1469,3 +1469,37 @@ html[lang=en] main :is(h2,h3){line-height:1.25!important}
 .po-hero-tech i{font-size:16px}
 .po-hero-tech:hover,.po-hero-tech:focus-visible{color:var(--mint);border:0;background:none;box-shadow:none}
 @media(prefers-reduced-motion:reduce){.po-hero-cue i{animation:none}}
+
+/* ---------- Overview extras (fx-eggs.js) ---------- */
+/* Radar sweep: a card is uncovered top to bottom behind a bright scan line. */
+.egg-scan{clip-path:inset(0 0 100% 0)}
+.egg-scan.egg-scanned{animation:egg-reveal .9s cubic-bezier(.3,.7,.2,1) var(--egg-d,0ms) forwards}
+.egg-scan::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;z-index:3;pointer-events:none;background:linear-gradient(90deg,transparent,#8affdd,transparent);box-shadow:0 0 14px #8affdd;opacity:0}
+.egg-scan.egg-scanned::before{animation:egg-line .9s cubic-bezier(.3,.7,.2,1) var(--egg-d,0ms) forwards}
+.po-six li,.po-test2 li{position:relative}
+@keyframes egg-reveal{to{clip-path:inset(0 0 0 0)}}
+@keyframes egg-line{0%{top:0;opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+/* RF pulse rings where empty space is clicked. */
+.egg-pulse{position:fixed;z-index:60;width:0;height:0;pointer-events:none}
+.egg-pulse i{position:absolute;left:-6px;top:-6px;width:12px;height:12px;border:1.5px solid #8affdd;border-radius:50%;opacity:0;animation:egg-ring 1.2s ease-out forwards}
+.egg-pulse i:nth-child(2){animation-delay:.18s}
+.egg-pulse i:nth-child(3){animation-delay:.36s}
+@keyframes egg-ring{0%{transform:scale(1);opacity:.9}100%{transform:scale(9);opacity:0}}
+/* Spoof mode: the accent turns from mint to warning red and amber, with a terminal line on top. */
+html.egg-spoof .po{--mint:#ff6b6b;--gold:#ffb347}
+html.egg-spoof .egg-pulse i{border-color:#ff6b6b}
+.egg-term{position:fixed;left:0;right:0;top:0;z-index:80;padding:10px 18px;background:#000;border-bottom:1px solid #ff6b6b;color:#5cff8a;font:600 14px/1.5 'JetBrains Mono',Consolas,monospace;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:egg-type .6s steps(40) both}
+@keyframes egg-type{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+html.egg-glitch body{animation:egg-glitch .22s steps(3)}
+@keyframes egg-glitch{0%{filter:none;transform:none}33%{filter:contrast(1.8) hue-rotate(90deg);transform:translateX(-4px) skewX(2deg)}66%{filter:invert(.12) saturate(2);transform:translateX(3px)}100%{filter:none;transform:none}}
+/* Coordinate glitch beside the credit line. */
+.egg-coord{display:block;height:0;overflow:visible;margin-top:-6px;font:500 12.5px/1.4 'JetBrains Mono',Consolas,monospace;color:#5f7f9f;opacity:0;transition:opacity .3s,color .3s}
+.egg-coord.is-on{opacity:.9}
+.egg-coord.is-hit{color:#ff8f8f}
+/* Konami console. */
+.egg-konami{position:fixed;inset:0;z-index:90;display:grid;place-content:center;justify-items:center;gap:14px;padding:24px;background:#020810e6;color:#5cff8a;font-family:'JetBrains Mono',Consolas,monospace;text-align:center}
+.egg-konami pre{margin:0;font-size:15px;line-height:1.35;color:#8affdd;text-align:left}
+.egg-konami p{margin:0;font-size:17px;letter-spacing:.5px}
+.egg-konami a{color:#d9bf8c;font-size:16px}
+.egg-konami button{margin-top:6px;padding:6px 14px;border:1px solid #2f5577;border-radius:6px;background:none;color:#9fb6cc;font:inherit;font-size:14px;cursor:pointer}
+@media(prefers-reduced-motion:reduce){.egg-scan{clip-path:none}.egg-term,html.egg-glitch body{animation:none}}

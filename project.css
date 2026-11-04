@@ -1450,3 +1450,14 @@ html[lang=en] main :is(h2,h3){line-height:1.25!important}
 .po-hero-tech{font-size:15px;font-weight:500;opacity:.9}
 .po-hero-tech i{font-size:15px}
 .po-hero-links{align-items:baseline}
+/* Technical details is the one call to action (it opens another page); reading on is a quiet secondary link. One accent: the mint of the GEOTRUST kicker. */
+.po-hero-links{align-items:center;gap:14px 28px}
+.po-hero-tech{gap:12px;padding:14px 26px;border:1px solid #8affdd99;border-radius:10px;background:#8affdd14;color:var(--mint);font-size:clamp(17px,1.4vw,19px);font-weight:700;opacity:1;letter-spacing:.5px;transition:box-shadow .3s,background .3s,border-color .3s}
+.po-hero-tech i{font-size:19px;transition:transform .3s}
+.po-hero-tech::after{display:none}
+.po-hero-tech:hover,.po-hero-tech:focus-visible{border-color:var(--mint);background:#8affdd24;box-shadow:0 0 18px #8affdd44,inset 0 0 12px #8affdd1a}
+.po-hero-tech:hover i,.po-hero-tech:focus-visible i{transform:translateX(5px)}
+.po-hero-cue{gap:8px;padding:4px 0;color:#8ea6bf;font-size:16px;font-weight:500}
+.po-hero-cue i{font-size:16px;animation:none}
+.po-hero-cue::after{display:none}
+.po-hero-cue:hover,.po-hero-cue:focus-visible{color:var(--mint)}

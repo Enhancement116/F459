@@ -1508,3 +1508,6 @@ html.egg-glitch body{animation:egg-glitch .22s steps(3)}
 #po-hijack-btn{padding:9px 18px;border:1px solid #ff8f8f99;border-radius:8px;background:#ff8f8f14;color:#ffb0b0;font:700 15px/1.2 "Noto Sans TC",sans-serif;transition:box-shadow .25s,background .25s}
 #po-hijack-btn:hover,#po-hijack-btn:focus-visible{background:#ff8f8f26;box-shadow:0 0 16px #ff8f8f44}
 .po-hijack-ctrl small{font-size:13.5px;color:#7f9bb8}
+/* Chapter 05: one sentence on how a device is judged, directly above the animation. */
+.po .po-method{margin:0;font-size:clamp(19px,1.6vw,22px);line-height:1.8;color:var(--ink)}
+#test .po-hijack{margin-top:clamp(20px,2.4vw,28px)}

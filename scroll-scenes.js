@@ -1,10 +1,13 @@
-// Scroll-driven scenes for the System page: pinned chapter openers whose text lights up as you
-// scroll, a chapter word list that highlights in turn, and the rig with its parts rising around it.
+// Scroll-driven scenes for the System page. Each scene is a tall wrapper with a pinned stage inside;
+// its --p custom property runs 0 to 1 while pinned and the CSS builds every effect from that value.
 // Below 1024px or with reduced motion the class stays off and the page reads as a normal document.
 (() => {
   const root = document.documentElement;
   const media = matchMedia('(min-width:1024px) and (prefers-reduced-motion:no-preference)');
+  const calm = matchMedia('(prefers-reduced-motion:reduce)');
   const clamp = v => Math.min(1, Math.max(0, v));
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
   const wrap = (el, cls) => {
     const scene = document.createElement('div');
@@ -13,44 +16,68 @@
     scene.append(el);
     return scene;
   };
+  const wrapAll = (selector, cls) => $$(selector).map(el => wrap(el, cls));
 
-  const chapters = [...document.querySelectorAll('.po-ch-head')].map(head => wrap(head, 'sys-scene--ch'));
-  const rigFigure = document.querySelector('.po-viz.svx');
-  const rig = rigFigure ? wrap(rigFigure, 'sys-scene--rig') : null;
-  const versus = [...document.querySelectorAll('.po-cards--2')].map(cards => wrap(cards, 'sys-scene--vs'));
-  const words = document.querySelector('.sys-words');
-  const scenes = [...chapters, ...versus, rig, words].filter(Boolean);
+  const hero = wrapAll('.po-hero--tech', 'sys-scene--hero');
+  const chapters = wrapAll('.po-ch-head', 'sys-scene--ch');
+  const versus = wrapAll('.po-cards--2', 'sys-scene--vs');
+  const rig = wrapAll('.po-viz.svx', 'sys-scene--rig');
+  const steps = wrapAll('.sys-eng', 'sys-scene--eng');
+  const diagrams = wrapAll('.po-viz:has(>svg)', 'sys-scene--dia');
+  const pair = wrapAll('.sys-pair', 'sys-scene--pair');
+  const route = wrapAll('.sys-duo--side', 'sys-scene--route');
+  const antenna = wrapAll('.sys-duo--plot', 'sys-scene--ant');
 
-  // Split a lead into single characters (whole words in English) so each can light up on its own.
+  // The closing line and its buttons share one pinned stage.
+  const prose = $('.po-prose');
+  const closing = [];
+  if (prose) {
+    const next = prose.nextElementSibling;
+    const stage = document.createElement('div');
+    stage.className = 'sys-end-stage';
+    prose.before(stage);
+    stage.append(prose);
+    if (next) stage.append(next);
+    closing.push(wrap(stage, 'sys-scene--end'));
+  }
+
+  const words = $('.sys-words');
+  const scenes = [...hero, ...chapters, ...versus, ...rig, ...steps, ...diagrams, ...pair, ...route, ...antenna, ...closing, words].filter(Boolean);
+
+  // Text that lights up as the scene is scrolled: a character at a time, or a word at a time in English.
+  const reveals = [
+    ...chapters.map(scene => [scene, $('.po-ch-lead', scene)]),
+    ...diagrams.map(scene => [scene, $('figcaption', scene)]),
+    ...closing.map(scene => [scene, $('.po-prose', scene)]),
+  ].filter(([, el]) => el);
+
   const split = () => {
     const en = root.lang === 'en';
-    chapters.forEach(scene => {
-      const lead = scene.querySelector('.po-ch-lead');
-      if (!lead) return;
-      const text = lead.textContent;
-      lead.setAttribute('aria-label', text);
-      lead.textContent = '';
+    reveals.forEach(([scene, el]) => {
+      const text = el.textContent;
+      el.setAttribute('aria-label', text);
+      el.textContent = '';
       (en ? text.split(/(\s+)/) : [...text]).forEach(part => {
         const s = document.createElement('span');
         s.textContent = part;
         s.setAttribute('aria-hidden', 'true');
-        lead.append(s);
+        el.append(s);
       });
-      scene.chars = [...lead.children];
+      scene.chars = [...el.children];
     });
   };
 
-  // The word list shows one chapter's description and link at a time.
-  const list = words ? [...words.querySelectorAll('li')] : [];
-  const desc = words && words.querySelector('.sys-words-d');
-  const go = words && words.querySelector('.sys-words-go');
-  let active = -1;
+  // The chapter word list shows one description and link at a time.
+  const list = words ? $$('li', words) : [];
+  const desc = words && $('.sys-words-d', words);
+  const go = words && $('.sys-words-go', words);
+  let activeWord = -1;
   const showWord = i => {
-    if (i === active || !list[i]) return;
-    active = i;
+    if (i === activeWord || !list[i]) return;
+    activeWord = i;
     list.forEach((li, n) => li.classList.toggle('is-on', n === i));
-    desc.textContent = list[i].querySelector('span').textContent;
-    go.href = list[i].querySelector('a').getAttribute('href');
+    desc.textContent = $('span', list[i]).textContent;
+    go.href = $('a', list[i]).getAttribute('href');
   };
 
   const update = () => {
@@ -63,11 +90,17 @@
       const p = clamp(-r.top / (r.height - vh));
       scene.style.setProperty('--p', p.toFixed(4));
       if (scene.chars) {
-        const lit = (p - 0.08) / 0.62;
+        const lit = (p - 0.06) / 0.66;
         const n = scene.chars.length;
-        scene.chars.forEach((c, i) => { c.style.opacity = 0.16 + 0.84 * clamp((lit - i / n) * n / 6); });
+        scene.chars.forEach((c, i) => { c.style.opacity = 0.14 + 0.86 * clamp((lit - i / n) * n / 6); });
       }
       if (scene === words) showWord(Math.min(list.length - 1, Math.floor(p * list.length)));
+      if (steps.includes(scene)) {
+        const items = $$('.po-eng-steps li', scene);
+        const on = Math.min(items.length - 1, Math.floor(p * items.length));
+        items.forEach((li, n) => li.classList.toggle('is-on', n === on));
+      }
+      if (antenna.includes(scene)) scene.classList.toggle('is-second', p > 0.5);
     });
   };
 
@@ -76,9 +109,34 @@
 
   const sync = () => {
     root.classList.toggle('sys-motion', media.matches);
-    chapters.forEach(scene => (scene.chars || []).forEach(c => { c.style.opacity = media.matches ? '' : 1; }));
+    scenes.forEach(scene => (scene.chars || []).forEach(c => { c.style.opacity = media.matches ? '' : 1; }));
     update();
   };
+
+  // Big numbers count up the first time they come into view.
+  const countUp = b => {
+    const node = b.firstChild;
+    const target = node.textContent;
+    const value = parseFloat(target);
+    const places = (target.split('.')[1] || '').length;
+    if (calm.matches || !value) return;
+    const start = performance.now();
+    const tick = now => {
+      const t = clamp((now - start) / 1200);
+      const eased = 1 - Math.pow(1 - t, 3);
+      node.textContent = (value * eased).toFixed(places);
+      if (t < 1) requestAnimationFrame(tick);
+      else node.textContent = target;
+    };
+    requestAnimationFrame(tick);
+  };
+  const seen = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    seen.unobserve(e.target);
+    e.target.classList.add('is-in');
+    $$('b', e.target).forEach(countUp);
+  }), { threshold: 0.35 });
+  $$('.sys-stats').forEach(el => seen.observe(el));
 
   // Soft light that follows the pointer
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
@@ -94,7 +152,7 @@
 
   document.addEventListener('languagechange', () => {
     split();
-    active = -1;
+    activeWord = -1;
     sync();
   });
   addEventListener('scroll', queue, { passive: true });

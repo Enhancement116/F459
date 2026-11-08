@@ -1196,6 +1196,12 @@ html.pcn-locked{overflow:hidden}
 /* Back to where you were, after an in-page jump */
 .po-return{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:80;display:flex;align-items:center;gap:10px;height:48px;padding:0 18px;border:1px solid var(--gold);border-radius:24px;background:#07101ef2;backdrop-filter:blur(10px);color:#fff;font:600 15px/1 'Noto Sans TC',sans-serif;cursor:pointer;box-shadow:0 10px 30px #000a;opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .3s,transform .3s}
 .po-return.is-on{opacity:1;transform:none;pointer-events:auto}
+.po-return{transition:opacity .3s,transform .3s,padding .3s,gap .3s}
+.po-return>span,.po-return>small{max-width:22em;overflow:hidden;white-space:nowrap;transition:max-width .3s,opacity .2s}
+.po-return.is-mini{gap:0;padding:0 15px;opacity:.75}
+.po-return.is-mini>span,.po-return.is-mini>small{max-width:0;opacity:0}
+.po-return.is-mini:hover,.po-return.is-mini:focus-visible{gap:10px;padding:0 18px;opacity:1}
+.po-return.is-mini:hover>span,.po-return.is-mini:hover>small,.po-return.is-mini:focus-visible>span,.po-return.is-mini:focus-visible>small{max-width:22em;opacity:1}
 .po-return b{color:var(--gold);font-size:17px}
 .po-return small{font-size:13px;color:#9fb4c8;font-weight:500}
 

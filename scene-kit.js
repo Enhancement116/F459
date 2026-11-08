@@ -157,7 +157,18 @@ window.GTScene = (() => {
     btn.querySelector('span').textContent = en ? 'Back to where you were' : '回到剛才的位置';
     btn.querySelector('small').textContent = back ? back.name : '';
   };
-  const hide = () => { btn.classList.remove('is-on'); back = null; };
+  let shrink = 0;
+  let leave = 0;
+  const hide = () => { btn.classList.remove('is-on', 'is-mini'); back = null; clearTimeout(shrink); clearTimeout(leave); };
+  // Once shown it folds down to its arrow after a few seconds, and leaves on its own after a while.
+  const show = () => {
+    btn.classList.remove('is-mini');
+    btn.classList.add('is-on');
+    clearTimeout(shrink);
+    clearTimeout(leave);
+    shrink = setTimeout(() => btn.classList.add('is-mini'), 4000);
+    leave = setTimeout(hide, 20000);
+  };
   main.addEventListener('click', e => {
     const a = e.target.closest('a[href^="#"]');
     if (!a || a.getAttribute('href') === '#') return;
@@ -165,7 +176,7 @@ window.GTScene = (() => {
     const name = (from?.querySelector('.po-viz-bar span, h2')?.textContent || '').trim().slice(0, 18);
     back = { y: scrollY, name };
     label();
-    setTimeout(() => { if (back && Math.abs(scrollY - back.y) > 400) btn.classList.add('is-on'); }, 700);
+    setTimeout(() => { if (back && Math.abs(scrollY - back.y) > 400) show(); }, 700);
   });
   btn.addEventListener('click', () => { if (back) scrollTo({ top: back.y, behavior: 'smooth' }); hide(); });
   // Once the reader scrolls back on their own, the offer goes away.

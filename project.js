@@ -45,6 +45,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
   scene('po-eng-spec', (g, t, en) => {
     const { ctx, W, H, n } = g;
     const x0 = 24, x1 = W - 24, base = n ? H - 120 : H - 72, top = n ? 120 : 92, amp = base - top;
+    const plain = 'plain' in (document.getElementById('po-eng-spec')?.dataset || {}); // the System page reads for non-specialists
     const fx = f => x0 + (f + 12) / 24 * (x1 - x0);
     const cyc = t % 9, k = Math.min(1, cyc / 2.6), ease = 1 - (1 - k) ** 3;
     const win = Math.min(1, Math.max(0, (cyc - 2.8) / 1));
@@ -56,7 +57,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       ctx.fillStyle = '#8affdd10'; ctx.fillRect(fx(-10.4), top - 26, fx(10.4) - fx(-10.4), amp + 26);
       g.line(fx(-10.4), top - 26, fx(-10.4), base, C.acc + 'aa', 1, [4, 4]);
       g.line(fx(10.4), top - 26, fx(10.4), base, C.acc + 'aa', 1, [4, 4]);
-      g.txt(en ? 'Sampling band 20.8 Msps (±10.4 MHz)' : '取樣頻寬 20.8 Msps（±10.4 MHz）', fx(0), top - 14, { size: n ? 10 : 12, color: C.acc, align: 'center', weight: 700 });
+      g.txt(plain ? (en ? 'One SDR carries 20.8 MHz' : '一台 SDR 涵蓋 20.8 MHz') : en ? 'Sampling band 20.8 Msps (±10.4 MHz)' : '取樣頻寬 20.8 Msps（±10.4 MHz）', fx(0), top - 14, { size: n ? 10 : 12, color: C.acc, align: 'center', weight: 700 });
       ctx.globalAlpha = 1;
     }
     // Main lobes.
@@ -69,24 +70,24 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       ctx.lineTo(fx(12), base); ctx.closePath();
       ctx.fillStyle = col + '30'; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
     });
-    g.txt('GPS L1 C/A', fx(gC), base - amp - 12, { size: n ? 11 : 13, color: C.gps, align: 'center', weight: 700 });
-    g.txt(en ? 'BeiDou B1I' : '北斗 B1I', fx(bC), base - amp * 0.55 - 12, { size: n ? 11 : 13, color: C.bds, align: 'center', weight: 700 });
+    g.txt(plain ? 'GPS' : 'GPS L1 C/A', fx(gC), base - amp - 12, { size: n ? 11 : 13, color: C.gps, align: 'center', weight: 700 });
+    g.txt(plain ? (en ? 'BeiDou' : '北斗') : en ? 'BeiDou B1I' : '北斗 B1I', fx(bC), base - amp * 0.55 - 12, { size: n ? 11 : 13, color: C.bds, align: 'center', weight: 700 });
     // NCO shifts.
     const ay = base + (n ? 34 : 30);
     if (ease > 0.05) {
       arrow(g, fx(0), ay, fx(gC), ay, C.gps); arrow(g, fx(0), ay, fx(bC), ay, C.bds);
-      g.txt('NCO +7.161 MHz', fx(gC / 2), ay + 14, { size: n ? 9.5 : 11, color: C.gps, align: 'center', mono: true });
-      g.txt('NCO −7.161 MHz', fx(bC / 2), ay + 14, { size: n ? 9.5 : 11, color: C.bds, align: 'center', mono: true });
+      g.txt(plain ? (en ? 'moved right +7.161 MHz' : '移到右邊 +7.161 MHz') : 'NCO +7.161 MHz', fx(plain ? gC : gC / 2), ay + 14, { size: n ? 9.5 : 11, color: C.gps, align: 'center', mono: true });
+      g.txt(plain ? (en ? 'moved left −7.161 MHz' : '移到左邊 −7.161 MHz') : 'NCO −7.161 MHz', fx(plain ? bC : bC / 2), ay + 14, { size: n ? 9.5 : 11, color: C.bds, align: 'center', mono: true });
     }
     // Axis: baseband offset below, RF frequency in brackets.
     g.line(x0, base, x1, base, C.line, 1.2);
     g.line(fx(0), top - 40, fx(0), base + 6, C.text + '88', 1.2, [3, 4]);
-    g.txt(`LO 1568.259 MHz`, fx(0), top - 50, { size: n ? 11 : 13, color: C.text, align: 'center', weight: 700, mono: true });
+    g.txt(plain ? (en ? 'SDR centre 1568.259 MHz' : 'SDR 中心 1568.259 MHz') : `LO 1568.259 MHz`, fx(0), top - 50, { size: n ? 11 : 13, color: C.text, align: 'center', weight: 700, mono: true });
     [[-7.161, '1561.098'], [7.161, '1575.42']].forEach(([f, rf]) => {
       g.line(fx(f), base, fx(f), base + 6, C.dim, 1);
       g.txt(`${rf} MHz`, fx(f), base + (n ? 70 : 64), { size: n ? 9.5 : 11, color: C.dim, align: 'center', mono: true });
     });
-    g.txt(en ? 'One complex I/Q stream · one transmit channel' : '一路複數 I/Q · 一個發射通道', W / 2, H - (n ? 14 : 12), { size: n ? 11 : 12, color: C.dim, align: 'center' });
+    g.txt(plain ? (en ? 'Combined into one signal, sent through one channel' : '合成一路訊號，一個通道送出') : en ? 'One complex I/Q stream · one transmit channel' : '一路複數 I/Q · 一個發射通道', W / 2, H - (n ? 14 : 12), { size: n ? 11 : 12, color: C.dim, align: 'center' });
   });
 
   // 07: three 1 ms blocks, each with its own frequency. Top: phase restarts at every edge. Bottom: phase carried over.

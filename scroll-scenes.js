@@ -50,6 +50,14 @@
   wrapAll('.sys-nmea', 'sys-scene--nmea', 4);
   wrapAll('.sys-duo--plot', 'sys-scene--ant', 2);
 
+  // Other pages mark their stages in the markup: data-scene names the scene, data-steps counts its stops.
+  $$('[data-scene]').forEach(el => {
+    const scene = document.createElement('div');
+    el.before(scene);
+    scene.append(el);
+    adopt(scene, el, `sys-scene--${el.dataset.scene}`, Math.max(1, +el.dataset.steps || 1));
+  });
+
   // The closing line and its buttons share one stage.
   const closing = [];
   const prose = $('.po-prose');
@@ -186,6 +194,23 @@
     return Math.min(scene.steps - 1, Math.max(0, Math.round(-scene.getBoundingClientRect().top / (travel / (scene.steps - 1)))));
   };
 
+  // A number that runs up when its step arrives, and rests at its start value otherwise.
+  const countTo = (el, on) => {
+    const from = +(el.dataset.countFrom || 0);
+    const to = +el.dataset.count;
+    const show = v => { el.textContent = Math.round(v).toLocaleString('en') + (v >= to ? el.dataset.countSuffix || '' : ''); };
+    if (!on) { cancelAnimationFrame(el.countFrame); el.counted = false; show(from); return; }
+    if (el.counted) return;
+    el.counted = true;
+    const start = performance.now();
+    const tick = now => {
+      const k = Math.min(1, (now - start) / 1800);
+      show(from + (to - from) * (1 - (1 - k) ** 3));
+      if (k < 1) el.countFrame = requestAnimationFrame(tick);
+    };
+    el.countFrame = requestAnimationFrame(tick);
+  };
+
   let ticking = false;
   const update = () => {
     ticking = false;
@@ -206,6 +231,7 @@
       const step = stepOf(scene);
       scene.dataset.step = step;
       if (scene === words) showWord(step);
+      $$('[data-count]', scene).forEach(el => countTo(el, step >= +(el.dataset.countStep || 0)));
       $$('.po-eng-steps>li,.sys-nmea-steps>li', scene).forEach((li, n) => li.classList.toggle('is-on', n === step));
       $$('.svx-cap ol>li', scene.classList.contains('sys-scene--rig') ? scene : document.createDocumentFragment()).forEach((li, n) => li.classList.toggle('is-on', n === step - 1));
     });

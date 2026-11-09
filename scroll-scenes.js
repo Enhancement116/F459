@@ -539,7 +539,9 @@
   const closeMenu = () => { if (menu?.getAttribute('aria-expanded') === 'true') menu.click(); };
   addEventListener('scroll', closeMenu, { passive: true });
   document.addEventListener('click', e => { if (!e.target.closest('.menu-toggle, #site-nav')) closeMenu(); });
-  addEventListener('resize', sync);
+  // A phone's address bar fires resize on every scroll; measure once per frame at most.
+  let resizeQueued = false;
+  addEventListener('resize', () => { if (!resizeQueued) { resizeQueued = true; requestAnimationFrame(() => { resizeQueued = false; sync(); }); } });
   addEventListener('load', sync);
   document.fonts?.ready.then(sync);
   media.addEventListener('change', sync);

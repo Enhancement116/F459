@@ -566,7 +566,9 @@
   let lastPanel = 0;
   function frame(now) {
     // Nothing is drawn while the globe is off screen or the tab is hidden.
-    if (!state.visible || document.hidden || now - state.last < 33) { if (!state.visible || document.hidden) state.last = now; requestAnimationFrame(frame); return; }
+    // Off screen or in a hidden tab the loop sleeps; wakeGlobe starts it again.
+    if (!state.visible || document.hidden) { state.running = false; return; }
+    if (now - state.last < 33) { requestAnimationFrame(frame); return; }
     const dt = Math.min((now - state.last) / 1000, 0.25);
     state.last = now;
     if (state.playing && state.visible && !document.hidden) {
@@ -815,7 +817,13 @@
   root.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => setZoom(state.zoom * (b.dataset.zoom > 0 ? 1.25 : 0.8))));
   document.addEventListener('languagechange', () => { lookupPlace(); updateGroundSite(); updateUi(); });
   reduced.addEventListener('change', () => { if (reduced.matches) state.playing = false; updateUi(); });
-  new IntersectionObserver(entries => { state.visible = entries[0].isIntersecting; }).observe(canvas);
+  const wakeGlobe = () => {
+    if (state.running || !state.visible || document.hidden) return;
+    state.running = true;
+    requestAnimationFrame(now => { state.last = now; frame(now); });
+  };
+  new IntersectionObserver(entries => { state.visible = entries[0].isIntersecting; wakeGlobe(); }).observe(canvas);
+  document.addEventListener('visibilitychange', wakeGlobe);
   new ResizeObserver(resize).observe(canvas);
   new ResizeObserver(resize).observe(sky);
 
@@ -912,6 +920,7 @@
   }
 
   buildTeach(); resize(); updateUi();
+  state.running = true;
   requestAnimationFrame(now => { state.last = now; frame(now); });
 })();
 

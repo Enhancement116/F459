@@ -169,3 +169,8 @@ html.sys-motion .sys-speed .sys-bar{font-size:12px}
 
 /* Team page: chapter chips are finger-sized */
 .tm-chip{min-height:36px;display:inline-flex;align-items:center}
+/* Staged pages: the header floats over the first stage instead of pushing it down, so each stage is centred in the window */
+html.sys-motion body>header{margin-bottom:calc(-1 * clamp(84px,5.8vw,104px))}
+@media(max-width:800px){html.sys-motion body>header{margin-bottom:-64px}}
+/* Looping animations rest while their stage is not the one on screen */
+html.sys-motion .sys-scene:not(.is-here) *,html.sys-motion .sys-scene:not(.is-here)::before,html.sys-motion .sys-scene:not(.is-here)::after{animation-play-state:paused!important}

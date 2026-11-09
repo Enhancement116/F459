@@ -97,7 +97,14 @@
     ];
   }
 
-  const api = { parseRinex, position, toRecord, fromRecord, FIELDS };
+  // The day's ephemeris, fetched once per page however many scripts ask for it.
+  const loaded = {};
+  const latest = base => {
+    const dir = typeof URL !== 'undefined' && typeof location !== 'undefined' ? new URL(base, location.href).href : base;
+    return loaded[dir] || (loaded[dir] = fetch(dir + 'latest.json').then(r => r.json())
+      .then(m => fetch(dir + m.file)).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+  };
+  const api = { parseRinex, position, toRecord, fromRecord, FIELDS, latest };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GnssOrbit = api;
 })(this);

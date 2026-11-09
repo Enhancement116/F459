@@ -58,7 +58,8 @@
     for (let i = 0; i < 4 && pin.offsetHeight > room; i++) pin.style.maxWidth = `${Math.floor(pin.offsetWidth * room / pin.offsetHeight) - 8}px`;
     pin.style.top = `${Math.max(top + 12, (innerHeight + top - pin.offsetHeight) / 2)}px`;
   });
-  addEventListener('resize', centrePins);
+  let pinQueued = false;
+  addEventListener('resize', () => { if (!pinQueued) { pinQueued = true; requestAnimationFrame(() => { pinQueued = false; centrePins(); }); } });
   addEventListener('load', centrePins);
   centrePins();
 

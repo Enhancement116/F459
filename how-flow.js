@@ -786,7 +786,13 @@
   playBtn.addEventListener('click', () => { playing = !playing; if (playing && t >= STEP_S[step]) go(step + 1); labels(); });
   document.addEventListener('languagechange', () => setTimeout(() => { labels(); draw(); }));
   reduced.addEventListener('change', () => { if (reduced.matches) playing = false; go(step); });
-  new IntersectionObserver(e => { visible = e[0].isIntersecting; }, { threshold: 0.2 }).observe(canvas);
+  const wakeFlow = () => {
+    if (running || !visible || document.hidden) return;
+    running = true;
+    requestAnimationFrame(now => { last = now; frame(now); });
+  };
+  new IntersectionObserver(e => { visible = e[0].isIntersecting; wakeFlow(); }, { threshold: 0.2 }).observe(canvas);
+  document.addEventListener('visibilitychange', wakeFlow);
   new ResizeObserver(() => { resize(); draw(); }).observe(canvas);
   // Side by side, the step list is held to the stage's height so long text never stretches the stage.
   const stage = root.querySelector('.hf-stage');
@@ -795,7 +801,10 @@
   ['pointerdown', 'keydown', 'wheel'].forEach(ev => root.addEventListener(ev, () => { lastTouch = performance.now(); }, { passive: true }));
   // Phones, tablets and low-end machines draw at most 30 frames per second at a lower pixel ratio.
   const LOW = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  // Off screen or in a hidden tab the loop sleeps; wakeFlow starts it again.
+  let running = true;
   function frame(now) {
+    if (!visible || document.hidden) { running = false; return; }
     if (now - last < (LOW ? 33 : 28)) { requestAnimationFrame(frame); return; }
     const dt = Math.min((now - last) / 1000, 0.1); last = now;
     if (!playing && visible && !reduced.matches && now - lastTouch > IDLE_MS) { playing = true; labels(); }

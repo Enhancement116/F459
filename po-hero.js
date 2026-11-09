@@ -105,11 +105,16 @@
     }
   }
   let last = 0;
+  // The loop sleeps while the globe is off screen or the tab is hidden, and wakes when it is back.
+  let running = false;
   function frame(now) {
-    if (visible && !document.hidden && now - last > 120) { last = now; draw(now); }
+    if (!visible || document.hidden) { running = false; return; }
+    if (now - last > 120) { last = now; draw(now); }
     requestAnimationFrame(frame);
   }
-  new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(canvas);
+  const wake = () => { if (!running && visible && !document.hidden) { running = true; requestAnimationFrame(frame); } };
+  new IntersectionObserver(e => { visible = e[0].isIntersecting; wake(); }).observe(canvas);
+  document.addEventListener('visibilitychange', wake);
   new ResizeObserver(() => { layout(); paintEarth(); draw(performance.now()); }).observe(canvas);
   layout(); paintEarth();
   fetch(WORLD_URL).then(r => r.json()).then(topo => {
@@ -123,7 +128,7 @@
     paintEarth();
   }).catch(() => {});
   let day = '';
-  fetch('../data/latest.json').then(r => r.json()).then(m => fetch('../data/' + m.file)).then(r => r.json()).then(data => {
+  GnssOrbit.latest('../data/').then(data => {
     day = data.date;
     sats = Object.entries(data.sats).map(([prn, list]) => {
       const sys = prn[0], prnNum = Number(prn.slice(1));
@@ -133,5 +138,5 @@
     const d = new Date();
     t0 = (d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds() + 18) % 86400;
   }).catch(() => {});
-  requestAnimationFrame(frame);
+  wake();
 })();

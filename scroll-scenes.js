@@ -396,6 +396,29 @@
   // comes in they go back to their column beside it.
   // Chapter title stages: the title itself sits at the middle of the window, with its kicker above
   // and its lead below, rather than the whole group being centred.
+  // The closing scene leaves room for the footer, so its last stop is also the bottom of the page.
+  const measureEnd = () => {
+    const end = $('.sys-scene--end');
+    if (!end) return;
+    const main = $('main'), foot = $('footer');
+    const cut = (main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0) + (foot ? foot.offsetHeight : 0);
+    end.style.setProperty('--end-cut', `${Math.round(Math.min(cut, innerHeight * 0.45))}px`);
+    // The closing sentence sits at the middle of the window; the buttons follow below it.
+    const prose = $('.po-prose', end);
+    const next = $('.po-next', end);
+    if (prose) {
+      // ...unless the buttons would then run into the footer (tall stacks on phones): then the group moves up.
+      // The sentence and its buttons, as one group, sit midway between the header and the footer.
+      const block = next ? next.getBoundingClientRect().bottom - prose.getBoundingClientRect().top : prose.offsetHeight;
+      const head = $('header'), top = head ? head.getBoundingClientRect().bottom : 0;
+      const bottom = innerHeight - Math.min(cut, innerHeight * 0.45);
+      end.style.setProperty('--end-top', `${Math.round(Math.max(top + 12, top + (bottom - top - block) / 2))}px`);
+    }
+  };
+  // Text sizes settle once the web fonts arrive, and change with the language: place it again then.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(measureEnd));
+  document.addEventListener('languagechange', () => requestAnimationFrame(measureEnd));
+
   const measureTitles = () => $$('.sys-scene--ch').forEach(scene => {
     const stage = scene.stage;
     const title = $('h2', stage);
@@ -658,6 +681,7 @@
     measureZoom();
     measureWork();
     measureTitles();
+    measureEnd();
     update();
     showPlace();
   };

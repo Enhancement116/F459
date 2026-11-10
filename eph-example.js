@@ -73,7 +73,8 @@
       ['data-zh', 'data-en', 'aria-label'].forEach(a => { const v = el.getAttribute(a); if (v && fix(v) !== v) el.setAttribute(a, fix(v)); });
     });
     const walk = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
-    for (let n; (n = walk.nextNode());) { const v = fix(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; }
+    for (let n; (n = walk.nextNode());) { const raw = n.nodeValue.replace(/\u200b/g, ''); const v = fix(raw); if (v !== raw) n.nodeValue = v; }
+    if (window.gtPhrase) window.gtPhrase(document.querySelector('main'));
     document.dispatchEvent(new CustomEvent('gt-eph', { detail: eph }));
   }).catch(() => {});
 })();

@@ -49,12 +49,15 @@
     const R = Math.ceil(Math.hypot(Math.max(px, W - px), Math.max(py, H - py))) + 60;
     const reach = Math.min(178, 180 - latA + 2);                                   // degrees from the pole that ever rise here
     const k = R / Math.max(120, reach);
-    sky.width = sky.height = R * 2;
+    // The sky is a faint backdrop: its backing store is capped (about 26 MB), and CSS stretches it to size.
+    const scale = Math.min(1, 2560 / (R * 2));
+    sky.width = sky.height = Math.round(R * 2 * scale);
     Object.assign(rot.style, { width: R * 2 + 'px', height: R * 2 + 'px', left: px - R + 'px', top: py - R + 'px' });
     rot.style.setProperty('--rot0', (90 - s * lstDeg(site.lon)) + 'deg');
     wrap.classList.toggle('is-south', south);
     rot.querySelectorAll('.fx-skylabel').forEach(n => n.remove());
     const ctx = sky.getContext('2d'), c0 = R;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     // RA/Dec in degrees → layer pixels; south mirrors so figures keep their true handedness.
     const P = (ra, dec) => { const th = 90 - s * dec; if (th > reach) return null; const a = s * ra * Math.PI / 180; return [c0 + th * k * Math.cos(a), c0 + th * k * Math.sin(a)]; };
     const rnd = (() => { let x = 20260922; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); })();

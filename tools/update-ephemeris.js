@@ -7,7 +7,7 @@
 //   node tools/update-ephemeris.js --prune         also delete older data/gnss-*.json files
 //   node tools/update-ephemeris.js --dry           report only, write nothing
 //
-// Files: RINEX 3 or 4 navigation files with GPS and/or BeiDou records, plain or .gz, in any
+// Files: RINEX 3 or 4 navigation files with GPS and/or BeiDou records, plain, .gz or .zip, in any
 // subfolder, under any name (daily BRDC/BRDM files, hourly files, receiver logs). The day is read
 // from the records themselves, not from file names. A full day is not required: if the newest
 // day only has a few hours of records, the site uses those hours.
@@ -40,24 +40,64 @@ const files = [];
   }
 })(dir);
 
+// Entries of a .zip file (stored or deflated; enough for archives of navigation files).
+function unzip(buf) {
+  let end = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { end = i; break; }
+  }
+  if (end < 0) throw new Error('damaged zip (no central directory)');
+  const count = buf.readUInt16LE(end + 10);
+  let p = buf.readUInt32LE(end + 16);
+  const out = [];
+  for (let k = 0; k < count; k++) {
+    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error('damaged zip');
+    const method = buf.readUInt16LE(p + 10), size = buf.readUInt32LE(p + 20);
+    const nameLen = buf.readUInt16LE(p + 28), extraLen = buf.readUInt16LE(p + 30), noteLen = buf.readUInt16LE(p + 32);
+    const local = buf.readUInt32LE(p + 42);
+    const name = buf.toString('utf8', p + 46, p + 46 + nameLen);
+    p += 46 + nameLen + extraLen + noteLen;
+    if (name.endsWith('/') || /(^|\/)(__MACOSX|\.)/.test(name)) continue;
+    if (size === 0xffffffff || local === 0xffffffff) throw new Error('zip64 archives are not supported');
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    const raw = buf.subarray(start, start + size);
+    if (method === 0) out.push([name, raw]);
+    else if (method === 8) out.push([name, zlib.inflateRawSync(raw)]);
+    else console.warn(`skip ${name}: unsupported zip compression (method ${method})`);
+  }
+  return out;
+}
+
+// A file, a .gz, or a .zip (whose entries may themselves be .gz or .zip) as [label, text] pairs.
+function open(label, buf, depth = 0) {
+  if (buf[0] === 0x1f && buf[1] === 0x8b) return open(label, zlib.gunzipSync(buf), depth);
+  if (buf.readUInt32LE(0) === 0x04034b50 && depth < 3) {
+    return unzip(buf).flatMap(([name, b]) => {
+      try { return open(`${label}/${name}`, b, depth + 1); } catch (err) { console.warn(`skip ${label}/${name}: ${err.message}`); return []; }
+    });
+  }
+  return [[label, buf.toString('utf8')]];
+}
+
 const ephs = [];
-const fileDays = new Map();   // file -> set of days its records fall on
+const fileDays = new Map();   // file (or archive/entry) -> set of days its records fall on
 for (const file of files) {
-  let text;
+  const shown = path.relative(ROOT, file);
+  let parts;
   try {
-    let buf = fs.readFileSync(file);
-    if (buf[0] === 0x1f && buf[1] === 0x8b) buf = zlib.gunzipSync(buf);
-    text = buf.toString('utf8');
+    parts = fs.statSync(file).size >= 4 ? open(path.basename(file), fs.readFileSync(file)) : [];
   } catch (err) {
-    console.warn(`skip ${path.relative(ROOT, file)}: ${err.message}`);
+    console.warn(`skip ${shown}: ${err.message}`);
     continue;
   }
-  if (!text.includes('END OF HEADER')) { console.warn(`skip ${path.relative(ROOT, file)}: not a RINEX file`); continue; }
-  const found = parseRinex(text);
-  if (!found.length) { console.warn(`skip ${path.relative(ROOT, file)}: no GPS or BeiDou records (RINEX 3/4 navigation needed)`); continue; }
-  const days = new Set();
-  for (const eph of found) { eph.file = file; ephs.push(eph); days.add(dayOf(eph.toeGpst)); }
-  fileDays.set(file, days);
+  for (const [label, text] of parts) {
+    if (!text.includes('END OF HEADER')) { console.warn(`skip ${label}: not a RINEX file`); continue; }
+    const found = parseRinex(text);
+    if (!found.length) { console.warn(`skip ${label}: no GPS or BeiDou records (RINEX 3/4 navigation needed)`); continue; }
+    const days = new Set();
+    for (const eph of found) { ephs.push(eph); days.add(dayOf(eph.toeGpst)); }
+    fileDays.set(label, days);
+  }
 }
 if (!ephs.length) { console.error(`No usable ephemeris in ${dir}.`); process.exit(1); }
 
@@ -86,7 +126,7 @@ if (forced) {
   day = days.filter(d => perDay.get(d).size >= Math.max(8, most * 0.4)).pop();
 }
 
-const sources = [...fileDays].filter(([, ds]) => [day - 1, day, day + 1].some(d => ds.has(d))).map(([f]) => path.basename(f)).sort();
+const sources = [...fileDays].filter(([, ds]) => [day - 1, day, day + 1].some(d => ds.has(d))).map(([f]) => f).sort();
 const built = buildDay(ephs, day, sources);
 const out = path.join(dataDir, `gnss-${built.data.date.slice(0, 4)}-${String(built.data.doy).padStart(3, '0')}.json`);
 

@@ -101,10 +101,18 @@
   const loaded = {};
   const latest = base => {
     const dir = typeof URL !== 'undefined' && typeof location !== 'undefined' ? new URL(base, location.href).href : base;
-    return loaded[dir] || (loaded[dir] = fetch(dir + 'latest.json').then(r => r.json())
-      .then(m => fetch(dir + m.file)).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+    return loaded[dir] || (loaded[dir] = fetch(dir + 'latest.json', { cache: 'no-cache' }).then(r => r.json())
+      .then(m => fetch(dir + m.file + (m.built ? '?v=' + m.built : ''))).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
   };
-  const api = { parseRinex, position, toRecord, fromRecord, FIELDS, latest };
+  // The part of the day (seconds from 00:00 GPST) the file covers; older files cover the whole day.
+  const span = data => {
+    const from = Number.isFinite(data && data.from) ? data.from : 0;
+    const to = Number.isFinite(data && data.to) ? data.to : 86400;
+    return to > from ? { from, to, len: to - from } : { from: 0, to: 86400, len: 86400 };
+  };
+  // Folds any time of day into the covered part, so clocks that run on keep landing inside it.
+  const wrap = (data, t) => { const s = span(data); return s.from + ((((t - s.from) % s.len) + s.len) % s.len); };
+  const api = { parseRinex, position, toRecord, fromRecord, FIELDS, latest, span, wrap };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GnssOrbit = api;
 })(this);

@@ -156,6 +156,40 @@
     if (calm) { beat = 3; draw(performance.now()); }
   }
 
+  // Arrived from a link on another page: offer the way back to where the reader left off
+  const BACK = {
+    load: { href: '../system/#fusion', zh: '← 回到核心設計：運算量', en: '← Back to Design: workload' },
+  };
+  const from = BACK[new URLSearchParams(location.search).get('from')];
+  if (from) {
+    const back = document.createElement('a');
+    back.className = 'tk-back';
+    back.href = from.href;
+    back.dataset.zh = from.zh;
+    back.dataset.en = from.en;
+    back.textContent = root.lang === 'en' ? from.en : from.zh;
+    // Straight from that page: step back in history, so the reader lands on the exact stop they left
+    back.addEventListener('click', e => {
+      let ref = null;
+      try { ref = new URL(document.referrer); } catch (_) {}
+      if (ref && ref.origin === location.origin && ref.pathname.endsWith('/project/system/') && history.length > 1) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+    document.body.append(back);
+  }
+
+  // A link from another page lands on its anchor once the page has finished laying out
+  if (location.hash.length > 1) {
+    const land = () => {
+      let t = null;
+      try { t = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch (_) {}
+      if (t && Math.abs(t.getBoundingClientRect().top) > 120) t.scrollIntoView({ behavior: 'instant', block: 'start' });
+    };
+    if (document.readyState === 'complete') land(); else addEventListener('load', land, { once: true });
+  }
+
   root.classList.add('tk-ready');
   if (calm) root.classList.add('tk-calm');
 })();

@@ -394,3 +394,34 @@ html.sys-motion .po .sys-scene--cmp .cmp-hd .cmp-cell{padding-block:clamp(8px,1.
 @media(max-width:1500px){header .brand span{display:none}}
 /* Chapter title stages: the whole group moves so the title lands on the middle of the window */
 html.sys-motion .sys-scene--ch .sys-stage>*{translate:0 var(--ch-shift,0px)}
+/* Workload: what the dots count, under the title */
+.po .sys-load-what{margin:clamp(8px,1vw,16px) auto 0;max-width:44em;text-align:center;display:grid;gap:4px}
+.po .sys-load-what b{font-size:clamp(17px,1.25vw,24px);color:#eef6ff}
+.po .sys-load-what span{font-size:clamp(14px,.95vw,18px);line-height:1.6;color:#9fb4c8}
+/* Workload: where the 1 ms is explained */
+.po .sys-load-more{display:inline-block;margin-top:6px;font-size:clamp(14px,.95vw,17px);font-weight:700;color:#8affdd;text-decoration:none;border-bottom:1px solid #8affdd66}
+.po .sys-load-more:hover,.po .sys-load-more:focus-visible{border-bottom-color:#8affdd}
+/* Way back to the page the reader came from */
+.tk-back{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:81;display:flex;align-items:center;height:48px;padding:0 18px;border-radius:24px;border:1px solid #8affdd;background:#07101ef2;backdrop-filter:blur(10px);color:#fff;font:700 15px/1 'Noto Sans TC',sans-serif;text-decoration:none;box-shadow:0 10px 30px #000a}
+.tk-back:hover,.tk-back:focus-visible{background:#0d2234f2}
+#why-1ms{scroll-margin-top:96px}
+/* Workload: larger small print, easier to read */
+:root .po .sys-load-what b{font-size:clamp(19px,1.45vw,27px)}
+:root .po .sys-load-what span{font-size:clamp(16px,1.15vw,21px);color:#b5c6d8}
+:root .po .sys-load-k b{font-size:clamp(18px,1.4vw,24px)}
+:root .po .sys-load-k small{font-size:clamp(13px,.95vw,16px)}
+:root .po .sys-load-big span{font-size:clamp(16px,1.15vw,21px)}
+:root .po .sys-load-say{font-size:clamp(17px,1.2vw,22px)}
+:root .po .sys-load-why b{font-size:clamp(17px,1.25vw,22px)}
+:root .po .sys-load-why em{font-size:clamp(16px,1.15vw,20px)}
+:root .po .sys-load-chain i{font-size:clamp(14px,1vw,18px)}
+:root .po .sys-load-who b{font-size:clamp(18px,1.35vw,24px)}
+:root .po .sys-load-who span{font-size:clamp(15px,1.05vw,19px)}
+:root .po .sys-load-tkey{font-size:clamp(14px,.95vw,17px)}
+:root .po .sys-load-tkey span{font-size:inherit}
+:root .po .sys-load-state{font-size:clamp(16px,1.15vw,20px)}
+:root .po .sys-load-legend,:root .po .sys-load-lg span{font-size:clamp(15px,1.05vw,19px)}
+:root .po .sys-load-cap{font-size:clamp(15px,1.05vw,19px)}
+:root .po .sys-load-more{font-size:clamp(16px,1.15vw,20px)}
+:root .po .sys-load-tkey{flex-wrap:wrap;column-gap:14px;row-gap:2px}
+:root .po .sys-load-tkey span{white-space:nowrap}

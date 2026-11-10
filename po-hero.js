@@ -22,7 +22,7 @@
   };
   const view = enu(VIEW_LAT, VIEW_LON), site = enu(LAT0, LON0);
   const SITE = site.up.map(v => v * RE);
-  let W = 0, H = 0, dpr = 1, R = 0, cx = 0, cy = 0, earth = null, world = null, sats = [], visible = true, t0 = 0;
+  let W = 0, H = 0, dpr = 1, R = 0, cx = 0, cy = 0, earth = null, world = null, sats = [], visible = true, t0 = 0, data = null;
 
   function layout() {
     const r = canvas.getBoundingClientRect();
@@ -76,7 +76,7 @@
     if (earth && earth.width && earth.height) ctx.drawImage(earth, 0, 0, W, H);
     const nk = project(SITE);
     // Real satellites above NKUST now (simulated clock runs 120× on the ephemeris day).
-    const t = (t0 + (reduced ? 0 : (now / 1000) * 120)) % 86400;
+    const t = data ? GnssOrbit.wrap(data, t0 + (reduced ? 0 : (now / 1000) * 120)) : 0;
     const seen = sats.map(s => {
       const p = positionAt(s, t);
       return { s, p, el: lookEl(p), q: project(p) };
@@ -128,7 +128,8 @@
     paintEarth();
   }).catch(() => {});
   let day = '';
-  GnssOrbit.latest('../data/').then(data => {
+  GnssOrbit.latest('../data/').then(json => {
+    data = json;
     day = data.date;
     sats = Object.entries(data.sats).map(([prn, list]) => {
       const sys = prn[0], prnNum = Number(prn.slice(1));

@@ -46,7 +46,8 @@
     mask: 10, onlyVisible: false, // elevation mask (degrees) for "visible from the site"
     site: { lat: LAT0, lon: LON0, custom: false },
     teachCounts: { GEO: 1, IGSO: 1, MEO: 3, GPS: 3 },
-    sats: [], tracks: [], world: null, dayStart: null, leap: 18, error: false
+    sats: [], tracks: [], world: null, dayStart: null, leap: 18, error: false,
+    span: { from: 0, to: 86400, len: 86400 } // the part of the ephemeris day the data covers
   };
   const satColor = s => s.sys === 'G' || s.kind === 'GPS' ? COLORS.GPS : COLORS[s.kind];
 
@@ -313,7 +314,7 @@
   function buildTracks() {
     state.tracks = state.sats.map(s => {
       const pts = [];
-      for (let t = 0; t <= 86400; t += 600) pts.push(positionAt(s, t));
+      for (let t = state.span.from; t <= state.span.to; t += 600) pts.push(positionAt(s, t));
       return pts;
     });
   }
@@ -356,7 +357,7 @@
         const ecef = state.tracks[s.index];
         if (state.filter === 'all') {
           // Recent trail only, to keep the overview legible.
-          const k = Math.floor(state.t / 600);
+          const k = Math.floor((state.t - state.span.from) / 600);
           const trail = ecef.slice(Math.max(0, k - 6), k + 1).map(project);
           trail.push(s);
           ctx.strokeStyle = satColor(s) + (front ? 'aa' : '44');
@@ -572,7 +573,8 @@
     const dt = Math.min((now - state.last) / 1000, 0.25);
     state.last = now;
     if (state.playing && state.visible && !document.hidden) {
-      state.t = (state.t + dt * state.speed) % 86400;
+      const { from, len } = state.span;
+      state.t = from + ((state.t - from + dt * state.speed) % len + len) % len;
       state.teachT += dt * state.speed;
     }
     if (state.earthDirty) drawEarth();
@@ -803,7 +805,7 @@
   root.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { state.mode = b.dataset.mode; updateUi(); }));
   root.querySelectorAll('[data-orbit]').forEach(b => b.addEventListener('click', () => { state.filter = b.dataset.orbit; updateUi(); }));
   root.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => { state.speed = Number(b.dataset.speed); updateUi(); }));
-  $('globe-reset').addEventListener('click', () => { state.t = 0; state.teachT = 0; updateUi(); });
+  $('globe-reset').addEventListener('click', () => { state.t = state.span.from; state.teachT = 0; updateUi(); });
   $('globe-only-visible').addEventListener('change', e => { state.onlyVisible = e.target.checked; updateUi(); });
   root.querySelectorAll('[data-teach-input]').forEach(input => input.addEventListener('input', () => {
     state.teachCounts[input.dataset.teachInput] = Number(input.value);
@@ -893,7 +895,7 @@
   });
 
   // ---------- Data ----------
-  fetch(MANIFEST_URL).then(r => r.json()).then(m => fetch('data/' + m.file)).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
+  fetch(MANIFEST_URL, { cache: 'no-cache' }).then(r => r.json()).then(m => fetch('data/' + m.file + (m.built ? '?v=' + m.built : ''))).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
     EPH.date = data.date; EPH.doy = data.doy;
     state.sats = Object.entries(data.sats).map(([prn, list]) => {
       const sys = prn[0], prnNum = Number(prn.slice(1));
@@ -904,6 +906,9 @@
     const [y, m, d] = data.date.split('-').map(Number);
     state.dayStart = Date.UTC(y, m - 1, d); // 00:00 GPST on the calendar
     state.leap = data.leapSeconds;
+    // Only the hours the file covers are animated: a part-day file loops over its own hours.
+    state.span = GnssOrbit.span(data);
+    state.t = state.span.from;
     buildTracks(); updateUi();
   }).catch(() => { state.error = true; state.mode = 'teach'; updateUi(); });
 

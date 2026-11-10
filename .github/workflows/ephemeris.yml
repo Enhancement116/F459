@@ -1,0 +1,70 @@
+# When ephemeris files are added to (or removed from) ephemeris/ on main, rebuild the site's
+# satellite data from the newest day in that folder and publish it.
+# It can also be run by hand from the Actions tab ("Run workflow"), optionally for a chosen day.
+name: Update ephemeris
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ephemeris/**'
+      - '!ephemeris/README.md'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Day to use (YYYY-MM-DD). Leave empty for the newest day in ephemeris/.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: ephemeris
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build data from ephemeris/
+        env:
+          DAY: ${{ github.event.inputs.date }}
+        run: |
+          if [ -n "$DAY" ]; then
+            node tools/update-ephemeris.js --prune --date "$DAY"
+          else
+            node tools/update-ephemeris.js --prune
+          fi
+
+      - name: Commit the new data
+        id: commit
+        run: |
+          git add -A data
+          if git diff --cached --quiet; then
+            echo "No change to data/."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          day=$(node -p "require('./data/latest.json').date")
+          git commit -m "Update ephemeris data to $day"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # A push made by this workflow may not start a Pages build on its own, so ask for one.
+      - name: Rebuild the site
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"

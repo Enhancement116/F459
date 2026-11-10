@@ -326,7 +326,11 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     return { D, CL, RE, SITE, up, east, north, dot3, ready, record, pos, look };
   })();
   const LAMBDA = { G: 299792458 / 1575.42e6, C: 299792458 / 1561.098e6 };
-  const T0 = 4 * 3600, SPAN = 4 * 3600;
+  let T0 = 4 * 3600, SPAN = 4 * 3600;
+  // The example's moment and window come from the ephemeris file (a part-day file moves them into its hours).
+  const takeEph = e => { if (e && Number.isFinite(e.t)) { T0 = e.t; SPAN = e.span || SPAN; } };
+  takeEph(window.GT_EPH);
+  document.addEventListener('gt-eph', e => takeEph(e.detail));
   // Both real-ephemeris chapters run the same clock: four hours around noon in Taiwan, about 33 s per loop.
   const sweep = t => T0 - SPAN / 2 + ((t * 0.03) % 1) * SPAN;
   const twTime = s => { const h = (s / 3600 + 8) % 24; return `${pad2(Math.floor(h))}:${pad2(Math.floor((h % 1) * 60))}`; };

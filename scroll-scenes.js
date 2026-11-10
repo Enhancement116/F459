@@ -7,6 +7,11 @@
   const media = matchMedia('(prefers-reduced-motion:no-preference) and (min-height:500px)');
   const coarse = matchMedia('(pointer:coarse)');
   const calm = matchMedia('(prefers-reduced-motion:reduce)');
+  // Readers can turn the stages off and read the page as a normal document; the choice is remembered.
+  const MODE_KEY = 'f459-reading';
+  let plain = false;
+  try { plain = localStorage.getItem(MODE_KEY) === 'plain'; } catch (e) {}
+  const motion = () => media.matches && !plain;
   const clamp = v => Math.min(1, Math.max(0, v));
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -38,13 +43,13 @@
 
   wrapAll('.po-hero--tech', 'sys-scene--hero', 1);
   const words = $('.sys-words');
-  if (words) adopt(words, $('.sys-words-stage', words), 'sys-scene--words', 5);
+  if (words) adopt(words, $('.sys-words-stage', words), 'sys-scene--words', 1);
   const chapters = wrapAll('.po-ch-head', 'sys-scene--ch', 1);
   wrapAll('.po-cards--2', 'sys-scene--vs', 2);
   wrapAll('.sys-track', 'sys-scene--track', 1);
   wrapAll('.po-viz.svx', 'sys-scene--rig', 4);
   wrapAll('.sys-eng', 'sys-scene--eng', 3);
-  wrapAll('.sys-speed', 'sys-scene--speed', 2);
+  wrapAll('.sys-speed', 'sys-scene--speed', 1);
   const pairs = wrapAll('.sys-pair', 'sys-scene--pair', 4);
   wrapAll('.sys-duo--side', 'sys-scene--route', 2);
   wrapAll('.sys-nmea', 'sys-scene--nmea', 4);
@@ -188,6 +193,34 @@
     go.href = $('a', list[i]).getAttribute('href');
   };
 
+  // The five questions share one stop and take turns by themselves; pointing at one shows it.
+  let wordTimer = 0;
+  let wordsHere = false;
+  const cycleWords = on => {
+    clearInterval(wordTimer);
+    if (!on || !list.length) return;
+    showWord(Math.max(0, activeWord));
+    wordTimer = setInterval(() => showWord((activeWord + 1) % list.length), 2600);
+  };
+  list.forEach((li, n) => li.addEventListener('pointerenter', () => { showWord(n); if (wordsHere) cycleWords(true); }));
+
+  // The CPU and GPU race runs again every few seconds while it is on screen, so the GPU side
+  // can be watched after reading the CPU side.
+  const race = $('.sys-load-race');
+  let raceOn = false;
+  let raceTimer = 0;
+  const raceLoop = on => {
+    if (on === raceOn || !race) return;
+    raceOn = on;
+    clearInterval(raceTimer);
+    if (!on) return;
+    raceTimer = setInterval(() => {
+      race.classList.add('is-reset');
+      void race.offsetWidth;
+      race.classList.remove('is-reset');
+    }, 9500);
+  };
+
   const stepOf = scene => {
     if (scene.steps < 2) return 0;
     const travel = scene.offsetHeight - scene.stage.offsetHeight;
@@ -214,7 +247,7 @@
   let ticking = false;
   const update = () => {
     ticking = false;
-    if (!media.matches) return;
+    if (!motion()) return;
     const mid = innerHeight / 2;
     scenes.forEach(scene => {
       const r = scene.getBoundingClientRect();
@@ -227,16 +260,17 @@
         scene.classList.remove('is-entering');
       }
       scene.classList.toggle('is-here', here);
+      if (scene === words && here !== wordsHere) { wordsHere = here; cycleWords(here); }
+      if (scene.classList.contains('sys-scene--load')) raceLoop(here && stepOf(scene) === 3);
       if (!here) return;
       const step = stepOf(scene);
       scene.dataset.step = step;
-      if (scene === words) showWord(step);
       $$('[data-count]', scene).forEach(el => countTo(el, step >= +(el.dataset.countStep || 0)));
       $$('.po-eng-steps>li,.sys-nmea-steps>li', scene).forEach((li, n) => li.classList.toggle('is-on', n === step));
-      $$('.svx-cap ol>li', scene.classList.contains('sys-scene--rig') ? scene : document.createDocumentFragment()).forEach((li, n) => li.classList.toggle('is-on', n === step - 1));
+      $$('.svx-cap ol>li', scene.classList.contains('sys-scene--rig') ? scene : document.createDocumentFragment()).forEach((li, n) => li.classList.toggle('is-on', n === step));
     });
   };
-  const queue = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  const queue = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { update(); showPlace(); }); } };
 
   // Stages sit below the header and chapter bar, and above the floating chapter button on phones.
   const measureBars = () => {
@@ -246,7 +280,7 @@
     const shown = el => el && getComputedStyle(el).display !== 'none';
     const top = Math.max(header ? header.getBoundingClientRect().height : 0, shown(bar) ? bar.getBoundingClientRect().bottom : 0);
     root.style.setProperty('--sys-top', `${Math.ceil(top) + 10}px`);
-    root.style.setProperty('--sys-bottom', shown(fab) ? '80px' : '20px');
+    root.style.setProperty('--sys-bottom', shown(fab) || shown($('.sys-ctl')) ? '80px' : '20px');
   };
 
   // Each screenshot first fills the stage: work out the move from its resting place to the centre.
@@ -296,9 +330,9 @@
 
   // One wheel or key input moves one stop, then the page holds so nothing leaves before it is read.
   // Inertia and fast spinning are swallowed during the hold.
-  const GLIDE_MS = 620;   // the move itself
-  const HOLD_MS = 1000;   // shortest time from one step to the next, glide included
-  const SETTLE_MS = 1700; // a continuous wheel stream cannot step again before this
+  const GLIDE_MS = 520;   // the move itself
+  const HOLD_MS = 600;    // shortest time from one step to the next, glide included
+  const SETTLE_MS = 900;  // a continuous wheel stream cannot step again before this
   const QUIET_MS = 140;   // silence that marks the end of one wheel gesture
 
   let gliding = false;
@@ -326,7 +360,8 @@
   let lastWheel = 0;
   let steppedAt = -Infinity;
   addEventListener('wheel', e => {
-    if (!media.matches || e.ctrlKey || !e.deltaY || paused()) return;
+    if (!motion() || e.ctrlKey || !e.deltaY || paused()) return;
+    setAuto(false);
     const now = performance.now();
     const quiet = now - lastWheel;
     lastWheel = now;
@@ -340,11 +375,14 @@
   }, { passive: false });
 
   addEventListener('keydown', e => {
-    if (!media.matches || e.altKey || e.ctrlKey || e.metaKey || paused()) return;
+    if (!motion() || e.altKey || e.ctrlKey || e.metaKey || paused()) return;
     if (e.target.closest?.('input,textarea,select,button,summary,canvas,[contenteditable]')) return;
     const down = e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey);
     const up = e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && e.shiftKey);
+    const ends = e.key === 'Home' ? stops[0] : e.key === 'End' ? stops[stops.length - 1] : undefined;
+    if (ends !== undefined) { e.preventDefault(); setAuto(false); glide(ends); return; }
     if (!down && !up) return;
+    setAuto(false);
     const next = nextStop(down);
     if (next === undefined) return;
     e.preventDefault();
@@ -356,6 +394,20 @@
 
   // Can one computer keep up? First the two cards take the middle of the stage, large; when the answer
   // comes in they go back to their column beside it.
+  // Chapter title stages: the title itself sits at the middle of the window, with its kicker above
+  // and its lead below, rather than the whole group being centred.
+  const measureTitles = () => $$('.sys-scene--ch').forEach(scene => {
+    const stage = scene.stage;
+    const title = $('h2', stage);
+    if (!title) return;
+    stage.style.setProperty('--ch-shift', '0px');
+    if (!motion()) return;
+    const box = stage.getBoundingClientRect();
+    const r = title.getBoundingClientRect();
+    const shift = innerHeight / 2 - (r.top - box.top + r.height / 2);
+    stage.style.setProperty('--ch-shift', `${Math.round(shift)}px`);
+  });
+
   const measureWork = () => $$('.sys-scene--speed').forEach(scene => {
     const stage = $('.sys-stage', scene);
     const work = $('.sys-work', scene);
@@ -438,7 +490,7 @@
       };
       const count = () => {
         cancelAnimationFrame(run);
-        if (!li.classList.contains('is-on') || !media.matches) { show(f.total); return; }
+        if (!li.classList.contains('is-on') || !motion()) { show(f.total); return; }
         const start = performance.now();
         const tick = now => {
           const k = Math.min(1, (now - start) / 2200);
@@ -453,16 +505,161 @@
     });
   };
   fillTerms();
+  // Workload dots: one per 1,000 computations, coloured by the layer they belong to.
+  $$('.sys-load-dots').forEach(box => {
+    if (box.childElementCount) return;
+    const [a, b] = (box.dataset.layers || '').split(',').map(Number);
+    for (let k = 0, n = +box.dataset.n || 336; k < n; k++) {
+      const dot = document.createElement('i');
+      dot.className = k < a ? 'l0' : k < b ? 'l1' : 'l2';
+      // Dots the CPU never reaches before time runs out
+      if (box.dataset.late && k >= +box.dataset.late) dot.classList.add('late');
+      dot.style.setProperty('--k', k);
+      dot.style.setProperty('--r', Math.floor(k / 24));
+      // Within its own layer each dot arrives a moment after the one before.
+      dot.style.setProperty('--j', k < a ? k : k < b ? k - a : k - b);
+      box.append(dot);
+    }
+  });
   keepUnits();
 
+  // ---- Controls for readers without a wheel: previous and next stop, where they are, and autoplay
+  const say = (el, zh, en, attr) => {
+    const v = root.lang === 'en' ? en : zh;
+    if (attr) el.setAttribute(attr, v); else el.textContent = v;
+  };
+  const ctl = document.createElement('div');
+  ctl.className = 'sys-ctl';
+  ctl.setAttribute('role', 'group');
+  ctl.innerHTML = '<button type="button" class="sys-ctl-prev"><span aria-hidden="true">↑</span></button>'
+    + '<span class="sys-ctl-n"><b>01</b><small></small></span>'
+    + '<button type="button" class="sys-ctl-next"><span aria-hidden="true">↓</span></button>'
+    + '<button type="button" class="sys-ctl-play"><span aria-hidden="true"></span></button><i class="sys-ctl-bar" aria-hidden="true"></i>';
+  document.body.append(ctl);
+  const prevBtn = $('.sys-ctl-prev', ctl);
+  const nextBtn = $('.sys-ctl-next', ctl);
+  const playBtn = $('.sys-ctl-play', ctl);
+  const modeBtns = [];
+  let auto = false;
+  let autoTimer = 0;
+  const placeOf = () => {
+    let best = 0;
+    stops.forEach((s, i) => { if (Math.abs(s - scrollY) < Math.abs(stops[best] - scrollY)) best = i; });
+    return best;
+  };
+  const showPlace = () => {
+    if (!stops.length) return;
+    const i = placeOf();
+    $('b', ctl).textContent = String(i + 1).padStart(2, '0');
+    $('small', ctl).textContent = ` / ${stops.length}`;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === stops.length - 1;
+  };
+  // Each stop stays up long enough to read what it shows.
+  const dwell = () => {
+    const scene = $('.sys-scene.is-here');
+    if (!scene) return 4000;
+    const chars = (scene.stage.innerText || '').replace(/\s+/g, '').length / scene.steps;
+    return Math.round(Math.min(9000, Math.max(3200, 1800 + chars * 45)));
+  };
+  const schedule = () => {
+    clearTimeout(autoTimer);
+    if (!auto) return;
+    const ms = dwell();
+    ctl.style.setProperty('--dwell', `${ms}ms`);
+    ctl.classList.remove('is-timing');
+    void ctl.offsetWidth;
+    ctl.classList.add('is-timing');
+    autoTimer = setTimeout(() => {
+      const next = nextStop(true);
+      if (next === undefined) { setAuto(false); return; }
+      steppedAt = performance.now();
+      glide(next);
+      autoTimer = setTimeout(schedule, GLIDE_MS + 80);
+    }, ms);
+  };
+  const labels = () => {
+    say(ctl, '逐步導覽', 'Step through', 'aria-label');
+    say(prevBtn, '上一步（↑ 鍵）', 'Previous (↑ key)', 'aria-label');
+    say(nextBtn, '下一步（↓ 或空白鍵）', 'Next (↓ or Space)', 'aria-label');
+    prevBtn.title = prevBtn.getAttribute('aria-label');
+    nextBtn.title = nextBtn.getAttribute('aria-label');
+    say(playBtn, auto ? '暫停自動播放' : '自動播放', auto ? 'Pause autoplay' : 'Autoplay', 'aria-label');
+    playBtn.title = playBtn.getAttribute('aria-label');
+    $('span', playBtn).textContent = auto ? '❚❚' : '▶';
+    modeBtns.forEach(b => {
+      say(b, plain ? '導覽模式' : '一般閱讀', plain ? 'Guided view' : 'Plain scroll');
+      say(b, plain ? '回到一步一停的導覽' : '改成一般網頁，自由捲動', plain ? 'Back to one stop at a time' : 'Read as a normal page and scroll freely', 'title');
+      b.setAttribute('aria-pressed', String(plain));
+    });
+  };
+  function setAuto(on) {
+    if (on === auto) return;
+    auto = on;
+    ctl.classList.toggle('is-playing', on);
+    if (!on) { clearTimeout(autoTimer); ctl.classList.remove('is-timing'); }
+    labels();
+    if (!on) return;
+    // From the last stop, autoplay starts again at the top.
+    if (nextStop(true) === undefined) { glide(stops[0]); autoTimer = setTimeout(schedule, GLIDE_MS + 80); } else schedule();
+  }
+  const stepBy = down => {
+    setAuto(false);
+    const next = nextStop(down);
+    if (next === undefined || gliding) return;
+    steppedAt = performance.now();
+    glide(next);
+  };
+  prevBtn.addEventListener('click', () => stepBy(false));
+  nextBtn.addEventListener('click', () => stepBy(true));
+  playBtn.addEventListener('click', () => setAuto(!auto));
+  // Any other touch or click from the reader pauses autoplay.
+  ['pointerdown', 'touchstart'].forEach(ev => addEventListener(ev, e => { if (!e.target.closest?.('.sys-ctl')) setAuto(false); }, { passive: true }));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) setAuto(false); });
+
+  // ---- The mode switch: in the header on wide screens, in the menu on phones
+  const switchMode = () => {
+    setAuto(false);
+    stopGlide();
+    // Keep the reader at the same place across the switch.
+    const top = parseFloat(getComputedStyle(root).getPropertyValue('--sys-top')) || 90;
+    const anchor = plain
+      ? (scenes.find(sc => { const r = sc.stage.getBoundingClientRect(); return r.top <= innerHeight * 0.4 && r.bottom > innerHeight * 0.4; }) || scenes.find(sc => sc.stage.getBoundingClientRect().bottom > top + 40))
+      : $('.sys-scene.is-here');
+    plain = !plain;
+    try { localStorage.setItem(MODE_KEY, plain ? 'plain' : 'guided'); } catch (e) {}
+    sync();
+    labels();
+    if (!anchor) return;
+    if (plain) scrollTo({ top: anchor.stage.getBoundingClientRect().top + scrollY - top, behavior: 'instant' });
+    else scrollTo({ top: anchor.getBoundingClientRect().top + scrollY, behavior: 'instant' });
+    update();
+    showPlace();
+  };
+  const makeMode = (cls, where, before) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `sys-mode ${cls}`;
+    if (before) where.insertBefore(b, before); else where.append(b);
+    b.addEventListener('click', switchMode);
+    modeBtns.push(b);
+  };
+  const headerEl = $('header');
+  if (headerEl && $('#language')) makeMode('sys-mode--head', headerEl, $('#language'));
+  if ($('#site-nav')) makeMode('sys-mode--menu', $('#site-nav'));
+  document.addEventListener('languagechange', () => setTimeout(labels));
+  labels();
+
   const sync = () => {
-    root.classList.toggle('sys-motion', media.matches);
-    root.classList.toggle('sys-touch', media.matches && coarse.matches);
+    root.classList.toggle('sys-motion', motion());
+    root.classList.toggle('sys-touch', motion() && coarse.matches);
     measureBars();
     measureStops();
     measureZoom();
     measureWork();
+    measureTitles();
     update();
+    showPlace();
   };
 
   // Big numbers count up the first time they come into view.
@@ -498,7 +695,7 @@
     document.body.append(glow);
     addEventListener('pointermove', e => {
       glow.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
-      glow.style.opacity = media.matches ? 1 : 0;
+      glow.style.opacity = motion() ? 1 : 0;
     }, { passive: true });
   }
 

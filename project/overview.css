@@ -239,3 +239,40 @@ html:not(.sys-motion) .ov-fig svg,html:not(.sys-motion) .ov-side-art,html:not(.s
 html:not(.sys-motion) .ov-flaw,html:not(.sys-motion) .ov-build,html:not(.sys-motion) .ov-bind,html:not(.sys-motion) .ov-harm,html:not(.sys-motion) .ov-test{display:grid;gap:clamp(16px,3vw,32px);margin:clamp(20px,4vw,40px) 0}
 @media(min-width:700px){html:not(.sys-motion) .ov-bind{grid-template-columns:repeat(2,minmax(0,1fr))}html:not(.sys-motion) .ov-devs{grid-template-columns:repeat(3,minmax(0,1fr))}}
 html:not(.sys-motion) .ov-price-n::after{content:""}
+/* Consequences: one large scene per stop, a headline, a picture across the stage and one line of what it costs */
+.ov-impact{display:grid;gap:clamp(40px,6vw,96px)}
+.ov-sc{display:grid;justify-items:center;gap:clamp(8px,1.2vw,18px);margin:0;text-align:center}
+.ov-sc--0{--lc:#70b7ff}.ov-sc--1{--lc:#f6c775}.ov-sc--2{--lc:#ff8a8a}
+.po .ov-sc-k{margin:0;font:700 clamp(16px,1.2vw,22px)/1.2 'Noto Sans TC',sans-serif;letter-spacing:2px;color:var(--lc)}
+.po .ov-sc-h{margin:0;font:700 clamp(40px,4.6vw,88px)/1.15 'Noto Sans TC',sans-serif;color:#fff}
+.po .ov-sc-line{margin:0;max-width:32em;font-size:clamp(20px,1.6vw,30px);line-height:1.6;color:#c7d5e6}
+.ov-sc-art{display:block;width:min(100%,1000px);height:auto;max-height:46vh}
+.ov-sc-grid path,.ov-sc-sea path{fill:none;stroke:#1d3650;stroke-width:2}
+.ov-sc-ground{stroke:#2c4a68;stroke-width:3}
+.ov-sc-true{fill:none;stroke:#8affdd;stroke-width:5;stroke-dasharray:12 10;opacity:.8}
+.ov-sc-fake{fill:none;stroke:#ff8a8a;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+.ov-sc-goal{fill:#8affdd}.ov-sc-bad{fill:#ff8a8a}
+.ov-sc-l{font:700 22px 'Noto Sans TC',sans-serif;fill:#c7d5e6}
+.ov-sc-l--ok{fill:#8affdd}.ov-sc-l--bad{fill:#ff8a8a}
+.ov-sc-mover rect,.ov-sc-mover path{fill:#0b1a2a;stroke:#eef6ff;stroke-width:3}
+.ov-sc-site path{fill:none;stroke:#c7d5e6;stroke-width:4;stroke-linejoin:round}
+.ov-sc-clock circle{fill:#1a0d12;stroke:#ff8a8a;stroke-width:4}
+.ov-sc-clock path{fill:none;stroke:#ff8a8a;stroke-width:4;stroke-linecap:round}
+.ov-sc-mover{offset-rotate:0deg}
+.ov-sc-mover--phone{offset-path:path("M180 320H360V200H180V80")}
+.ov-sc-mover--ship{offset-path:path("M90 300C330 230 520 260 820 340");offset-rotate:auto}
+/* As a stage: one scene at a time, crossfading */
+html.sys-motion .sys-scene--impact .sys-stage{display:grid;align-content:center}
+html.sys-motion .sys-scene--impact .ov-impact{gap:0}
+html.sys-motion .sys-scene--impact .ov-sc{grid-area:1/1;opacity:0;transform:translateY(24px);transition:opacity .5s ease,transform .6s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+html.sys-motion .sys-scene--impact[data-step="0"] .ov-sc--0,html.sys-motion .sys-scene--impact[data-step="1"] .ov-sc--1,html.sys-motion .sys-scene--impact[data-step="2"] .ov-sc--2{opacity:1;transform:none;pointer-events:auto}
+html.sys-motion .sys-scene--impact .ov-sc-fake{stroke-dasharray:1400;stroke-dashoffset:1400}
+html.sys-motion .sys-scene--impact.is-here[data-step="0"] .ov-sc--0 .ov-sc-fake,html.sys-motion .sys-scene--impact.is-here[data-step="1"] .ov-sc--1 .ov-sc-fake{animation:ovScDraw 3.2s ease-in-out .4s infinite}
+html.sys-motion .sys-scene--impact.is-here[data-step="0"] .ov-sc-mover--phone,html.sys-motion .sys-scene--impact.is-here[data-step="1"] .ov-sc-mover--ship{animation:ovScMove 3.2s ease-in-out .4s infinite}
+html.sys-motion .sys-scene--impact.is-here[data-step="2"] .ov-sc-clock{animation:ovScWarn 1.1s steps(2) infinite}
+html.sys-motion .sys-scene--impact.is-here[data-step="2"] .ov-sc-site:nth-child(3) .ov-sc-clock{animation-delay:.35s}
+html.sys-motion .sys-scene--impact.is-here[data-step="2"] .ov-sc-site:nth-child(4) .ov-sc-clock{animation-delay:.7s}
+@keyframes ovScDraw{0%{stroke-dashoffset:1400}70%,100%{stroke-dashoffset:0}}
+@keyframes ovScMove{0%{offset-distance:0%}70%,100%{offset-distance:100%}}
+@keyframes ovScWarn{50%{opacity:.3}}
+.ov-sc-mover{offset-distance:100%}

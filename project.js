@@ -1002,7 +1002,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
     // The spoofer: an antenna below the route, sending out arcs once it keys up.
     const ax = route(vHit)[0] + W * 0.04, ay = H * 0.86;
     g.line(ax, ay, ax, ay - 26, '#ff8f8f', 2); g.line(ax - 10, ay, ax, ay - 26, '#ff8f8f', 1.5); g.line(ax + 10, ay, ax, ay - 26, '#ff8f8f', 1.5);
-    g.txt(en ? 'spoofing signal' : '欺騙訊號', ax + 16, ay - 10, { size: 12.5, color: '#ff8f8f', weight: 700 });
+    g.txt(en ? 'simulated spoofing' : '模擬的欺騙訊號', ax + 16, ay - 10, { size: 12.5, color: '#ff8f8f', weight: 700 });
     const since = p - HIT;
     if (since > 0 && since < 2.4) for (let k = 0; k < 3; k++) {
       const s = since - k * 0.35; if (s < 0) continue;

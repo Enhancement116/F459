@@ -315,3 +315,14 @@ html.sys-motion [data-step="1"] .ov-replay{opacity:1;transform:none;transition-d
 html.sys-motion [data-step="2"] .ov-replay{opacity:0;transform:translateY(20px)}
 html.sys-motion [data-step="2"] .ov-hijack{opacity:1;transform:none;pointer-events:auto;transition-delay:.15s}
 html.sys-motion .ov-build .ov-hijack canvas{max-height:calc(var(--sys-avail) * .55)}
+
+/* 03, two stops: both problems at once, then GeoTrust's low cost takes over */
+.ov-bind .ov-price{font-size:clamp(22px,calc(2.6 * var(--u)),48px)}
+html.sys-motion [data-step="0"] .ov-bind .ov-side,html.sys-motion .ov-bind[data-step="0"] .ov-side{opacity:1;border-color:#ff8f8f88}
+html.sys-motion [data-step="1"] .ov-cheap{opacity:1;transform:none}
+html.sys-motion [data-step="1"] .ov-side{opacity:0;border-color:#2c5278}
+.ov-cheap-col--old .ov-cheap-n{font-size:clamp(18px,calc(2 * var(--u)),38px)}
+html.sys-motion .ov-cheap .ov-cheap-col--old .ov-cheap-n{font-size:clamp(20px,calc(2.4 * var(--u)),44px)}
+.ov-cheap-col--new .ov-cheap-n{font-size:clamp(30px,calc(4.4 * var(--u)),84px)}
+html.sys-motion .ov-cheap .ov-cheap-col--new .ov-cheap-n{font-size:clamp(34px,calc(5.6 * var(--u)),108px)}
+.ov-cheap-row{align-items:end}

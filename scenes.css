@@ -635,3 +635,313 @@ html.sys-motion .sys-scene--ant .sys-ant3d{max-height:calc(var(--sys-avail) * .6
   .pcn-bar a::before{width:12px;height:12px}
   .pcn-bar a.is-current::before{width:16px;height:16px}
 }
+
+/* Dynamic chapter: why a moving test uses NMEA, and how each position becomes signal */
+.sys-why-body{display:grid;gap:clamp(16px,2vw,36px);align-items:center}
+@media(min-width:900px){.sys-why-body{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}}
+.sys-why-art{display:block;width:100%;height:auto;max-height:calc(var(--sys-avail,70vh) * .72)}
+.sys-why-h{font:700 20px 'Noto Sans TC',sans-serif;fill:#eef6ff}
+.sys-why-note{font:500 16px 'Noto Sans TC',sans-serif;fill:#9fb4c8}
+.sys-why-ln rect,.sys-why-sg rect{fill:#0b1b2c;stroke:#2c5278;stroke-width:1.5}
+.sys-why-code{font:600 17px 'JetBrains Mono',Consolas,monospace;fill:#c7d5e6}
+.sys-why-code .t{fill:#8affdd}
+.sys-why-sec{font:600 13px 'Noto Sans TC',sans-serif;fill:#9fb4c8}
+.sys-why-sg path{fill:none;stroke:#f6c775;stroke-width:2.5;stroke-linecap:round}
+.sys-why-route{fill:none;stroke:#2c5278;stroke-width:4;stroke-dasharray:2 10;stroke-linecap:round}
+.sys-why-sat rect{fill:#0b1118;stroke:#eef6ff;stroke-width:2}.sys-why-sat path{stroke:#70b7ff;stroke-width:3}
+.sys-why-ray{stroke:#70b7ff;stroke-width:1.6;stroke-dasharray:5 5;opacity:0}
+.sys-why-pt{fill:#0b1118;stroke:#8affdd;stroke-width:3}
+.sys-why-mover{fill:#8affdd;offset-path:path("M360 315 Q420 270 455 250 T585 185 L630 160");offset-distance:0%;opacity:0}
+.sys-why-arrow,.sys-why-arrowhead{fill:none;stroke:#9fb4c8;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.sys-why-steps{list-style:none;margin:0;padding:0;display:grid;gap:clamp(8px,1vw,16px)}
+.sys-why-step{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;padding:clamp(10px,1.2vw,20px) clamp(12px,1.4vw,24px);border-left:3px solid #2c5278}
+.sys-why-step i{grid-row:1/3;font:700 clamp(18px,1.6vw,28px)/1.2 Orbitron,sans-serif;font-style:normal;color:#8affdd}
+.po .sys-why-step b{font-size:clamp(19px,1.6vw,30px);line-height:1.3;color:#fff}
+.po .sys-why-step p{margin:0;font-size:clamp(16px,1.15vw,21px);line-height:1.65;color:#c7d5e6}
+/* As a stage: one step at a time, the picture builds up */
+html.sys-motion .sys-scene--why .sys-stage{display:flex;flex-direction:column;justify-content:center}
+html.sys-motion .sys-scene--why .sys-why-step{opacity:.28;transition:opacity .4s ease,border-color .4s ease,background .4s ease}
+html.sys-motion .sys-scene--why[data-step="0"] .sys-why-step--0,html.sys-motion .sys-scene--why[data-step="1"] .sys-why-step--1,html.sys-motion .sys-scene--why[data-step="2"] .sys-why-step--2{opacity:1;border-left-color:#8affdd;background:#0c2a4a55}
+html.sys-motion .sys-scene--why :is(.sys-why-ln,.sys-why-sg,.sys-why-sec){opacity:.12;transition:opacity .5s ease}
+html.sys-motion .sys-scene--why .sys-why-pt{opacity:.25;transition:opacity .4s ease}
+html.sys-motion .sys-scene--why.is-here[data-step="0"] .sys-why-mover{opacity:1;animation:sysWhyMove 4s ease-in-out infinite}
+html.sys-motion .sys-scene--why[data-step="0"] .sys-why-pt{opacity:.12}
+html.sys-motion .sys-scene--why:not([data-step="0"]) :is(.sys-why-ln,.sys-why-pt){opacity:1}
+html.sys-motion .sys-scene--why[data-step="2"] :is(.sys-why-sg,.sys-why-sec){opacity:.35}
+/* Step 3: line n → point n → its satellite rays → signal n, one second after another */
+html.sys-motion .sys-scene--why.is-here[data-step="2"] :is(.sys-why-ln,.sys-why-pt,.sys-why-sg,.sys-why-sec,.sys-why-ray){animation:sysWhyBeat 4.8s steps(1,end) infinite}
+html.sys-motion .sys-scene--why.is-here[data-step="2"] :is(.sys-why-ln--1,.sys-why-pt--1,.sys-why-sg--1,.sys-why-sec--1,.sys-why-ray--1){animation-delay:1.2s}
+html.sys-motion .sys-scene--why.is-here[data-step="2"] :is(.sys-why-ln--2,.sys-why-pt--2,.sys-why-sg--2,.sys-why-sec--2,.sys-why-ray--2){animation-delay:2.4s}
+html.sys-motion .sys-scene--why.is-here[data-step="2"] :is(.sys-why-ln--3,.sys-why-pt--3,.sys-why-sg--3,.sys-why-sec--3,.sys-why-ray--3){animation-delay:3.6s}
+html.sys-motion .sys-scene--why.is-here[data-step="2"] .sys-why-ln rect,html.sys-motion .sys-scene--why.is-here[data-step="2"] .sys-why-sg rect{transition:stroke .2s}
+@keyframes sysWhyBeat{0%{opacity:1}25%,100%{opacity:.3}}
+html.sys-motion .sys-scene--why.is-here[data-step="2"] .sys-why-ray{animation-name:sysWhyRay}
+@keyframes sysWhyRay{0%{opacity:.9}25%,100%{opacity:0}}
+@keyframes sysWhyMove{0%{offset-distance:0%}85%,100%{offset-distance:100%}}
+/* Without the stage (plain reading or reduced motion): everything shown */
+html:not(.sys-motion) .sys-why-ray--3{opacity:.7}
+.sys-why .po-viz-bar{justify-content:center;text-align:center}
+.po .sys-why .po-viz-bar span{font-size:clamp(26px,2.6vw,46px);font-weight:700;color:#fff}
+.sys-why .po-viz-bar em{display:none}
+.sys-why-h{font-size:24px}.sys-why-code{font-size:19px}.sys-why-note{font-size:17px}.sys-why-sec{font-size:15px}
+@media(min-width:900px){.sys-why-body{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}}
+html.sys-motion .sys-scene--why .sys-why-art{max-height:calc(var(--sys-avail,70vh) * .8)}
+/* One step's text at a time, in the same place, so the scene fits under the header */
+html.sys-motion .sys-scene--why .sys-why-steps{display:grid}
+html.sys-motion .sys-scene--why .sys-why-step{grid-area:1/1;opacity:0!important;transform:translateY(10px);transition:opacity .45s ease,transform .5s ease;background:none!important;border-left-color:#8affdd!important}
+html.sys-motion .sys-scene--why[data-step="0"] .sys-why-step--0,html.sys-motion .sys-scene--why[data-step="1"] .sys-why-step--1,html.sys-motion .sys-scene--why[data-step="2"] .sys-why-step--2{opacity:1!important;transform:none}
+html.sys-motion .sys-scene--why .sys-stage{gap:clamp(10px,2vh,28px)}
+@media(max-width:899px){
+  html.sys-motion .sys-scene--why .sys-why-art{max-height:calc(var(--sys-avail,70vh) * .5)}
+  .po .sys-why .po-viz-bar span{font-size:24px}
+}
+@media(min-width:900px){.sys-why-body{grid-template-columns:minmax(0,2.1fr) minmax(0,1fr)}html.sys-motion .sys-scene--why .sys-why-art{max-height:calc(var(--sys-avail,70vh) * .86)}}
+/* Phones: the picture is shown 1.6× and pans to the part each step talks about */
+@media(max-width:899px){
+  .sys-why-body{overflow:hidden}
+  html.sys-motion .sys-scene--why .sys-why-art{width:160%;max-width:none;max-height:none;transform:translateX(-18.75%);transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+  html.sys-motion .sys-scene--why[data-step="1"] .sys-why-art{transform:translateX(0)}
+  html.sys-motion .sys-scene--why[data-step="2"] .sys-why-art{transform:translateX(-37.5%)}
+}
+
+/* ===== Dynamic chapter: one map tells it — moving device, NMEA position each second, a signal per position ===== */
+.sys-rt .po-viz-bar{justify-content:center;text-align:center}
+.po .sys-rt .po-viz-bar span{font-size:clamp(26px,2.6vw,46px);font-weight:700;color:#fff}
+.sys-rt-body{display:grid;gap:clamp(14px,2vw,36px);align-items:center}
+@media(min-width:900px){.sys-rt-body{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}
+.sys-rt-art{display:block;width:100%;height:auto}
+html.sys-motion .sys-scene--rt .sys-rt-art{max-height:calc(var(--sys-avail,70vh) * .84)}
+.sys-rt-streets path{fill:none;stroke:#16293d;stroke-width:2}
+.sys-rt-road{fill:none;stroke:#2c4a68;stroke-width:14;stroke-linecap:round}
+.sys-rt-done{fill:none;stroke:#8affdd;stroke-width:4;stroke-linecap:round;stroke-dasharray:1000;stroke-dashoffset:1000}
+.sys-rt-sat rect{fill:#0b1118;stroke:#eef6ff;stroke-width:2}.sys-rt-sat path{stroke:#70b7ff;stroke-width:3}
+.sys-rt-ray{stroke:#70b7ff;stroke-width:2;stroke-dasharray:6 6;opacity:0}
+.sys-rt-pt circle{fill:#0b1118;stroke:#8affdd;stroke-width:3}
+.sys-rt-pt text{font:600 15px 'JetBrains Mono',Consolas,monospace;fill:#9fb4c8}
+.sys-rt-car rect{fill:#eef6ff}.sys-rt-car circle{fill:#0b1118}
+.sys-rt-car{offset-distance:0%;offset-rotate:auto}
+.sys-rt-card rect{fill:#0b1b2cf2;stroke:#8affdd88;stroke-width:1.5}
+.sys-rt-code{font:600 21px 'JetBrains Mono',Consolas,monospace;fill:#c7d5e6}
+.sys-rt-code .c-t{fill:#8affdd}.sys-rt-code .c-a{fill:#f6c775}.sys-rt-code .c-o{fill:#70b7ff}
+.sys-rt-pin{stroke:#8affdd88;stroke-width:2;stroke-dasharray:4 4}
+.sys-rt-h{font:700 18px 'Noto Sans TC',sans-serif;fill:#eef6ff}
+.sys-rt-sg rect{fill:#0b1b2c;stroke:#2c5278;stroke-width:1.5}
+.sys-rt-sg path{fill:none;stroke:#f6c775;stroke-width:2.5;stroke-linecap:round}
+.sys-rt-sg text{font:700 13px Orbitron,sans-serif;fill:#9fb4c8}
+.sys-rt-steps{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.sys-rt-step{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;padding:clamp(10px,1.2vw,22px) clamp(12px,1.4vw,24px);border-left:3px solid #8affdd}
+.sys-rt-step i{grid-row:1/3;font:700 clamp(20px,1.8vw,32px)/1.2 Orbitron,sans-serif;font-style:normal;color:#8affdd}
+.po .sys-rt-step b{font-size:clamp(20px,1.7vw,32px);line-height:1.3;color:#fff}
+.po .sys-rt-step p{margin:0;font-size:clamp(16px,1.2vw,22px);line-height:1.7;color:#c7d5e6}
+/* Stage: one step's words at a time; the map builds up */
+html.sys-motion .sys-scene--rt .sys-stage{display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,2vh,26px)}
+html.sys-motion .sys-scene--rt .sys-rt-steps{display:grid}
+html.sys-motion .sys-scene--rt .sys-rt-step{grid-area:1/1;opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .5s ease}
+html.sys-motion .sys-scene--rt[data-step="0"] .sys-rt-step--0,html.sys-motion .sys-scene--rt[data-step="1"] .sys-rt-step--1,html.sys-motion .sys-scene--rt[data-step="2"] .sys-rt-step--2{opacity:1;transform:none}
+html.sys-motion .sys-scene--rt :is(.sys-rt-pt,.sys-rt-card,.sys-rt-pin,.sys-rt-sg,.sys-rt-h,.sys-rt-sat){opacity:0;transition:opacity .5s ease}
+/* 1: the device drives the route */
+html.sys-motion .sys-scene--rt.is-here[data-step="0"] .sys-rt-car{animation:sysRtDrive 6s linear infinite}
+html.sys-motion .sys-scene--rt.is-here[data-step="0"] .sys-rt-done{animation:sysRtDone 6s linear infinite}
+@keyframes sysRtDrive{from{offset-distance:0%}to{offset-distance:100%}}
+@keyframes sysRtDone{from{stroke-dashoffset:1000}to{stroke-dashoffset:0}}
+/* 2: a point for every second, and the NMEA line of one of them */
+html.sys-motion .sys-scene--rt:not([data-step="0"]) .sys-rt-car{opacity:0}
+html.sys-motion .sys-scene--rt:not([data-step="0"]) .sys-rt-done{stroke-dashoffset:0}
+html.sys-motion .sys-scene--rt:not([data-step="0"]) .sys-rt-pt{opacity:1;transition-delay:calc(var(--i) * 90ms)}
+html.sys-motion .sys-scene--rt[data-step="1"] :is(.sys-rt-card,.sys-rt-pin){opacity:1;transition-delay:.8s}
+html.sys-motion .sys-scene--rt[data-step="1"] .sys-rt-pt--4 circle{fill:#8affdd}
+/* 3: satellites, rays to each point in turn, and its stretch of signal */
+html.sys-motion .sys-scene--rt[data-step="2"] :is(.sys-rt-sat,.sys-rt-h){opacity:1}
+html.sys-motion .sys-scene--rt[data-step="2"] .sys-rt-sg{opacity:.35}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg,.sys-rt-ray,.sys-rt-pt circle){animation:sysRtBeat 6.4s steps(1,end) infinite}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray{animation-name:sysRtRay}
+@keyframes sysRtBeat{0%{opacity:1;fill:#8affdd}12.5%,100%{opacity:.35;fill:#0b1118}}
+@keyframes sysRtRay{0%{opacity:.9}12.5%,100%{opacity:0}}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-sg path{stroke-width:3}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--1,.sys-rt-ray--1,.sys-rt-pt--1 circle){animation-delay:0.8s}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--2,.sys-rt-ray--2,.sys-rt-pt--2 circle){animation-delay:1.6s}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--3,.sys-rt-ray--3,.sys-rt-pt--3 circle){animation-delay:2.4s}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--4,.sys-rt-ray--4,.sys-rt-pt--4 circle){animation-delay:3.2s}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--5,.sys-rt-ray--5,.sys-rt-pt--5 circle){animation-delay:4.0s}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--6,.sys-rt-ray--6,.sys-rt-pt--6 circle){animation-delay:4.8s}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] :is(.sys-rt-sg--7,.sys-rt-ray--7,.sys-rt-pt--7 circle){animation-delay:5.6s}
+
+/* Phones: words under the map, the map a little taller in its text */
+@media(max-width:899px){.sys-rt-code{font-size:24px}.sys-rt-pt text{font-size:18px}.sys-rt-h{font-size:22px}
+  html.sys-motion .sys-scene--rt .sys-rt-art{max-height:calc(var(--sys-avail,70vh) * .5)}
+  .po .sys-rt .po-viz-bar span{font-size:24px}}
+/* Plain reading: everything at once */
+html:not(.sys-motion) .sys-rt-done{stroke-dashoffset:0}
+html:not(.sys-motion) .sys-rt-car{display:none}
+html:not(.sys-motion) .sys-rt-ray--4{opacity:.8}
+/* Rays: only to the point of the moment (kept apart from the shared beat so it is not overridden) */
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray{animation:sysRtRay 6.4s steps(1,end) infinite!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--1{animation-delay:0.8s!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--2{animation-delay:1.6s!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--3{animation-delay:2.4s!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--4{animation-delay:3.2s!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--5{animation-delay:4.0s!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--6{animation-delay:4.8s!important}
+html.sys-motion .sys-scene--rt.is-here[data-step="2"] .sys-rt-ray--7{animation-delay:5.6s!important}
+@keyframes sysRtRay{0%{opacity:.9}12.5%,100%{opacity:0}}
+
+/* ===== Interface chapter: the command line, the one-screen interface, then the difference — one idea per step ===== */
+.sys-ui-body{display:grid;gap:clamp(16px,2.4vw,44px);align-items:center}
+@media(min-width:900px){.sys-ui-body{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}}
+.sys-ui-shots{position:relative;display:grid;place-items:center;min-width:0}
+.sys-ui-img{display:block;max-width:100%;height:auto;border:1px solid #2c5278;border-radius:10px;box-shadow:0 18px 40px #0008}
+.sys-ui-gui{position:relative;display:block}
+.sys-ui-pin{position:absolute;left:var(--x);top:var(--y);translate:-50% -50%;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border:1px solid #8affdd;border-radius:999px;background:#07101ef0;box-shadow:0 0 0 6px #8affdd1f,0 8px 22px #000a;white-space:nowrap}
+.sys-ui-pin b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#8affdd;color:#04121a;font:700 15px Orbitron,sans-serif}
+.sys-ui-pin em{font-style:normal;font-weight:700;font-size:clamp(14px,1.05vw,19px);color:#fff}
+.sys-ui-texts{display:grid;min-width:0}
+.po .sys-ui-k{margin:0 0 4px;font:700 clamp(14px,1vw,18px)/1.2 'Noto Sans TC',sans-serif;letter-spacing:2px;color:#ff9a9a}
+.po .sys-ui-k--gt{color:#8affdd}
+.po .sys-ui-h{margin:0 0 clamp(12px,1.6vw,24px);font-size:clamp(28px,2.8vw,50px);line-height:1.2;color:#fff}
+.sys-ui-list{list-style:none;margin:0;padding:0;display:grid;gap:clamp(12px,1.4vw,22px)}
+.sys-ui-list li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px}
+.sys-ui-list i{grid-row:1/3;display:grid;place-items:center;width:clamp(30px,2.2vw,40px);height:clamp(30px,2.2vw,40px);border:1.5px solid #ff9a9a;border-radius:50%;font:700 clamp(14px,1vw,18px) Orbitron,sans-serif;font-style:normal;color:#ff9a9a}
+.sys-ui-list--gt i{border-color:#8affdd;background:#8affdd;color:#04121a}
+.po .sys-ui-list b{font-size:clamp(19px,1.5vw,28px);line-height:1.35;color:#fff}
+.po .sys-ui-list span{font-size:clamp(15px,1.1vw,20px);line-height:1.6;color:#9fb4c8}
+.sys-ui-cmp{display:grid;gap:clamp(14px,2vw,30px);justify-items:center;text-align:center}
+.po .sys-ui-cmp-h{margin:0;font-size:clamp(28px,3vw,54px);color:#fff}
+.sys-ui-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:clamp(10px,2vw,40px);width:min(100%,1000px)}
+.po .sys-ui-row-k{grid-column:1/-1;margin:0;font-size:clamp(16px,1.2vw,22px);color:#9fb4c8;letter-spacing:1px}
+.sys-ui-old,.sys-ui-new{display:grid;gap:4px;padding:clamp(12px,1.6vw,26px);border-radius:16px}
+.sys-ui-old{border:1px solid #ff9a9a55;background:#2a0f1466}
+.sys-ui-new{border:1px solid #8affdd77;background:#0a242466}
+.sys-ui-old small,.sys-ui-new small{font-size:clamp(13px,.95vw,17px);color:#9fb4c8}
+.sys-ui-old b{font:700 clamp(30px,3.6vw,68px)/1.1 Orbitron,'Noto Sans TC',sans-serif;color:#ff9a9a;text-decoration:line-through;text-decoration-thickness:3px}
+.sys-ui-new b{font:700 clamp(34px,4.4vw,84px)/1.1 Orbitron,'Noto Sans TC',sans-serif;color:#8affdd}
+.sys-ui-arrow{font-style:normal;font-size:clamp(28px,2.6vw,48px);color:#8affdd}
+.po .sys-ui-note{margin:0;font-size:clamp(13px,.95vw,17px);color:#9fb4c8}
+/* Stage: one step at a time */
+html.sys-motion .sys-scene--ui .sys-stage{display:flex;flex-direction:column;justify-content:center}
+html.sys-motion .sys-scene--ui .sys-ui-body{position:relative}
+html.sys-motion .sys-scene--ui .sys-ui-shots>*{grid-area:1/1}
+html.sys-motion .sys-scene--ui .sys-ui-img{max-height:calc(var(--sys-avail,70vh) * .78);width:auto}
+html.sys-motion .sys-scene--ui :is(.sys-ui-img--cmd,.sys-ui-gui,.sys-ui-txt,.sys-ui-cmp){opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .6s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+html.sys-motion .sys-scene--ui .sys-ui-txt{grid-area:1/1}
+html.sys-motion .sys-scene--ui[data-step="0"] :is(.sys-ui-img--cmd,.sys-ui-txt--0),html.sys-motion .sys-scene--ui[data-step="1"] :is(.sys-ui-gui,.sys-ui-txt--1){opacity:1;transform:none;pointer-events:auto}
+html.sys-motion .sys-scene--ui .sys-ui-pin{opacity:0;scale:.6;transition:opacity .35s ease,scale .45s cubic-bezier(.2,.9,.3,1.3)}
+html.sys-motion .sys-scene--ui[data-step="1"] .sys-ui-pin{opacity:1;scale:1}
+html.sys-motion .sys-scene--ui[data-step="1"] .sys-ui-pin:nth-of-type(1){transition-delay:.5s}
+html.sys-motion .sys-scene--ui[data-step="1"] .sys-ui-pin:nth-of-type(2){transition-delay:.7s}
+html.sys-motion .sys-scene--ui[data-step="1"] .sys-ui-pin:nth-of-type(3){transition-delay:.9s}
+html.sys-motion .sys-scene--ui .sys-ui-cmp{position:absolute;inset:0;align-content:center}
+html.sys-motion .sys-scene--ui[data-step="2"] .sys-ui-cmp{opacity:1;transform:none;pointer-events:auto}
+html.sys-motion .sys-scene--ui[data-step="2"] :is(.sys-ui-shots,.sys-ui-texts){visibility:hidden}
+html.sys-motion .sys-scene--ui[data-step="2"] .sys-ui-new b{animation:sysUiPop .7s cubic-bezier(.2,.9,.3,1.3) .5s both}
+@keyframes sysUiPop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+@media(max-width:899px){
+  html.sys-motion .sys-scene--ui .sys-ui-img{max-height:calc(var(--sys-avail,70vh) * .4)}
+  .sys-ui-pin{padding:4px 10px 4px 4px;gap:5px}.sys-ui-pin b{width:22px;height:22px;font-size:12px}.sys-ui-pin em{font-size:12px}
+  .sys-ui-row{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
+}
+/* Plain reading: every part in order */
+html:not(.sys-motion) .sys-ui-shots{display:grid;gap:20px}
+html:not(.sys-motion) .sys-ui-cmp{grid-column:1/-1;margin-top:20px}
+.sys-ui-old b,.sys-ui-new b{white-space:nowrap}
+@media(max-width:899px){.sys-ui-old b{font-size:22px}.sys-ui-new b{font-size:26px}.sys-ui-old,.sys-ui-new{padding:12px 10px}}
+
+/* ===== Interface chapter as a side-by-side run: the command line crawls to half an hour, the interface is done in seconds ===== */
+@property --dl-m{syntax:'<integer>';inherits:false;initial-value:0}
+@property --dl-s{syntax:'<integer>';inherits:false;initial-value:0}
+.sys-dl .po-viz-bar{justify-content:center;text-align:center}
+.po .sys-dl .po-viz-bar span{font-size:clamp(26px,2.6vw,46px);font-weight:700;color:#fff}
+.sys-dl-body{display:grid;gap:clamp(14px,2vw,32px);margin-top:clamp(10px,1.4vw,22px)}
+@media(min-width:900px){.sys-dl-body{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sys-dl-side{display:grid;grid-template-rows:auto 1fr auto;gap:clamp(8px,1vw,14px);min-width:0;padding:clamp(12px,1.4vw,22px);border-radius:18px}
+.sys-dl-side--cli{border:1px solid #ff9a9a44;background:#1a0b1066}
+.sys-dl-side--gt{border:1px solid #8affdd55;background:#08201f66}
+.po .sys-dl-k{margin:0;font-size:clamp(18px,1.5vw,28px);font-weight:700}
+.sys-dl-side--cli .sys-dl-k{color:#ff9a9a}.sys-dl-side--gt .sys-dl-k{color:#8affdd}
+/* terminal */
+.sys-dl-term{display:flex;flex-direction:column;min-height:clamp(220px,26vw,380px);border:1px solid #3a2a40;border-radius:10px;background:#120a14;overflow:hidden}
+.sys-dl-term-bar{display:flex;gap:6px;padding:8px 10px;background:#1f1424}.sys-dl-term-bar i{width:10px;height:10px;border-radius:50%;background:#5a4560}
+.sys-dl-lines{padding:clamp(10px,1vw,16px);font:500 clamp(12px,.9vw,16px)/1.7 'JetBrains Mono',Consolas,monospace;color:#d6c6dc}
+.po .sys-dl-line{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sys-dl-line--cmd{color:#f2e7f5}.sys-dl-line--out{color:#a993b2}
+.sys-dl-caret{display:inline-block;width:.6em;height:1.1em;background:#ff9a9a;vertical-align:middle;animation:sysDlBlink 1s steps(2) infinite}
+@keyframes sysDlBlink{50%{opacity:0}}
+/* interface */
+.sys-dl-gui{position:relative;align-self:center}
+.sys-dl-gui img{display:block;width:100%;height:auto;border:1px solid #2c5278;border-radius:10px}
+.sys-dl-cursor{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-4px 0 0 -4px;background:conic-gradient(from 200deg at 4px 4px,#fff 0 40deg,transparent 0);clip-path:polygon(0 0,0 80%,25% 60%,45% 100%,58% 94%,40% 56%,72% 56%);filter:drop-shadow(0 2px 4px #000);z-index:3;background:#fff}
+.sys-dl-tap{position:absolute;left:var(--x);top:var(--y);width:44px;height:44px;margin:-22px 0 0 -22px;border:2px solid #8affdd;border-radius:50%;opacity:0;z-index:2}
+.sys-dl-step{position:absolute;left:var(--x);top:var(--y);translate:-50% -50%;padding:3px 10px;border-radius:999px;background:#07101ef0;border:1px solid #8affdd;opacity:0;z-index:2;white-space:nowrap}
+.sys-dl-step em{font-style:normal;font-weight:700;font-size:clamp(12px,.95vw,16px);color:#fff}
+/* clocks and results */
+.sys-dl-foot{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.sys-dl-clock{font:700 clamp(30px,3vw,54px)/1 Orbitron,sans-serif}
+.sys-dl-clock--cli{color:#ff9a9a;counter-reset:m var(--dl-m)}
+.sys-dl-clock--cli::after{content:counter(m,decimal-leading-zero) ":00"}
+.sys-dl-clock--gt{color:#8affdd;counter-reset:s var(--dl-s)}
+.sys-dl-clock--gt::after{content:"0:0" counter(s)}
+.po .sys-dl-done{font-size:clamp(16px,1.3vw,24px);color:#fff;opacity:0}
+.po .sys-dl-note{margin:clamp(10px,1.4vw,20px) 0 0;text-align:center;font-size:clamp(14px,1vw,18px);color:#9fb4c8}
+/* One 12-second run, repeated while the scene is on screen */
+.sys-dl-side--cli .sys-dl-clock{--dl-m:30}.sys-dl-side--gt .sys-dl-clock{--dl-s:6}
+.sys-dl-side .sys-dl-done{opacity:1}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-clock--cli{animation:sysDlMin 12s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-clock--gt{animation:sysDlSec 12s linear infinite}
+@keyframes sysDlMin{0%{--dl-m:0}83%,100%{--dl-m:30}}
+@keyframes sysDlSec{0%{--dl-s:0}35%,100%{--dl-s:6}}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-side--cli .sys-dl-done{animation:sysDlDoneCli 12s ease infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-side--gt .sys-dl-done{animation:sysDlDoneGt 12s ease infinite}
+@keyframes sysDlDoneCli{0%,82%{opacity:0}86%,100%{opacity:1}}
+@keyframes sysDlDoneGt{0%,34%{opacity:0}38%,100%{opacity:1}}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-line{animation:sysDlLine 12s steps(1,end) infinite;animation-delay:calc(var(--i) * 1.3s)}
+@keyframes sysDlLine{0%{opacity:1}100%{opacity:1}}
+html.sys-motion .sys-scene--dl .sys-dl-line{opacity:0}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-line{animation-name:sysDlLineShow}
+@keyframes sysDlLineShow{0%{opacity:1}}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-cursor{animation:sysDlCursor 12s cubic-bezier(.45,0,.25,1) infinite}
+@keyframes sysDlCursor{0%{left:50%;top:60%}6%,9%{left:22%;top:48%}14%,17%{left:68%;top:22%}22%,25%{left:80%;top:62%}30%,100%{left:72%;top:93%}}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-tap{animation:sysDlTap 12s ease-out infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-tap--2{animation-delay:.95s}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-tap--3{animation-delay:1.9s}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-tap--4{animation-delay:2.9s}
+@keyframes sysDlTap{0%,6%{opacity:0;transform:scale(.4)}7%{opacity:1;transform:scale(.6)}12%,100%{opacity:0;transform:scale(1.6)}}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-step{animation:sysDlStep 12s ease infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-step--2{animation-delay:.95s}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-step--3{animation-delay:1.9s}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-step--4{animation-delay:2.9s}
+@keyframes sysDlStep{0%,6%{opacity:0}8%,80%{opacity:1}86%,100%{opacity:0}}
+html.sys-motion .sys-scene--dl .sys-stage{display:flex;flex-direction:column;justify-content:center}
+@media(max-width:899px){.sys-dl-term{min-height:150px}.sys-dl-lines{font-size:11px}.sys-dl-clock{font-size:26px}
+  html.sys-motion .sys-scene--dl .sys-dl-side{padding:10px}html.sys-motion .sys-scene--dl .sys-dl-term{max-height:calc(var(--sys-avail,70vh) * .26)}}
+@media(max-width:899px){
+  .po .sys-dl .po-viz-bar span{font-size:21px}
+  .sys-dl-body{gap:10px;margin-top:6px}
+  .po .sys-dl-k{font-size:16px}
+  html.sys-motion .sys-scene--dl .sys-dl-term{min-height:0;max-height:calc(var(--sys-avail,70vh) * .2)}
+  .sys-dl-lines{padding:8px;line-height:1.55}
+  .sys-dl-clock{font-size:22px}.po .sys-dl-done{font-size:14px}
+  .po .sys-dl-note{font-size:12px;margin-top:8px}
+  html.sys-motion .sys-scene--dl .sys-dl-side{gap:6px}
+}
+/* Both pictures size from the height under the header, so title, run and note fit together */
+html.sys-motion .sys-scene--dl .sys-dl-term{min-height:0;height:calc(var(--sys-avail,70vh) * .42)}
+html.sys-motion .sys-scene--dl .sys-dl-gui img{width:auto;max-width:100%;max-height:calc(var(--sys-avail,70vh) * .42);margin:0 auto}
+html.sys-motion .sys-scene--dl .sys-dl-gui{justify-self:center}
+@media(max-width:899px){html.sys-motion .sys-scene--dl .sys-dl-term{height:calc(var(--sys-avail,70vh) * .18)}html.sys-motion .sys-scene--dl .sys-dl-gui img{max-height:calc(var(--sys-avail,70vh) * .24)}}
+
+/* Route scene, fewer words: three step dots and one short line above a full-width map */
+.sys-rt-body{grid-template-columns:minmax(0,1fr)!important}
+.sys-rt-top{display:grid;justify-items:center;gap:clamp(8px,1.2vw,16px);margin:clamp(6px,1vw,14px) 0 clamp(4px,.8vw,10px)}
+.sys-rt-dots{list-style:none;margin:0;padding:0;display:flex;gap:clamp(14px,3vw,48px)}
+.sys-rt-dot{display:flex;align-items:center;gap:8px;color:#6f8297;font-size:clamp(14px,1vw,18px);font-weight:700}
+.sys-rt-dot i{display:grid;place-items:center;width:26px;height:26px;border:1.5px solid currentColor;border-radius:50%;font:700 13px Orbitron,sans-serif;font-style:normal}
+.sys-rt-caps{display:grid;text-align:center}
+.po .sys-rt-cap{grid-area:1/1;margin:0;font-size:clamp(22px,2.1vw,38px);font-weight:700;line-height:1.35;color:#eef6ff}
+html.sys-motion .sys-scene--rt .sys-rt-dot{transition:color .4s ease}
+html.sys-motion .sys-scene--rt[data-step="0"] .sys-rt-dot--0,html.sys-motion .sys-scene--rt[data-step="1"] .sys-rt-dot--1,html.sys-motion .sys-scene--rt[data-step="2"] .sys-rt-dot--2{color:#8affdd}
+html.sys-motion .sys-scene--rt[data-step="1"] .sys-rt-dot--0,html.sys-motion .sys-scene--rt[data-step="2"] :is(.sys-rt-dot--0,.sys-rt-dot--1){color:#d9bf8c}
+html.sys-motion .sys-scene--rt .sys-rt-cap{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .5s ease}
+html.sys-motion .sys-scene--rt[data-step="0"] .sys-rt-cap--0,html.sys-motion .sys-scene--rt[data-step="1"] .sys-rt-cap--1,html.sys-motion .sys-scene--rt[data-step="2"] .sys-rt-cap--2{opacity:1;transform:none}
+html.sys-motion .sys-scene--rt .sys-rt-art{max-height:calc(var(--sys-avail,70vh) * .72);margin:0 auto}
+html:not(.sys-motion) .sys-rt-cap{grid-area:auto}
+@media(max-width:899px){.po .sys-rt-cap{font-size:19px}.sys-rt-dot{font-size:13px}.sys-rt-dot i{width:22px;height:22px;font-size:11px}
+  html.sys-motion .sys-scene--rt .sys-rt-art{max-height:calc(var(--sys-avail,70vh) * .6)}}

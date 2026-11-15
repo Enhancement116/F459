@@ -109,3 +109,13 @@ html.tk-ready .tk-flow .po-steps>li{opacity:1}
 .tk-code[data-beat="1"] .tk-gap{opacity:1}
 /* Narrow phones: the worked-example figures stack instead of running off the side */
 @media(max-width:480px){.po .po-stats--calc{grid-template-columns:minmax(0,1fr)!important}.po .po-stats--calc>div{min-width:0}}
+
+/* The six-step bar under each chapter title is a slim one-line guide; the full pipeline lives in the hero. */
+.tk .po-trk3{gap:14px;margin:-4px 0 26px;padding:8px 0;border:0;border-top:1px solid #d9bf8c26;border-bottom:1px solid #d9bf8c26;background:none}
+.tk .po-trk3 .t3-k{font-size:13px}
+.tk .po-trk3 ol::before{display:none}
+.tk .po-trk3 a{grid-auto-flow:column;align-items:center;gap:6px}
+.tk .po-trk3 svg{width:18px;height:18px;padding:0;border:0;background:none;box-shadow:none}
+.tk .po-trk3 li.is-current svg{background:none;color:var(--gold);box-shadow:none}
+.tk .po-trk3 li.is-current a{color:var(--gold)}
+.tk .po-trk3 a span{font-size:13px}

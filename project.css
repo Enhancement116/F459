@@ -768,7 +768,7 @@ html:has(main.po){scroll-padding-top:0}
 
 /* comparison */
 .po-cmp{border:1px solid var(--rule);background:#0a1828}
-.cmp-row{display:grid;grid-template-columns:150px repeat(3,minmax(0,1fr)) minmax(0,1.25fr);border-top:1px solid #1d3650}
+.cmp-row{display:grid;grid-template-columns:150px repeat(3,minmax(0,1fr));border-top:1px solid #1d3650}
 .cmp-row:first-child{border-top:0}
 .cmp-hd{background:#0d2034}
 .cmp-hd b{font-size:17px;color:var(--ink)}
@@ -1517,3 +1517,17 @@ html.egg-glitch body{animation:egg-glitch .22s steps(3)}
 /* Chapter 05: one sentence on how a device is judged, directly above the animation. */
 .po .po-method{margin:0;font-size:clamp(19px,1.6vw,22px);line-height:1.8;color:var(--ink)}
 #test .po-hijack{margin-top:clamp(20px,2.4vw,28px)}
+
+/* Design page: the fusion as a static summary (the full version is Tech 05), and links that hand a topic to another page. */
+.sys-fuse{margin-top:24px}
+.sys-fuse-art{display:block;width:100%;max-width:820px;height:auto;margin:18px auto 6px}
+.sys-fuse-art rect,.sys-fuse-art circle{fill:#0a1828;stroke-width:2}
+.sys-fuse-art .f-gps rect{stroke:#70b7ff}.sys-fuse-art .f-bds rect{stroke:#f6c775}.sys-fuse-art .f-mix circle{stroke:#8affdd}.sys-fuse-art .f-sdr rect{stroke:#8affdd}
+.sys-fuse-art text{font:700 22px 'Noto Sans TC',sans-serif;fill:#e6f0fb}.sys-fuse-art .f-sm{font-size:16px;font-weight:400;fill:#9fb4c8}
+.sys-fuse-art .f-line{fill:none;stroke:#3f6b8f;stroke-width:3}
+.sys-fuse figcaption{display:grid;gap:12px;padding:6px 4px 4px}
+.sys-fuse-say{margin:0;font-size:clamp(16px,1.2vw,19px);line-height:1.85;color:#c3d2e3}
+.sys-fuse-go,.sys-more{justify-self:start;display:inline-block;padding:9px 16px;border:1px solid #8affdd55;border-radius:999px;color:#cfeee4;font-size:15px;text-decoration:none;background:#8affdd0d}
+.sys-more{margin-top:18px}
+.sys-fuse-go:hover,.sys-more:hover{border-color:#8affdd;background:#8affdd1f}
+.sys-dl .sys-more,.sys-nmea .sys-more{display:block;width:max-content;max-width:100%;margin:16px auto 4px}

@@ -79,36 +79,9 @@ html.sys-motion .sys-scene--hm-every.is-here[data-step="1"] .hm-hand{animation:h
 @keyframes hmFlow{to{stroke-dashoffset:-24}}
 @keyframes hmTurn{to{transform:rotate(360deg)}}
 
-/* 02 fragile */
-.hm-scope rect{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.5}
-.hm-scope-grid{fill:none;stroke:#1a3149;stroke-width:1}
-.hm-scope-k{fill:var(--hm-dim)!important;font-size:16px!important}
-.hm-noise-band{fill:#9fb4c81a}
-.hm-noise{fill:none;stroke:#9fb4c8;stroke-width:1.5;stroke-linejoin:round}
-.hm-real{fill:none;stroke:var(--hm-acc);stroke-width:2.5}
-.hm-fake{fill:none;stroke:var(--hm-red);stroke-width:3}
-.hm-l--noise{fill:#9fb4c8!important}.hm-l--real{fill:var(--hm-acc)!important}.hm-l--fake{fill:var(--hm-red)!important}
-.hm-map rect{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.5}
-.hm-map-st{fill:none;stroke:#1d3852;stroke-width:10;stroke-linecap:round}
-.hm-pin path{stroke:#04101e;stroke-width:1.5}
-.hm-pin--true path{fill:var(--hm-acc)}.hm-pin--fake path{fill:var(--hm-red)}
-.hm-pin text{font-size:16px!important}
-.hm-pin--true text{fill:var(--hm-acc)!important}.hm-pin--fake text{fill:var(--hm-red)!important}
-.hm-drag{fill:none;stroke:var(--hm-red);stroke-width:2;stroke-dasharray:6 6}
-.hm-map-k{font-size:15px!important;fill:var(--hm-dim)!important}
-html.sys-motion .sys-scene--hm-weak .hm-fake,html.sys-motion .sys-scene--hm-weak .hm-l--fake{opacity:0}
-html.sys-motion .sys-scene--hm-weak[data-step="1"] .hm-fake,html.sys-motion .sys-scene--hm-weak[data-step="1"] .hm-l--fake,
-html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-fake,html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-l--fake{opacity:1}
-html.sys-motion .sys-scene--hm-weak.is-here[data-step="1"] .hm-fake{animation:hmRise .9s cubic-bezier(.2,.7,.2,1)}
-html.sys-motion .sys-scene--hm-weak .hm-map{opacity:.28}
-html.sys-motion .sys-scene--hm-weak .hm-pin--fake,html.sys-motion .sys-scene--hm-weak .hm-drag{opacity:0}
-html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-map,html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-pin--fake,html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-drag{opacity:1}
-html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-pin--true{opacity:.4}
-html.sys-motion .sys-scene--hm-weak.is-here[data-step="2"] .hm-drag{animation:hmFlow 1s linear infinite}
-html.sys-motion .sys-scene--hm-weak.is-here[data-step="0"] .hm-real{animation:hmGlow 1.8s ease-in-out infinite}
-@keyframes hmRise{from{transform:scaleY(.05)}to{transform:none}}
-.hm-fake{transform-origin:0 200px;transform-box:view-box}
-@keyframes hmGlow{50%{stroke-width:4;filter:drop-shadow(0 0 6px #8affdd)}}
+/* 02: the chapter title alone, then a link to the overview's full explanation */
+.hm .hm-more{display:inline-block;margin-top:22px;padding:10px 18px;border:1px solid #8affdd66;border-radius:999px;color:#cfeee4;font-size:clamp(15px,1.1vw,18px);text-decoration:none;background:#8affdd0d;transition:background .2s,border-color .2s}
+.hm .hm-more:hover,.hm .hm-more:focus-visible{background:#8affdd22;border-color:var(--hm-acc)}
 
 /* 03 the lab */
 .hm-node rect,.hm-node path{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.8}

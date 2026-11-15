@@ -1,67 +1,22 @@
-// Technical details page: a free-scrolling read. Each chapter's main figure stays pinned on the left while
-// its points light up one by one on the right; everything else rises into view as it arrives.
-// The header comes from header.js, shared with the other free-scrolling pages.
+// Technical details page. The stages, stops and header come from scroll-scenes.js (as on the design page);
+// this file adds the "go deeper" dialogs, the waveform figure and the way back to another page.
 (() => {
   const root = document.documentElement;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const calm = matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-  // ---- Chapters: the first figure pinned beside the chapter's points and its running example
-  $$('main > section.po-ch').forEach(sec => {
-    const steps = $(':scope > ol.po-steps', sec);
-    const fig = $(':scope > figure.po-viz:not(.po-eng-viz)', sec);
-    if (!steps || !fig) return;
-    const block = document.createElement('div');
-    block.className = 'tk-scrolly';
-    const pin = document.createElement('div');
-    pin.className = 'tk-pin';
-    const flow = document.createElement('div');
-    flow.className = 'tk-flow';
-    const lead = steps.previousElementSibling;
-    steps.before(block);
-    if (lead && lead.matches('h3.po-sub')) flow.append(lead);
-    flow.append(steps);
-    const trace = $(':scope > aside.po-trace', sec);
-    if (trace) flow.append(trace);
-    pin.append(fig);
-    block.append(pin, flow);
-    sec.classList.add('tk-has-scrolly');
+  // ---- "Go deeper": each chapter's details and formulas open in a dialog over the stage
+  $$('.tk-deep-open').forEach(btn => {
+    const dlg = document.getElementById('deep-' + btn.dataset.deep);
+    if (!dlg) return;
+    btn.addEventListener('click', () => { dlg.showModal(); dlg.scrollTop = 0; });
   });
-
-  // ---- The point at the middle of the screen is the one lit
-  const points = $$('.tk-flow .po-steps > li');
-  if ('IntersectionObserver' in window) {
-    const lit = new IntersectionObserver(entries => entries.forEach(e => e.target.classList.toggle('is-on', e.isIntersecting)),
-      { rootMargin: '-42% 0px -42% 0px' });
-    points.forEach(li => lit.observe(li));
-    // Everything else rises in once, as it comes into view.
-    const rise = new IntersectionObserver(entries => entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      e.target.classList.add('is-in');
-      rise.unobserve(e.target);
-    }), { rootMargin: '0px 0px -12% 0px' });
-    $$('.po-ch-head, .po-trk3, .tk-pin, .po-trace, .po-deep, main > section > figure, .po-eng, .po-level, .po-bounds li, .po-cmp, .po-table-wrap, .tk-end, .tk-need, .po-sub, .po-bridge-p')
-      .forEach(el => { el.classList.add('tk-rise'); rise.observe(el); });
-  } else {
-    points.forEach(li => li.classList.add('is-on'));
-  }
-  // ---- A pinned figure sits in the middle of the screen, so the space around it is shared above and below
-  const centrePins = () => $$('.tk-pin').forEach(pin => {
-    // Below 1000px the figure sits in the normal flow above the points, so it keeps no offset or width cap.
-    if (innerWidth < 1000) { pin.style.top = ''; pin.style.maxWidth = ''; return; }
-    const top = parseFloat(getComputedStyle(root).getPropertyValue('--sys-top')) || 100;
-    // On a short screen the figure narrows until it fits the height, so nothing hides below the fold.
-    pin.style.maxWidth = '';
-    const room = innerHeight - top - 24;
-    // A narrower figure wraps its caption onto more lines, so settle it in a few passes.
-    for (let i = 0; i < 4 && pin.offsetHeight > room; i++) pin.style.maxWidth = `${Math.floor(pin.offsetWidth * room / pin.offsetHeight) - 8}px`;
-    pin.style.top = `${Math.max(top + 12, (innerHeight + top - pin.offsetHeight) / 2)}px`;
+  $$('dialog.tk-deep').forEach(dlg => {
+    $('.tk-deep-x', dlg)?.addEventListener('click', () => dlg.close());
+    // A click on the dimmed backdrop (outside the panel) closes it too.
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
   });
-  let pinQueued = false;
-  addEventListener('resize', () => { if (!pinQueued) { pinQueued = true; requestAnimationFrame(() => { pinQueued = false; centrePins(); }); } });
-  addEventListener('load', centrePins);
-  centrePins();
 
   // ---- Waveform: the same code arrives late, and sliding a copy across finds the delay as a peak
   const codeFig = $('.tk-code');

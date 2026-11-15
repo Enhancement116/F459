@@ -1,0 +1,265 @@
+/* Test page: a bold, full-screen, cinematic take on the home page story.
+   test.js writes --p (0→1 while a section is pinned) and --e (0→1 as it enters) on every section. */
+:root{--ink:#f4f7fc;--dim:#9fb0c8;--gold:#f6c775;--mint:#5ef2c4;--blue:#6aa8ff;--red:#ff5a63;--bg:#04060c}
+*{box-sizing:border-box}
+html{background:var(--bg);scrollbar-width:none}
+html::-webkit-scrollbar{display:none}
+body{margin:0;color:var(--ink);font-family:'Noto Sans TC',sans-serif;line-height:1.6;background:var(--bg);overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%;height:auto}
+em{font-style:normal;color:var(--mint)}
+
+:root{--sys-gutter:clamp(16px,2.6vw,64px)}
+header{position:fixed!important;inset:0 0 auto;z-index:30;margin:0!important}
+/* The site's own sky (fx.js): the real stars, Milky Way and constellations over NKUST. Here it stays fully visible. */
+/* The same parallax star layers as the home page (scroll-scenes.js draws them there; test.js here). */
+.sys-sky{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.sys-sky>i{position:absolute;left:0;right:0;top:0;background-repeat:repeat;will-change:transform}
+.sys-sky>b{position:absolute;left:50%;top:50%;width:150vmax;height:46vmax;margin:-23vmax 0 0 -75vmax;border:1px solid #4d74c933;border-radius:50%;box-shadow:0 0 60px #2e5bd61a inset;will-change:transform}
+main,.t-foot{position:relative;z-index:1}
+
+.sc{position:relative;height:var(--len,100vh)}
+.pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+.kicker{display:flex;align-items:center;gap:16px;margin:0 0 18px;font:700 clamp(16px,1.3vw,20px)/1.4 'Noto Sans TC',sans-serif;letter-spacing:.24em;color:#e8eef8}
+.kicker .kn{font:clamp(40px,3.6vw,60px)/1 'Archivo Black',sans-serif;letter-spacing:0;color:var(--gold)}
+.kicker .kn+span{padding-left:16px;border-left:2px solid #f6c77588}
+
+/* Titles fade in once as their section arrives, then stay. */
+.reveal{opacity:0;transition:opacity .9s ease}
+.reveal.show{opacity:1}
+
+/* ---------- 0 · Hero: the real Earth and satellites (po-hero.js); it stays still while the title leaves ---------- */
+/* The real Earth is part of the page background: fixed behind every section, like the star sky. */
+.earth-bg{position:fixed;inset:0;margin:0;z-index:-1;pointer-events:none;opacity:0;animation:fade 1.6s .2s ease forwards;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.earth-bg canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* Letterbox shade, so the title always reads over the photo. */
+.sc-hero .pin::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#04060cd9 0,#04060c88 34%,transparent 62%);-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
+.hero-copy{position:absolute;z-index:2;left:clamp(16px,6vw,96px);top:50%;max-width:min(860px,88vw);translate:0 -42%}
+h1{margin:0 0 22px;font:900 clamp(48px,8.4vw,138px)/1.08 'Noto Serif TC',serif;letter-spacing:-.02em}
+h1 .l1,h1 .l2{display:block}
+@keyframes rise{to{transform:none}}
+.hero-sub{margin:0;font-size:clamp(19px,1.7vw,27px);color:#dfe7f3}
+@keyframes fade{to{opacity:1}}
+/* The legend belongs to the Earth: it stays with it at the corner and fades out as soon as the reader scrolls. */
+.rig-cap{position:fixed;z-index:2;right:clamp(16px,4vw,48px);bottom:20px;margin:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px;color:var(--dim);pointer-events:none;opacity:calc(1 - var(--hs,0) * 3)}
+.rig-keys{display:flex;align-items:center;gap:6px}
+#t-real-count{font-size:14px;color:#e6edf7}
+.rig-src{font-size:12px}
+.rig-cap .k{width:9px;height:9px;border-radius:50%;margin-left:6px}.rig-cap .g{background:#ff9f7a}.rig-cap .m{background:#70e3ed}.rig-cap .i{background:#bd9aff}
+.scroll-cue{position:absolute;z-index:2;left:50%;bottom:28px;margin:0;translate:-50% 0;font:12px 'Archivo Black',sans-serif;letter-spacing:.3em;color:#ffffff88;animation:bob 2s ease-in-out infinite;opacity:calc(1 - var(--hs,0) * 3)}
+@keyframes bob{50%{transform:translateY(8px)}}
+
+/* Opening styles to compare (data-hero on the section). */
+.hero-switch{position:fixed;left:16px;bottom:16px;z-index:40;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:12px;background:#0b1626ee;border:1px solid #ffffff26;font-size:13px}
+.hero-switch span{color:var(--dim);margin:0 4px}
+.hero-switch button{padding:6px 10px;border:1px solid #ffffff2e;border-radius:8px;background:none;color:#c9d6e8;font:inherit;cursor:pointer}
+.hero-switch button[aria-pressed="true"]{background:var(--mint);border-color:var(--mint);color:#04211f;font-weight:700}
+.sc-hero h1{font-family:'Noto Sans TC',sans-serif;font-weight:900;letter-spacing:.01em}
+.sc-hero h1 em{text-shadow:0 0 40px #5ef2c466}
+/* The Earth starts at full strength; as the reader begins to scroll (--hs, 0→1 over the first
+   ~60% of a screen) it recedes into the background in the chosen way (data-earth on the section). */
+.earth-bg canvas{--k:var(--hs,0)}
+/* 1 Faded. */
+.sc-hero[data-earth="1"] .earth-bg canvas{opacity:calc(1 - var(--k) * .6)}
+/* 2 Sunk: the globe slides down and fades upward into the sky. */
+.sc-hero[data-earth="2"] .earth-bg canvas{translate:0 calc(var(--k) * 30vh);opacity:calc(1 - var(--k) * .3)}
+.sc-hero[data-earth="2"] .earth-bg{-webkit-mask-image:linear-gradient(rgba(0,0,0,calc(1 - var(--hs,0))) 20%,#000 60%,rgba(0,0,0,calc(1 - var(--hs,0))) 100%);mask-image:linear-gradient(rgba(0,0,0,calc(1 - var(--hs,0))) 20%,#000 60%,rgba(0,0,0,calc(1 - var(--hs,0))) 100%)}
+/* 3 Soft focus. */
+.sc-hero[data-earth="3"] .earth-bg canvas{filter:blur(calc(var(--k) * 3px)) brightness(calc(1 - var(--k) * .4))}
+/* 4 Monochrome. */
+.sc-hero[data-earth="4"] .earth-bg canvas{filter:grayscale(var(--k)) brightness(calc(1 - var(--k) * .45))}
+
+/* Scale contrast: one huge word, a small line above, a medium line below; no punctuation.
+   Each variant has its own wording (set by test.js) and its own colours. */
+.sc-hero .hero-copy{top:50%;translate:0 -50%;max-width:none;width:92vw}
+.ht{margin:0 0 3vh;line-height:1}
+.ht span{display:block}
+.ht .t-s{font-size:clamp(26px,3vw,50px);letter-spacing:.12em;color:var(--hs,#fff)}
+.ht .t-b{font-size:min(21vw,32vh);line-height:.95;letter-spacing:-.01em;margin:.06em 0 .1em;color:var(--hb,#5ef2c4);text-shadow:0 0 50px var(--hg,#5ef2c455)}
+.ht .t-m{font-size:clamp(38px,5vw,86px);letter-spacing:.06em;color:var(--hm,#fff)}
+/* 1: 把整片 / 天空 / 搬進實驗室 — mint and white. */
+.sc-hero[data-hero="1"]{--hb:#5ef2c4;--hg:#5ef2c455}
+/* 2: 整片天空 / 搬進實驗室 — warm gold, after the Big Dipper BeiDou is named for. */
+.sc-hero[data-hero="2"]{--hb:#ffd27a;--hg:#ffb84a44;--hs:#ffe3ad;--hm:#fff}
+.sc-hero[data-hero="2"] .ht .t-b{font-size:min(15vw,26vh)}
+/* 3: 在實驗室裡 / 造一片天空 — as on the home page: serif white headline, mint lines. */
+.sc-hero[data-hero="3"]{--hb:#f4f9ff;--hg:#4f9dff33;--hs:#8affdd;--hm:#8affdd}
+.sc-hero[data-hero="3"] .ht .t-b{font-size:min(14.5vw,24vh)}
+/* 4: 重現 / 天空 / GPS 與北斗 — white with one gold word. */
+.sc-hero[data-hero="4"]{--hb:#ffffff;--hg:#ffffff33;--hs:#f6c775;--hm:#c9d6e8}
+.sc-hero[data-hero="4"] .ht .t-m{font-size:clamp(28px,3.4vw,56px);letter-spacing:.14em}
+
+/* ---------- 1 · Everywhere ---------- */
+/* 01: the vertical title, then 定位｜對時 side by side, each with a demo that plays on its own. */
+.sc-every{height:auto;padding:16vh clamp(16px,6vw,96px) 10vh}
+.every-head{display:flex;flex-direction:column;align-items:center;margin:0 auto 10vh}
+.every-head .kicker{margin-bottom:22px}
+.vt{margin:0;writing-mode:vertical-rl;font:900 clamp(34px,5.4vh,60px)/1.35 'Noto Sans TC',sans-serif;letter-spacing:.12em;text-shadow:0 0 24px #6aa8ff66}
+.vt span{display:block}
+.dual{display:grid;grid-template-columns:1fr 2px 1fr;gap:5vw;align-items:start}
+.dual-line{align-self:stretch;background:linear-gradient(transparent,#ffffffaa 15%,#ffffffaa 85%,transparent)}
+.dual-side--l{text-align:right}
+.demo{display:block;width:100%;height:34vh;margin-bottom:2vh}
+.dual-side b{display:block;font:900 clamp(56px,6.4vw,110px)/1 'Noto Sans TC',sans-serif;letter-spacing:.06em;text-shadow:0 0 30px #6aa8ff55}
+.dual-side--r b{color:var(--gold);text-shadow:0 0 30px #f6c77544}
+.dual-side p{margin:18px 0 0;font-size:clamp(19px,1.6vw,26px);line-height:1.6;color:#e6edf7}
+.dual-side p span{font-size:.85em;letter-spacing:.1em;color:var(--dim)}
+
+/* ---------- 2 · Fragile: three phones ---------- */
+.sc-weak{height:auto;display:grid;grid-template-columns:auto minmax(0,1fr);gap:5vw;align-items:center;padding:12vh clamp(16px,6vw,96px)}
+.weak-head{display:flex;flex-direction:column;gap:18px}
+.kicker--weak{margin:0}
+.weak-title{margin:0;writing-mode:vertical-rl;font:900 clamp(30px,5vh,56px)/1.3 'Noto Sans TC',sans-serif;letter-spacing:.14em;text-shadow:0 0 22px #6aa8ff55}
+.weak-title span{display:block}
+.weak-title em{color:var(--mint);font-style:normal}
+.flow3{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);gap:clamp(8px,1.4vw,22px);align-items:center;margin:0;padding:0;list-style:none}
+.flow3>li:not(.f3-arrow){display:flex;flex-direction:column;gap:14px}
+.f3-arrow{font:clamp(28px,3vw,48px) 'Archivo Black',sans-serif;color:#ffffff55}
+.f3-no{display:flex;align-items:center;gap:12px;margin:0;font:900 clamp(24px,2.2vw,34px)/1 'Noto Sans TC',sans-serif}
+.f3-no i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--mint);color:#04211f;font:20px 'Archivo Black',sans-serif;font-style:normal}
+.f3-bad .f3-no{color:#ff8a90}.f3-bad .f3-no i{background:var(--red);color:#fff}
+.ph-screen{display:block;width:100%;aspect-ratio:3/4;max-height:52vh;border-radius:24px;border:2px solid #ffffff2e;background:#0b1626;box-shadow:0 20px 60px #000c,inset 0 0 0 5px #04060c}
+.f3-text{margin:0;font-size:clamp(19px,1.6vw,26px);font-weight:700;line-height:1.4;color:#f1f5fb}
+
+/* ---------- 3 · Build: normal scroll, each block fades in once ---------- */
+.sc-build{height:auto;padding:14vh clamp(16px,6vw,96px) 8vh}
+.build-head{margin-bottom:12vh}
+.glow-title{margin:0 0 24px}
+.glow-title small{display:block;font:900 clamp(20px,2vw,32px)/1.4 'Noto Sans TC',sans-serif;letter-spacing:.1em;color:#a9f5dd;text-shadow:0 0 14px #5ef2c466}
+.glow-title b{display:block;font:900 clamp(64px,10vw,170px)/1.05 'Noto Sans TC',sans-serif;letter-spacing:.04em;color:#7ff8d4;text-shadow:0 0 18px #5ef2c4aa,0 0 60px #5ef2c455}
+.slot-lead{margin:0;font-size:clamp(20px,1.7vw,28px);line-height:1.6;color:#dfe7f3}
+.build-step{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:5vw;align-items:center;margin-bottom:14vh}
+.build-step--flip .shot{order:2}
+.step-no{display:flex;align-items:center;gap:14px;margin:0 0 18px;font-weight:700;letter-spacing:.2em;color:var(--gold)}
+.step-no b{display:grid;place-items:center;width:46px;height:46px;border:1.5px solid var(--gold);border-radius:50%;font:20px 'Archivo Black',sans-serif;letter-spacing:0}
+.slot-copy h3{margin:0 0 16px;font:900 clamp(28px,2.9vw,50px)/1.25 'Noto Sans TC',sans-serif}
+.slot-copy p:last-child{margin:0;padding-left:18px;border-left:3px solid var(--gold);font-size:clamp(19px,1.65vw,27px);line-height:1.6;color:#e6edf7}
+.shot{margin:0}
+.shot img{width:100%;border-radius:12px;border:1px solid #ffffff1f;box-shadow:0 30px 80px #000c}
+.shot--bare img{border:0;box-shadow:none;border-radius:0}
+.shot figcaption{margin-top:12px;font-size:15px;color:#9fb0c8}
+.use-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(12px,1.6vw,24px)}
+.use{display:flex;flex-direction:column;padding:28px 26px;border-radius:18px;border:1px solid #ffffff1f;background:linear-gradient(170deg,#0f2036cc,#08121fcc)}
+.use b{font:900 clamp(24px,2.1vw,34px)/1.25 'Noto Sans TC',sans-serif}
+.use:nth-child(even) b{color:var(--mint)}
+.use p{flex:1;margin:14px 0 22px;font-size:clamp(17px,1.35vw,21px);line-height:1.6;color:#dfe7f3}
+.use ul{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.use li{padding:4px 12px;border:1px solid #f6c77566;border-radius:99px;font-size:14px;color:var(--gold)}
+
+/* ---------- 4 · Real sky: the home page's live globe, fitted to one screen ---------- */
+.sc-sky{height:100vh;height:100svh;min-height:640px;display:flex;flex-direction:column;padding:84px clamp(16px,3vw,40px) 2vh}
+.sky-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 24px;margin:0 0 12px}
+.sky-head .kicker{margin:0}
+.sky-head h2{margin:0;font:900 clamp(26px,2.6vw,44px)/1.2 'Noto Sans TC',sans-serif}
+.sky-head h2 em{color:var(--mint)}
+.sky-note{flex-basis:100%;margin:0;font-size:clamp(15px,1.15vw,18px);color:#c9d6e8}
+.sky-note .globe-source{margin-left:12px;font-size:13px}
+/* Globe on the left, the panel on the right; both fill what is left of the screen. */
+.sc-sky .globe-console{flex:1;min-height:0;display:flex;flex-direction:column;max-width:none;margin:0}
+.sc-sky .globe-body{flex:1;min-height:0;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(300px,340px)}
+.sc-sky .globe-stage{height:100%!important;min-height:0!important;width:auto!important;max-width:none!important}
+.sc-sky .globe-panel{display:flex!important;flex-direction:column;height:100%!important;max-height:none!important;width:auto!important;max-width:none!important;overflow:hidden!important;padding:0!important}
+.sc-sky .globe-panel>*{flex:none;min-height:0;overflow:visible;scrollbar-width:thin;scrollbar-color:#2c5278 transparent;margin:0!important;padding:16px 18px!important}
+.sc-sky .globe-panel>.gp-visible{border-bottom:1px solid #ffffff1a}
+.sc-sky .globe-panel>.gp-foot{margin-top:auto!important;overflow:visible;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:center;border-top:1px solid #ffffff1a;padding:10px 18px!important}
+.sc-sky .gp-adv>.gp-sec{padding:0!important;margin:0 0 14px!important;border:0!important}
+.sc-sky #globe-visible-list,.sc-sky .gp-play,.sc-sky .gp-foot,.sc-sky .gp-sky figcaption{display:none!important}
+.sc-sky .gp-sky{margin:6px 0 0!important}
+.sc-sky .gp-sky canvas{display:block;height:min(17vh,170px)!important;width:auto!important;max-width:100%;margin:0 auto}
+/* The side column scrolls only when it must, without a visible bar. */
+.sc-sky .globe-panel{overflow-y:auto!important;scrollbar-width:none}
+.sc-sky .globe-panel::-webkit-scrollbar{display:none}
+/* Playback speeds in the top bar. */
+.sc-sky .console-top{display:flex;align-items:center;gap:10px}
+.sc-sky .console-top>span{margin-right:auto}
+.speed-top{display:flex!important;gap:0;margin:0!important;width:auto!important}
+.speed-top button{padding:8px 14px!important;font-size:14px!important;white-space:nowrap}
+.sc-sky .gp-adv>summary{display:none}
+.sc-sky .globe-stage{position:relative}
+/* Orbit details: shown in the side column in place of the visible-satellite block; the globe stays clear. */
+.orbit-pop{padding:18px 18px 8px!important;border-bottom:1px solid #ffffff1a!important}
+.globe-panel.is-reading>.gp-visible{display:none!important}
+.orbit-pop[hidden]{display:none}
+.orbit-pop .orbit-brief{display:grid!important}
+.orbit-pop .ob{grid-template-columns:1fr;gap:18px}
+.orbit-pop .ob h4{padding-left:12px;border-left:5px solid var(--c);font:900 clamp(20px,1.6vw,26px)/1.3 'Noto Sans TC',sans-serif}
+.orbit-pop .ob-lead{font-size:clamp(16px,1.15vw,18px);line-height:1.7;color:#e6edf7}
+.orbit-pop .ob-specs{display:grid;grid-template-columns:1fr;gap:8px;border:0}
+.orbit-pop .ob-specs div{display:block;padding:12px 14px;border:1px solid #ffffff1f;border-radius:10px;background:#ffffff08}
+.orbit-pop .ob-specs dt{margin-bottom:4px;font-size:13px;letter-spacing:.08em;color:var(--gold)}
+.orbit-pop .ob-specs dd{font-size:clamp(16px,1.2vw,19px);font-weight:700;line-height:1.45;color:#fff}
+.orbit-pop .ob-points{gap:12px}
+.orbit-pop .ob-points li{padding-left:20px;font-size:clamp(16px,1.2vw,18px);line-height:1.7;color:#dfe7f3}
+.orbit-pop .ob-points li::before{top:.65em;width:8px;height:8px;border-radius:50%;background:var(--pc,#8affdd)}
+.orbit-pop-x{display:block;margin:0 0 14px;padding:6px 12px;border:1px solid #ffffff40;border-radius:8px;background:#0b1626;color:#fff;font:inherit;font-size:14px;cursor:pointer}
+.sc-sky .orbit-card::after{content:'看說明 ›';display:block;margin-top:6px;font-size:12px;color:var(--c);opacity:.85}
+.sc-sky .globe-drag>span{display:none}
+
+/* ---------- 5 · Next ---------- */
+.sc-next{padding:18vh clamp(16px,6vw,96px) 14vh}
+.next-list{margin:0;padding:0;list-style:none;border-top:1px solid #ffffff22}
+.next-list a{display:grid;grid-template-columns:80px 1fr auto;align-items:baseline;gap:20px;padding:22px 0;border-bottom:1px solid #ffffff22;transition:padding .3s,color .3s}
+.next-list span{font:16px 'Archivo Black',sans-serif;color:var(--gold)}
+.next-list b{font:900 clamp(32px,4.6vw,76px)/1.15 'Noto Serif TC',serif}
+.next-list em{color:var(--dim);font-size:16px}
+.next-list a:hover{padding-left:24px;color:var(--mint)}
+.next-list li{opacity:0;translate:-8vw 0;transition:opacity .8s,translate .9s cubic-bezier(.16,.8,.24,1)}
+.next-list.on li{opacity:1;translate:none}
+.next-list.on li:nth-child(2){transition-delay:.06s}.next-list.on li:nth-child(3){transition-delay:.12s}.next-list.on li:nth-child(4){transition-delay:.18s}.next-list.on li:nth-child(5){transition-delay:.24s}.next-list.on li:nth-child(6){transition-delay:.3s}
+footer{position:relative;z-index:1;background:#04060ccc}
+
+@media(max-width:860px){
+  .sc-sky{height:auto}.sc-sky .globe-body{grid-template-columns:1fr}.sc-sky .globe-stage{height:70vh!important}
+  .uses{grid-template-columns:1fr 1fr;bottom:6vh}.uses li:nth-child(5){display:none}
+  .uses li{padding:14px}.uses svg{width:36px;height:36px;margin-bottom:6px}
+  .sc-weak{grid-template-columns:1fr}.flow3{grid-template-columns:1fr}.f3-arrow{transform:rotate(90deg);justify-self:center}
+  .dual{grid-template-columns:1fr}.dual-line{display:none}.dual-side--l{text-align:left}
+  .build-step{grid-template-columns:1fr}.build-step--flip .shot{order:0}.use-cards{grid-template-columns:1fr 1fr}
+  .skyplot{width:90vw;right:5vw;top:62%;opacity:.5}.sky-copy{max-width:none;right:16px}
+  .next-list a{grid-template-columns:44px 1fr}.next-list em{display:none}
+  .t-tag{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transition:none}
+  h1 .ln>span,.hero-sub,.hero-copy .kicker,.earth-bg{animation:none;opacity:1}
+  .scroll-cue{animation:none}
+}
+/* The visible-satellite block side by side (count left, sky plot right), so the orbit cards fit below it. */
+.sc-sky .gp-vis-grid{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:10px!important;align-items:center}
+.sc-sky .gp-sky canvas{height:min(15vh,140px)!important}
+.sc-sky .gp-sky{width:auto!important;max-width:none!important}
+
+/* The sky on this page turns at the real sidereal rate. */
+.fx-skyrot{animation-duration:86164s!important}
+
+.t-mode[aria-pressed="true"]{background:#8abaff;border-color:#8abaff;color:#04111f}
+/* 一般閱讀: no inertial scrolling, no motion. */
+html.t-plain *,html.t-plain *::before,html.t-plain *::after{animation:none!important;transition:none!important}
+html.t-plain .reveal{opacity:1}
+html.t-plain .fx-sat{display:none}
+
+/* Shared entrance effects (fx.js / fx.css) on this page's own blocks. */
+.next-h{margin:0 0 5vh;font:900 clamp(34px,4vw,64px)/1.15 'Noto Sans TC',sans-serif}
+.po-viz{position:relative}
+.sc-every .po-card,.sc-weak .po-card,.use.po-card{transform-style:preserve-3d}
+
+/* Opening title in the home page's manner: serif, white with mint, and the kicker led in by a glowing line. */
+.sc-hero .ht{font-family:'Noto Serif TC',serif;font-weight:900}
+.sc-hero .ht .t-b{text-shadow:0 0 60px #4f9dff33,0 2px 0 #00000080}
+.sc-hero .ht .t-s,.sc-hero .ht .t-m{text-shadow:0 0 48px #8affdd66}
+.hero-kicker{gap:16px;color:#8affdd;font-size:15px;letter-spacing:.24em}
+.hero-kicker i{display:block;width:64px;height:2px;background:linear-gradient(90deg,transparent,#8affdd);box-shadow:0 0 12px #8affdd;transform-origin:left;animation:hkLine 1.2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes hkLine{from{transform:scaleX(0)}}
+html:lang(en) .sc-hero .ht .t-b{letter-spacing:-.02em}
+/* The opening kicker lines up on the left with the title, like everything else in the block. */
+.sc-hero .hero-kicker{justify-content:flex-start;width:auto}
+/* English: Latin text reads across, not down, and the largest lines are scaled to fit. */
+html:lang(en) .vt,html:lang(en) .weak-title{writing-mode:horizontal-tb;letter-spacing:0;line-height:1.15}
+html:lang(en) .vt{text-align:center;font-size:clamp(36px,4.4vw,72px)}
+html:lang(en) .weak-title{font-size:clamp(30px,3.2vw,52px);max-width:22vw}
+html:lang(en) .sc-hero .ht .t-b{font-size:min(9.5vw,16vh);line-height:1}
+html:lang(en) .glow-title b{font-size:clamp(56px,7.6vw,128px)}
+html:lang(en) .sky-head h2{font-size:clamp(24px,2.3vw,40px)}
+/* Buttons take the page font, as the site's base stylesheet does (button{font:inherit}). */
+button{font:inherit;color:inherit}
+header{font-family:'Space Grotesk','Noto Sans TC',sans-serif}

@@ -12,7 +12,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
   // Which day's ephemerides to show is decided by data/latest.json (written by tools/build-ephemeris.js).
-  const MANIFEST_URL = 'data/latest.json';
+  // A page outside the site root can point elsewhere with data-data on #globe-console.
+  const DATA_DIR = (root && root.dataset.data) || 'data/';
+  const MANIFEST_URL = DATA_DIR + 'latest.json';
   const EPH = { date: '', doy: '' };
   const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';
   const RE = 6378137;
@@ -895,7 +897,7 @@
   });
 
   // ---------- Data ----------
-  fetch(MANIFEST_URL, { cache: 'no-cache' }).then(r => r.json()).then(m => fetch('data/' + m.file + (m.built ? '?v=' + m.built : ''))).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
+  fetch(MANIFEST_URL, { cache: 'no-cache' }).then(r => r.json()).then(m => fetch(DATA_DIR + m.file + (m.built ? '?v=' + m.built : ''))).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
     EPH.date = data.date; EPH.doy = data.doy;
     state.sats = Object.entries(data.sats).map(([prn, list]) => {
       const sys = prn[0], prnNum = Number(prn.slice(1));

@@ -119,3 +119,104 @@ html.tk-ready .tk-flow .po-steps>li{opacity:1}
 .tk .po-trk3 li.is-current svg{background:none;color:var(--gold);box-shadow:none}
 .tk .po-trk3 li.is-current a{color:var(--gold)}
 .tk .po-trk3 a span{font-size:13px}
+
+/* ==== Guided stages (2026-11): same reading as the design page ==== */
+/* Core stage: the chapter's main figure on the left, its points on the right, one point lit per step. */
+.tk-core{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:clamp(24px,3vw,56px);align-items:center;margin:clamp(24px,4vh,48px) 0}
+.tk-core-fig .po-viz{margin:0}
+.tk-core-side{display:grid;gap:clamp(12px,1.8vh,20px);align-content:center}
+.tk-core-side>.po-sub{margin:0}
+.tk-core-side .po-steps{display:grid;grid-template-columns:minmax(0,1fr)!important;gap:clamp(8px,1.4vh,16px);margin:0;padding:0;border:0;background:none}
+.tk-core-side .po-steps>li{display:grid;gap:4px;margin:0;padding:4px 0 4px clamp(14px,1.4vw,22px);border:0;border-left:2px solid #2c5278;background:none;transition:opacity .45s ease,border-color .45s ease}
+.tk-core-side .po-steps>li::before,.tk-core-side .po-steps>li+li::before{display:none}
+.tk-core-side .po-steps>li>b{display:none}
+.po .tk-core-side .ps-big{margin:0;font:700 clamp(22px,2.1vw,38px)/1.15 Orbitron,'Noto Sans TC',sans-serif;color:#8affdd;-webkit-text-fill-color:#8affdd;background:none}
+.po .tk-core-side .po-steps h3{margin:0;font-size:clamp(17px,1.35vw,24px);color:#fff}
+.po .tk-core-side .po-steps p:not(.ps-big){margin:0;font-size:clamp(14px,1vw,17px);line-height:1.7;color:#c7d5e6}
+.tk-core-side .po-trace{margin:0;padding:12px 14px}
+.tk-core-side .po-trace p{font-size:clamp(14px,.95vw,16px)}
+.tk-why .po-sub{margin:0 0 8px}
+.tk-why .po-bridge-p{margin:0 0 8px;font-size:clamp(14px,1vw,17px);line-height:1.75}
+.tk-deep-open{justify-self:start;padding:9px 16px;border:1px solid #2c5278;border-radius:999px;background:#0b1b2c;color:#8affdd;font:inherit;font-size:15px;cursor:pointer;transition:border-color .2s,background .2s}
+.tk-deep-open:hover,.tk-deep-open:focus-visible{border-color:#8affdd;background:#8affdd14}
+/* Checks: four layers in a row, the trace below. Limits: the list and its note. */
+.tk-core--levels,.tk-core--limits{grid-template-columns:minmax(0,1fr);justify-items:stretch}
+.tk .tk-core--levels .po-levels{grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.2vw,20px)}
+.tk-core--levels .po-level{transition:opacity .45s ease,border-color .45s ease}
+.tk-core--limits .po-bounds{margin:0}
+/* The "go deeper" dialog */
+dialog.tk-deep{width:min(1100px,calc(100vw - 32px));max-height:calc(100vh - 48px);margin:auto;padding:0;border:1px solid #2c5278;border-radius:14px;background:#08131f;color:#dbe8f6;box-shadow:0 30px 80px -20px #000}
+dialog.tk-deep::backdrop{background:#02070dcc;backdrop-filter:blur(3px)}
+.tk-deep-in{position:relative;padding:clamp(20px,3vw,40px)}
+.tk-deep-x{position:sticky;top:0;float:right;margin:-8px -8px 8px 16px;padding:7px 14px;border:1px solid #2c5278;border-radius:999px;background:#0b1b2c;color:#c7d5e6;font:inherit;font-size:14px;cursor:pointer;z-index:2}
+.tk-deep-x:hover{border-color:#8affdd;color:#fff}
+.tk-deep-in>ul{margin:0 0 18px;padding-left:1.2em;line-height:1.8}
+.tk-deep .po-table-wrap{overflow-x:auto}
+/* Plain document reading and narrow screens: everything stacks */
+@media(max-width:999px){
+  .tk-core{grid-template-columns:minmax(0,1fr)}
+  .tk .tk-core--levels .po-levels{grid-template-columns:minmax(0,1fr)}
+}
+.tk-example{display:grid;justify-items:center;gap:14px;margin:clamp(24px,4vh,48px) auto;max-width:56em;text-align:center}
+.tk-example .po-trace{text-align:left}
+
+/* ---- In guided mode ---- */
+html.sys-motion .po.tk .po-bridge-next{display:none}
+html.sys-motion .po .sys-scene--tk-core>.sys-stage{display:grid;align-content:center}
+html.sys-motion .sys-scene--tk-core .tk-core-fig canvas,html.sys-motion .sys-scene--tk-core .tk-core-fig .tk-code-svg{max-height:calc(var(--sys-avail) - 150px)!important;width:100%;object-fit:contain}
+html.sys-motion .sys-scene--tk-core .po-steps>li{opacity:.3}
+html.sys-motion .sys-scene--tk-core[data-step="0"] .po-steps>li:nth-child(1),
+html.sys-motion .sys-scene--tk-core[data-step="1"] .po-steps>li:nth-child(2),
+html.sys-motion .sys-scene--tk-core[data-step="2"] .po-steps>li:nth-child(3),
+html.sys-motion .sys-scene--tk-core[data-step="3"] .po-steps>li:nth-child(4){opacity:1;border-left-color:#8affdd}
+html.sys-motion .sys-scene--tk-core .po-level{opacity:.3}
+html.sys-motion .sys-scene--tk-core[data-step="0"] .po-level:nth-child(1),
+html.sys-motion .sys-scene--tk-core[data-step="1"] .po-level:nth-child(-n+2),
+html.sys-motion .sys-scene--tk-core[data-step="2"] .po-level:nth-child(-n+3),
+html.sys-motion .sys-scene--tk-core[data-step="3"] .po-level{opacity:1}
+/* Engineering stages: title, figure, then pain -> choice -> result, one per step */
+html.sys-motion .po .sys-scene--tk-eng>.sys-stage{display:grid;align-content:center;gap:clamp(8px,1.4vh,16px);margin:0}
+html.sys-motion .po .sys-scene--tk-eng .po-eng-k,html.sys-motion .po .sys-scene--tk-eng .po-eng-title{margin:0;text-align:center}
+html.sys-motion .po .sys-scene--tk-eng .po-eng-title{font-size:clamp(22px,2.4vw,40px)}
+html.sys-motion .po .sys-scene--tk-eng .po-eng-viz{margin:0}
+html.sys-motion .sys-scene--tk-eng .po-eng-viz canvas{max-height:calc(var(--sys-avail) - 330px)!important;width:100%;object-fit:contain}
+html.sys-motion .sys-scene--tk-eng .po-eng-steps li{opacity:.3;transition:opacity .45s ease}
+html.sys-motion .sys-scene--tk-eng[data-step="0"] .po-eng-steps li:nth-child(1),
+html.sys-motion .sys-scene--tk-eng[data-step="1"] .po-eng-steps li:nth-child(-n+2),
+html.sys-motion .sys-scene--tk-eng[data-step="2"] .po-eng-steps li{opacity:1}
+html.sys-motion .po .sys-scene--tk-eng .po-eng-steps li{padding:14px 16px}
+html.sys-motion .sys-scene--tk-eng .po-eng-steps p{font-size:clamp(13px,.95vw,16px);line-height:1.65}
+/* The example, specs and closing stages sit centred */
+html.sys-motion .po .sys-scene--tk-example>.sys-stage,html.sys-motion .po .sys-scene--tk-end>.sys-stage{display:grid;place-content:center;justify-items:center;margin:0;max-width:none}
+html.sys-motion .tk-example .po-trace{max-width:52em}
+html.sys-motion .tk-example .po-trace p{font-size:clamp(17px,1.4vw,24px);line-height:1.8}
+html.sys-motion .po .sys-scene--tk-specs>.sys-stage{display:grid;align-content:center;gap:10px}
+html.sys-motion .sys-scene--tk-specs .po-table td,html.sys-motion .sys-scene--tk-specs .po-table th{padding-block:7px}
+html.sys-motion .sys-scene--tk-specs .po-sub{margin:6px 0 0}
+html.sys-motion .sys-scene--tk-specs .po-bridge-p{margin:0}
+/* The hero fits one screen */
+html.sys-motion .po .sys-scene--hero>.sys-stage.tk-hero{display:grid;align-content:center;padding-top:var(--sys-top)}
+/* Waveform chapter: the four signal figures as a 2 x 2 block beside the figure */
+.tk-core-side .po-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.tk-core-side .po-stats>div{min-width:0;padding:12px 14px}
+.tk-core-side .po-stats dt{font-size:13px}
+.tk-core-side .po-stats dd{font-size:clamp(18px,1.5vw,24px)}
+.tk-core-side .po-stats dd+dd,.tk-core-side .po-stats p{font-size:12.5px;line-height:1.5}
+/* Limits: a centred list */
+html.sys-motion .po .sys-scene--tk-core .tk-core--limits{justify-items:center;text-align:left}
+html.sys-motion .tk-core--limits .po-bounds{width:min(860px,100%);padding:26px 30px;gap:16px}
+html.sys-motion .tk-core--limits .po-bounds li{font-size:clamp(18px,1.5vw,25px);line-height:1.6;padding-left:24px}
+html.sys-motion .tk-core--limits .tk-core-side{width:min(860px,100%)}
+html.sys-motion .tk-core--limits .po-bridge-p{font-size:clamp(15px,1.1vw,18px)}
+/* Inside the dialog every row is shown at once (the page's row-by-row reveal does not apply there) */
+.po-js .tk-deep .po-table-wrap tbody tr,.po-js .tk-deep .po-eqs li,.po-js .tk-deep .po-bounds li{opacity:1!important;transform:none!important}
+/* Specs stage: the whole table fits, no inner scroll */
+html.sys-motion .sys-scene--tk-specs .po-table-wrap{overflow:visible;min-height:auto}
+html.sys-motion .sys-scene--tk-specs .po-feat-head{margin:0 0 4px}
+html.sys-motion .sys-scene--tk-specs .po-table td,html.sys-motion .sys-scene--tk-specs .po-table th{padding:5px 12px;font-size:14px;line-height:1.45}
+html.sys-motion .sys-scene--tk-specs .po-bridge-p{font-size:14.5px;line-height:1.65}
+
+.tk-deep-h{display:flex;align-items:baseline;gap:12px;margin:0 0 18px;font-size:clamp(22px,2vw,30px);font-weight:700;color:#fff}
+.tk-deep-h i{font:700 .8em Orbitron,sans-serif;font-style:normal;color:#f6c775}
+dialog.tk-deep{scrollbar-width:thin;scrollbar-color:#2c5278 transparent}
+.tk-deep .po-table-wrap{margin-bottom:20px}.tk-deep-h{margin-bottom:6px}

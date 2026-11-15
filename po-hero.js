@@ -17,6 +17,9 @@
   const SCALE = opt.scale ? +opt.scale : 1;
   const MAX = opt.max ? +opt.max : 9;
   const labelEl = opt.label ? document.getElementById(opt.label) : null;
+  // data-palette="orbit" colours satellites as the live globe does: GPS orange, BeiDou by orbit class.
+  const ORBIT_PAL = { GPS: '#ff9f7a', MEO: '#70e3ed', IGSO: '#bd9aff', GEO: '#f6c775' };
+  const colourOf = s => opt.palette === 'orbit' ? (s.sys === 'G' ? ORBIT_PAL.GPS : ORBIT_PAL[s.recs[0].eph.kind] || ORBIT_PAL.MEO) : s.sys === 'G' ? '#70b7ff' : '#f6c775';
   const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';
   const RE = 6378137, K = 0.231, D2R = Math.PI / 180;
   const LAT0 = 22.75843215402263, LON0 = 120.33823886027615; // NKUST
@@ -93,7 +96,7 @@
     }).filter(o => o.el > 12);
     const seen = above.filter(o => o.q.y > 14 && o.q.x > 14 && o.q.x < W - 14).sort((a, b) => b.el - a.el).slice(0, MAX);
     seen.forEach(({ s, q }, i) => {
-      const col = s.sys === 'G' ? '#70b7ff' : '#f6c775';
+      const col = colourOf(s);
       ctx.setLineDash([3, 5]); ctx.lineDashOffset = -(now / 60) % 8;
       ctx.strokeStyle = col + '88'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(nk.x, nk.y); ctx.stroke(); ctx.setLineDash([]);

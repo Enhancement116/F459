@@ -1029,3 +1029,22 @@ html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-column:1/-1;gr
   html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-row:2}
   html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-row:3}
 }
+
+/* Depth and hand-over between stages (2026-11) */
+.sys-sky{display:none}
+html.sys-motion .sys-sky{display:block;position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+html.sys-motion .sys-sky>i{position:absolute;left:0;right:0;top:0;background-repeat:repeat;will-change:transform}
+html.sys-motion .sys-sky>b{position:absolute;left:50%;top:50%;width:150vmax;height:46vmax;margin:-23vmax 0 0 -75vmax;border:1px solid #4d74c933;border-radius:50%;box-shadow:0 0 60px #2e5bd61a inset;will-change:transform}
+/* Leaving stages go up and fade first; the next one rises in a moment later. Reading back reverses it. */
+html.sys-motion .po .sys-stage{transform:translate3d(0,56px,0) scale(.985);transition:opacity .2s ease,transform .45s cubic-bezier(.4,0,.6,1)}
+html.sys-motion .po .sys-scene.is-past>.sys-stage{transform:translate3d(0,-56px,0) scale(.985)}
+html.sys-motion .po .sys-scene.is-here>.sys-stage{transform:none;transition:opacity .5s ease .06s,transform .7s cubic-bezier(.16,.8,.24,1) .04s}
+/* Figures drift a little with the scroll, so gliding from stop to stop moves continuously. */
+html.sys-motion .sys-scene>.sys-stage canvas,html.sys-motion .sys-scene>.sys-stage .tk-code-svg{translate:0 calc(var(--sd,0) * 160px)}
+/* Continuous flow: no stepping; each stage fades with its distance from rest, and its parts move at
+   different speeds as it passes (titles slowest, figures fastest). */
+html.sys-flow .po .sys-scene>.sys-stage,html.sys-flow .po .sys-scene.is-past>.sys-stage,html.sys-flow .po .sys-scene.is-here>.sys-stage{opacity:var(--vis,0);transform:none;transition:none}
+html.sys-flow .sys-scene>.sys-stage :is(h1,h2,h3,.sys-kicker,.po-kicker){translate:0 calc(var(--sd,0) * 40px)}
+html.sys-flow .sys-scene>.sys-stage :is(p,ul,ol){translate:0 calc(var(--sd,0) * 70px)}
+html.sys-flow .sys-scene>.sys-stage :is(canvas,svg,img,.tk-code-svg){translate:0 calc(var(--sd,0) * 120px)}
+html.sys-flow .sys-stage *{transition-delay:0s!important}

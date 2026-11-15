@@ -12,6 +12,9 @@
   let plain = false;
   try { plain = localStorage.getItem(MODE_KEY) === 'plain'; } catch (e) {}
   const motion = () => media.matches && !plain;
+  // A page can ask for continuous flow (<html data-flow="continuous">): the wheel scrolls freely with
+  // inertia instead of stepping, and every stage fades and moves in proportion to the scroll.
+  const flow = root.dataset.flow === 'continuous';
   const clamp = v => Math.min(1, Math.max(0, v));
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -244,14 +247,62 @@
     el.countFrame = requestAnimationFrame(tick);
   };
 
+  // A sky of three star layers behind every stage, each drifting at its own speed, so passing from one
+  // stage to the next feels like moving through one space. Each layer is a random tile drawn once.
+  const sky = document.createElement('div');
+  sky.className = 'sys-sky';
+  sky.setAttribute('aria-hidden', 'true');
+  const LAYERS = [
+    { tile: 380, stars: 70, size: [0.4, 0.9], alpha: [0.25, 0.55], speed: 0.04 },
+    { tile: 520, stars: 34, size: [0.8, 1.4], alpha: [0.4, 0.8], speed: 0.12 },
+    { tile: 700, stars: 12, size: [1.3, 2.2], alpha: [0.7, 1], speed: 0.26, glow: true },
+  ].map(L => {
+    const c = document.createElement('canvas');
+    c.width = c.height = L.tile;
+    const g = c.getContext('2d');
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    for (let i = 0; i < L.stars; i++) {
+      const x = rnd(0, L.tile), y = rnd(0, L.tile), r = rnd(...L.size);
+      g.fillStyle = `rgba(${Math.random() < 0.3 ? '255,226,170' : '200,220,255'},${rnd(...L.alpha).toFixed(2)})`;
+      if (L.glow) { g.shadowColor = 'rgba(150,190,255,.9)'; g.shadowBlur = 6; }
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    }
+    const el = document.createElement('i');
+    el.style.backgroundImage = `url(${c.toDataURL()})`;
+    el.style.backgroundSize = `${L.tile}px`;
+    el.style.height = `calc(100% + ${L.tile}px)`;
+    sky.append(el);
+    return { el, ...L };
+  });
+  // A faint orbit ring is the nearest layer and moves fastest.
+  const ring = document.createElement('b');
+  sky.append(ring);
+  document.body.prepend(sky);
+  const moveSky = () => {
+    const y = scrollY;
+    LAYERS.forEach(L => { L.el.style.transform = `translate3d(0,${-(y * L.speed % L.tile).toFixed(1)}px,0)`; });
+    const span = Math.max(1, root.scrollHeight - innerHeight);
+    ring.style.transform = `translate3d(0,${(40 - y / span * 80).toFixed(2)}vh,0) rotate(${(-18 + y / span * 50).toFixed(2)}deg)`;
+  };
+
   let ticking = false;
   const update = () => {
     ticking = false;
     if (!motion()) return;
+    moveSky();
     const mid = innerHeight / 2;
     scenes.forEach(scene => {
       const r = scene.getBoundingClientRect();
       const here = r.top <= mid && r.bottom > mid;
+      // Stages already passed wait above, the ones to come wait below: each stage leaves upward and
+      // the next rises in, or the other way round when reading back.
+      scene.classList.toggle('is-past', r.bottom <= mid);
+      // How far the view is from this stage's resting range, in screens (0 while it rests on any of its
+      // stops): figures drift with it on the way in and out, so a hand-over moves continuously.
+      const travel = scene.offsetHeight - scene.stage.offsetHeight;
+      const sd = r.top > 0 ? r.top / innerHeight : Math.min(0, (r.top + travel) / innerHeight);
+      scene.style.setProperty('--sd', Math.max(-1, Math.min(1, sd)).toFixed(3));
+      scene.style.setProperty('--vis', clamp(1.2 - Math.abs(sd) * 1.6).toFixed(3));
       // Coming back to a stage: jump to its current step first, so the last visit's state cannot flash.
       if (here && !scene.classList.contains('is-here')) {
         scene.classList.add('is-entering');
@@ -344,6 +395,7 @@
   let glideFrame = 0;
   const stopGlide = () => { cancelAnimationFrame(glideFrame); gliding = false; };
   const glide = to => {
+    cancelAnimationFrame(flowFrame); flowFrame = 0;
     const from = scrollY;
     const start = performance.now();
     gliding = true;
@@ -364,10 +416,29 @@
 
   let lastWheel = 0;
   let steppedAt = -Infinity;
+  // Continuous flow: the wheel moves a target, and the page eases toward it every frame.
+  let flowTarget = 0, flowFrame = 0, flowY = 0;
+  const flowStep = () => {
+    flowY += (flowTarget - flowY) * 0.085;
+    if (Math.abs(flowTarget - flowY) < 0.5) { flowY = flowTarget; flowFrame = 0; }
+    scrollTo({ top: flowY, behavior: 'instant' });
+    if (flowFrame) flowFrame = requestAnimationFrame(flowStep);
+  };
+  // Scrolling by other means (keys, scrollbar, links) moves the target with it.
+  addEventListener('scroll', () => { if (!flowFrame && !gliding) flowTarget = flowY = scrollY; }, { passive: true });
   addEventListener('wheel', e => {
     // A widget that used the wheel itself (the home page globe zooming) keeps it.
     if (!motion() || e.ctrlKey || !e.deltaY || paused() || e.defaultPrevented) return;
     setAuto(false);
+    if (flow) {
+      e.preventDefault();
+      stopGlide();
+      const max = root.scrollHeight - innerHeight;
+      if (!flowFrame) flowY = scrollY;
+      flowTarget = Math.max(0, Math.min(max, (flowFrame ? flowTarget : scrollY) + e.deltaY * (e.deltaMode === 1 ? 40 : 1)));
+      if (!flowFrame) flowFrame = requestAnimationFrame(flowStep);
+      return;
+    }
     const now = performance.now();
     const quiet = now - lastWheel;
     lastWheel = now;
@@ -681,7 +752,8 @@
 
   const sync = () => {
     root.classList.toggle('sys-motion', motion());
-    root.classList.toggle('sys-touch', motion() && coarse.matches);
+    root.classList.toggle('sys-touch', motion() && coarse.matches && !flow);
+    root.classList.toggle('sys-flow', motion() && flow);
     measureBars();
     measureStops();
     measureZoom();

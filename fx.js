@@ -149,7 +149,13 @@
     paintSky();
     loadCatalogue();
     let rt = 0;
-    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(paintSky, 250); });
+    // The sky is a large canvas: repaint only when the width changes or the height changes a lot,
+    // not when a phone's address bar slides in and out.
+    let lastW = innerWidth, lastH = innerHeight;
+    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => {
+      if (innerWidth === lastW && Math.abs(innerHeight - lastH) < 160) return;
+      lastW = innerWidth; lastH = innerHeight; paintSky();
+    }, 250); });
     document.addEventListener('languagechange', () => setTimeout(() => {
       wrap.querySelectorAll('[data-zh]').forEach(n => { n.textContent = isEn() ? n.dataset.en : n.dataset.zh; });
     }));

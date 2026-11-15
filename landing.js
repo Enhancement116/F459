@@ -374,10 +374,15 @@
 
   const size = () => {
     vw = innerWidth; vh = innerHeight; dpr = Math.min(2, devicePixelRatio || 1);
-    [...phones.map(c => [c, c.clientWidth, c.clientHeight]), [pos, pos.clientWidth, pos.clientHeight], [tim, tim.clientWidth, tim.clientHeight]].forEach(([c, w, h]) => { c.width = w * dpr; c.height = h * dpr; });
+    // Only reallocate a canvas whose size really changed (phones fire resize as the address bar slides).
+    [...phones.map(c => [c, c.clientWidth, c.clientHeight]), [pos, pos.clientWidth, pos.clientHeight], [tim, tim.clientWidth, tim.clientHeight]].forEach(([c, w, h]) => {
+      const W = Math.round(w * dpr), H = Math.round(h * dpr);
+      if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+    });
     measure();
   };
-  addEventListener('resize', size);
+  let sizeTimer = 0;
+  addEventListener('resize', () => { clearTimeout(sizeTimer); sizeTimer = setTimeout(size, 150); });
   addEventListener('load', size);
   size();
 

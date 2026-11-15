@@ -1,0 +1,201 @@
+/* Home page: a short scroll story (hero, three staged chapters), then the real-ephemeris globe and the way onward.
+   The stages ride on scroll-scenes.js (data-scene / data-steps); without motion every stage reads as a normal block
+   showing its final state, with all captions listed. */
+.hm{--hm-gps:#70b7ff;--hm-bds:#f6c775;--hm-igso:#bd9aff;--hm-acc:#8affdd;--hm-red:#ff8f8f;--hm-dim:#8ea6c0;--hm-ink:#e6f0fb;--hm-line:#2a4561;--hm-panel:#0a1828}
+
+/* ---------- Hero: one huge headline across the screen, the intro and buttons under a rule, a planet's limb below ---------- */
+.hm-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr);align-content:center;min-height:calc(100svh - 90px);padding:clamp(28px,5vh,64px) 0 clamp(90px,14vh,160px)}
+html.sys-motion .sys-scene--hm-hero .sys-stage{display:grid;grid-template-columns:minmax(0,1fr);align-content:center;padding-bottom:clamp(90px,14vh,160px)}
+.hm-hero-copy{position:relative;z-index:1;width:100%;max-width:1440px;margin:0 auto}
+.hm-kicker{display:flex;align-items:center;gap:16px;margin:0 0 clamp(18px,3vh,30px);font-size:15px;letter-spacing:.24em;color:var(--hm-acc);font-weight:700}
+.hm-kicker i{display:block;width:64px;height:2px;background:linear-gradient(90deg,transparent,var(--hm-acc));box-shadow:0 0 12px var(--hm-acc);transform-origin:left;animation:hmLine 1.2s cubic-bezier(.2,.7,.2,1) both}
+.hm-hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(54px,8.8vw,168px);line-height:1.12;letter-spacing:-.01em;margin:0 0 clamp(28px,5.5vh,64px);color:#f4f9ff;text-shadow:0 0 60px #4f9dff33,0 2px 0 #00000080;animation:hmTitle 1.8s cubic-bezier(.16,.8,.2,1) .7s both}
+html[lang=en] .hm-hero h1{font-size:clamp(46px,7.6vw,146px);line-height:1.04}
+.hm-hero h1 em{font-style:normal;color:var(--hm-acc);text-shadow:0 0 48px #8affdd66}
+.hm-hero-foot{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:clamp(24px,5vw,90px);padding-top:clamp(20px,3.2vh,34px);border-top:1px solid #ffffff1f;animation:hmFade 1.2s ease 1.7s both}
+.hm-hero-foot::before{content:"";position:absolute;left:0;top:-1px;width:min(420px,40%);height:1px;background:linear-gradient(90deg,var(--hm-acc),transparent);transform-origin:left;animation:hmLine 1.4s cubic-bezier(.2,.7,.2,1) .7s both}
+.hm-tag{font-size:clamp(17px,1.3vw,21px);line-height:1.85;color:#b9cadd;max-width:38em;margin:0}
+.hm-cta{display:flex;flex-wrap:wrap;gap:12px}
+.hm-cta .po-btn{margin:0}
+/* Backdrop: the real Earth (Natural Earth) and the GPS / BeiDou satellites above NKUST now, from the broadcast
+   ephemerides (po-hero.js, real-time clock). A dark wash on the left keeps the headline readable. */
+.hm-now{position:absolute;inset:0;z-index:0;margin:0;pointer-events:none;animation:hmFade 1.6s ease .2s both}
+.hm-now canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hm-now::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#07090ce6 0,#07090ca8 34%,#07090c33 62%,transparent 80%)}
+.hm-now figcaption{position:absolute;z-index:1;left:max(var(--sys-gutter,24px),calc((100% - 1440px)/2));bottom:22px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;max-width:min(760px,70%);font-size:13px;color:#a9bdd2;pointer-events:auto}
+.hm-now figcaption #hm-real-count{color:#d9e6f3}
+.hm-hero-copy{z-index:2}
+@keyframes hmTitle{from{opacity:0;transform:translateY(46px);letter-spacing:.06em;filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+@keyframes hmLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes hmFade{from{opacity:0}to{opacity:1}}
+
+/* ---------- Staged chapters: the caption centred on top, the drawing large below ---------- */
+.hm-stage{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"caps" "art" "uses";justify-items:center;align-items:start;gap:clamp(16px,3vh,30px);max-width:1240px;margin:0 auto;padding:24px 0 60px;text-align:center}
+html.sys-motion .po .sys-scene.sys-scene--hm-every .sys-stage,
+html.sys-motion .po .sys-scene.sys-scene--hm-weak .sys-stage,
+html.sys-motion .po .sys-scene.sys-scene--hm-lab .sys-stage{display:grid;align-content:center;max-width:none;padding-inline:max(var(--sys-gutter),calc((100vw - 1240px)/2))}
+.hm-art{grid-area:art;width:100%;height:auto;max-height:min(58vh,620px);overflow:visible}
+html.sys-motion .sys-scene[class*="sys-scene--hm-"] .hm-art{max-height:calc(var(--sys-h) - var(--sys-top,170px) - var(--sys-bottom,80px) - 230px)}
+.hm-caps{grid-area:caps;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px 40px;width:100%}
+.hm-cap{padding:0}
+.hm-cap b{display:inline-block;font-size:14px;letter-spacing:.2em;color:var(--hm-acc);padding-bottom:6px;border-bottom:2px solid var(--hm-acc)}
+.hm-cap strong{display:block;font-family:'Noto Serif TC',serif;font-size:clamp(26px,2.6vw,40px);line-height:1.35;margin:12px 0 8px;color:var(--hm-ink)}
+.hm-cap p{margin:0 auto;max-width:34em;font-size:clamp(16px,1.15vw,19px);line-height:1.8;color:#b5c6da}
+.hm-uses{grid-area:uses;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.hm-uses li{font-size:15px;padding:7px 14px;border:1px solid #8affdd55;border-radius:999px;color:#cfeee4;background:#8affdd0d}
+/* In the guided view only the current caption shows, in one shared place. */
+html.sys-motion .sys-scene[class*="sys-scene--hm-"] .hm-caps{display:grid;grid-template-columns:minmax(0,1fr);gap:0;width:min(820px,100%)}
+html.sys-motion .sys-scene[class*="sys-scene--hm-"] .hm-cap{grid-area:1/1;opacity:0;transform:translateY(18px);transition:opacity .45s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+html.sys-motion .sys-scene[class*="sys-scene--hm-"][data-step="0"] .hm-cap--0,
+html.sys-motion .sys-scene[class*="sys-scene--hm-"][data-step="1"] .hm-cap--1,
+html.sys-motion .sys-scene[class*="sys-scene--hm-"][data-step="2"] .hm-cap--2{opacity:1;transform:none}
+html.sys-motion .sys-scene--hm-lab .hm-uses{opacity:0;transform:translateY(12px);transition:opacity .45s .15s,transform .5s .15s}
+html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-uses{opacity:1;transform:none}
+
+/* Shared SVG pieces */
+.hm-art text{font-family:'Noto Sans TC',sans-serif;font-size:19px;fill:#cfdbe8}
+.hm-art .hm-sm{font-size:15px;fill:var(--hm-dim)}
+.hm-art *{transition:opacity .5s ease,fill .5s ease,stroke .5s ease}
+
+/* 01 everywhere */
+.hm-s rect{fill:#13263c;stroke-width:1.5}
+.hm-s--gps rect{stroke:var(--hm-gps)}.hm-s--bds rect{stroke:var(--hm-bds)}
+.hm-far{fill:var(--hm-dim)!important;font-size:16px!important}
+.hm-rays path{fill:none;stroke-width:1.4;stroke-dasharray:5 7}
+.hm-rays--pos path{stroke:#70b7ffaa}.hm-rays--time path{stroke:#f6c775aa}
+.hm-ground{stroke:var(--hm-line);stroke-width:1.5}
+.hm-dev path,.hm-dev rect,.hm-dev circle,.hm-dev ellipse{fill:#0f2236;stroke:#9fb4c8;stroke-width:1.8}
+.hm-dev--pos.is-lit path,.hm-dev--pos rect,.hm-dev--pos path,.hm-dev--pos circle,.hm-dev--pos ellipse{stroke:var(--hm-gps)}
+.hm-dev--time path,.hm-dev--time rect{stroke:var(--hm-bds)}
+.hm-clock circle{fill:#0f2236;stroke:var(--hm-bds);stroke-width:2}
+.hm-clock path{stroke:var(--hm-bds);stroke-width:2.4;stroke-linecap:round}
+.hm-hand{transform-origin:0 0}
+html.sys-motion .sys-scene--hm-every .hm-rays--time,html.sys-motion .sys-scene--hm-every .hm-dev--time,html.sys-motion .sys-scene--hm-every .hm-clock{opacity:.18}
+html.sys-motion .sys-scene--hm-every[data-step="1"] .hm-rays--time,html.sys-motion .sys-scene--hm-every[data-step="1"] .hm-dev--time,html.sys-motion .sys-scene--hm-every[data-step="1"] .hm-clock{opacity:1}
+html.sys-motion .sys-scene--hm-every[data-step="1"] .hm-rays--pos,html.sys-motion .sys-scene--hm-every[data-step="1"] .hm-dev--pos{opacity:.25}
+html.sys-motion .sys-scene--hm-every.is-here[data-step="0"] .hm-rays--pos path,
+html.sys-motion .sys-scene--hm-every.is-here[data-step="1"] .hm-rays--time path{animation:hmFlow 1.2s linear infinite}
+html.sys-motion .sys-scene--hm-every.is-here[data-step="1"] .hm-hand{animation:hmTurn 4s steps(12) infinite}
+@keyframes hmFlow{to{stroke-dashoffset:-24}}
+@keyframes hmTurn{to{transform:rotate(360deg)}}
+
+/* 02 fragile */
+.hm-scope rect{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.5}
+.hm-scope-grid{fill:none;stroke:#1a3149;stroke-width:1}
+.hm-scope-k{fill:var(--hm-dim)!important;font-size:16px!important}
+.hm-noise-band{fill:#9fb4c81a}
+.hm-noise{fill:none;stroke:#9fb4c8;stroke-width:1.5;stroke-linejoin:round}
+.hm-real{fill:none;stroke:var(--hm-acc);stroke-width:2.5}
+.hm-fake{fill:none;stroke:var(--hm-red);stroke-width:3}
+.hm-l--noise{fill:#9fb4c8!important}.hm-l--real{fill:var(--hm-acc)!important}.hm-l--fake{fill:var(--hm-red)!important}
+.hm-map rect{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.5}
+.hm-map-st{fill:none;stroke:#1d3852;stroke-width:10;stroke-linecap:round}
+.hm-pin path{stroke:#04101e;stroke-width:1.5}
+.hm-pin--true path{fill:var(--hm-acc)}.hm-pin--fake path{fill:var(--hm-red)}
+.hm-pin text{font-size:16px!important}
+.hm-pin--true text{fill:var(--hm-acc)!important}.hm-pin--fake text{fill:var(--hm-red)!important}
+.hm-drag{fill:none;stroke:var(--hm-red);stroke-width:2;stroke-dasharray:6 6}
+.hm-map-k{font-size:15px!important;fill:var(--hm-dim)!important}
+html.sys-motion .sys-scene--hm-weak .hm-fake,html.sys-motion .sys-scene--hm-weak .hm-l--fake{opacity:0}
+html.sys-motion .sys-scene--hm-weak[data-step="1"] .hm-fake,html.sys-motion .sys-scene--hm-weak[data-step="1"] .hm-l--fake,
+html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-fake,html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-l--fake{opacity:1}
+html.sys-motion .sys-scene--hm-weak.is-here[data-step="1"] .hm-fake{animation:hmRise .9s cubic-bezier(.2,.7,.2,1)}
+html.sys-motion .sys-scene--hm-weak .hm-map{opacity:.28}
+html.sys-motion .sys-scene--hm-weak .hm-pin--fake,html.sys-motion .sys-scene--hm-weak .hm-drag{opacity:0}
+html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-map,html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-pin--fake,html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-drag{opacity:1}
+html.sys-motion .sys-scene--hm-weak[data-step="2"] .hm-pin--true{opacity:.4}
+html.sys-motion .sys-scene--hm-weak.is-here[data-step="2"] .hm-drag{animation:hmFlow 1s linear infinite}
+html.sys-motion .sys-scene--hm-weak.is-here[data-step="0"] .hm-real{animation:hmGlow 1.8s ease-in-out infinite}
+@keyframes hmRise{from{transform:scaleY(.05)}to{transform:none}}
+.hm-fake{transform-origin:0 200px;transform-box:view-box}
+@keyframes hmGlow{50%{stroke-width:4;filter:drop-shadow(0 0 6px #8affdd)}}
+
+/* 03 the lab */
+.hm-node rect,.hm-node path{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.8}
+.hm-node>text{font-size:20px!important;font-weight:700}
+.hm-mini-sky circle:not(.hm-ms){fill:none;stroke:#1f3a56}
+.hm-ms--gps{fill:var(--hm-gps)}.hm-ms--bds{fill:var(--hm-bds)}
+.hm-cable{fill:none;stroke:#3a5c7d;stroke-width:3}
+.hm-pulse{fill:var(--hm-acc);filter:drop-shadow(0 0 8px #8affdd)}
+.hm-fix{font-size:28px!important;font-weight:700;fill:var(--hm-acc)!important}
+.hm-loop path{fill:none;stroke:var(--hm-acc);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hm-node--sdr text:not(.hm-sm){fill:var(--hm-ink)}
+/* Step 0 lights the laptop, step 1 the cable and SDR, step 2 the receiver and the replay loop. */
+html.sys-motion .sys-scene--hm-lab .hm-pulse,html.sys-motion .sys-scene--hm-lab .hm-fix,html.sys-motion .sys-scene--hm-lab .hm-fix-sub,html.sys-motion .sys-scene--hm-lab .hm-loop{opacity:0}
+html.sys-motion .sys-scene--hm-lab .hm-node--sdr,html.sys-motion .sys-scene--hm-lab .hm-node--rx,html.sys-motion .sys-scene--hm-lab .hm-cable{opacity:.35}
+html.sys-motion .sys-scene--hm-lab[data-step="0"] .hm-node--pc rect{stroke:var(--hm-acc)}
+html.sys-motion .sys-scene--hm-lab.is-here[data-step="0"] .hm-ms{animation:hmBlink 1.6s ease-in-out infinite}
+html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(4){animation-delay:.25s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(5){animation-delay:.5s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(6){animation-delay:.75s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(7){animation-delay:1s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(8){animation-delay:1.25s}
+html.sys-motion .sys-scene--hm-lab:not([data-step="0"]) .hm-node--sdr,html.sys-motion .sys-scene--hm-lab:not([data-step="0"]) .hm-cable,html.sys-motion .sys-scene--hm-lab:not([data-step="0"]) .hm-pulse{opacity:1}
+html.sys-motion .sys-scene--hm-lab[data-step="1"] .hm-node--sdr rect{stroke:var(--hm-acc)}
+html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-node--rx,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-fix,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-fix-sub,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-loop{opacity:1}
+html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-node--rx rect{stroke:var(--hm-acc)}
+html.sys-motion .sys-scene--hm-lab.is-here[data-step="2"] .hm-loop{animation:hmTurn 2.4s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes hmBlink{50%{opacity:.25}}
+
+/* ---------- The real sky: centred heading, the console framed and as wide as the page ---------- */
+.hm-sky{padding-top:clamp(50px,9vh,100px)}
+.hm-sky .hero-stage--globe{max-width:1320px;margin-inline:auto;padding-inline:0}
+.hm-sky-head{text-align:center;max-width:920px;margin:0 auto clamp(24px,4vh,40px)}
+.hm-sky-head h2,.hm-next h2{font-family:'Noto Serif TC',serif}
+.hm-sky-head .home-lead{margin-inline:auto}
+.hm-sky-hints{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.hm-sky-hints li{font-size:14px;color:#cfdbe8;padding:6px 14px;border:1px solid #ffffff26;border-radius:999px;background:#ffffff08}
+.hm-sky .globe-console{border:1px solid #8affdd4d;border-radius:16px;box-shadow:0 0 0 6px #8affdd0a,0 30px 90px #00000099,0 0 80px #2f7dff1f}
+
+/* ---------- Where next: a route line, one station per page ---------- */
+.hm-next{max-width:1320px;margin:0 auto;padding:clamp(70px,12vh,140px) 0 clamp(70px,12vh,130px);text-align:center}
+.hm-next>h2{font-size:clamp(30px,3.4vw,52px);line-height:1.35;margin:10px 0 12px}
+.hm-next-lead{margin:0 auto;max-width:36em;color:#b5c6da;font-size:clamp(16px,1.2vw,19px);line-height:1.8}
+#live-sky,#home-next{scroll-margin-top:calc(var(--sys-top,150px) + 8px)}
+.hm-route{list-style:none;margin:clamp(40px,7vh,72px) 0 0;padding:0;position:relative;display:grid;grid-template-columns:1.6fr repeat(5,minmax(0,1fr));text-align:left}
+.hm-route::before{content:"";position:absolute;left:17px;right:17px;top:16px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--hm-acc),var(--hm-gps) 55%,var(--hm-bds));box-shadow:0 0 16px #8affdd55}
+.hm-stop a{position:relative;display:flex;flex-direction:column;gap:8px;padding-right:18px;color:inherit;text-decoration:none}
+.hm-dot{position:relative;z-index:1;display:block;width:22px;height:22px;margin:6px 0 18px 6px;border-radius:50%;background:#07101e;border:3px solid var(--hm-gps);transition:transform .25s ease,background .25s ease,box-shadow .25s ease}
+.hm-stop--start .hm-dot{width:34px;height:34px;margin:0 0 12px;border-color:var(--hm-acc);background:var(--hm-acc);box-shadow:0 0 0 6px #8affdd22,0 0 24px var(--hm-acc)}
+.hm-stop--end .hm-dot{border-color:var(--hm-bds)}
+.hm-stop-k{font-size:13px;letter-spacing:.14em;color:var(--hm-acc);font-weight:700}
+.hm-stop strong{font-family:'Noto Serif TC',serif;font-size:clamp(18px,1.45vw,22px);line-height:1.45;color:var(--hm-ink);transition:color .25s ease}
+.hm-stop--start strong{font-size:clamp(22px,2vw,30px);line-height:1.35}
+.hm-stop em{font-style:normal;font-size:15px;color:var(--hm-bds);margin-top:4px}
+.hm-stop a:hover .hm-dot,.hm-stop a:focus-visible .hm-dot{transform:scale(1.25);background:var(--hm-gps);box-shadow:0 0 18px var(--hm-gps)}
+.hm-stop--start a:hover .hm-dot{background:var(--hm-acc);box-shadow:0 0 0 8px #8affdd2a,0 0 30px var(--hm-acc)}
+.hm-stop a:hover strong,.hm-stop a:focus-visible strong{color:var(--hm-acc)}
+
+/* ---------- Narrow screens ---------- */
+@media (max-width:1000px){
+  .hm-route{grid-template-columns:1fr;gap:0;max-width:560px;margin-inline:auto}
+  .hm-route::before{left:16px;right:auto;top:17px;bottom:40px;width:3px;height:auto;background:linear-gradient(180deg,var(--hm-acc),var(--hm-gps) 55%,var(--hm-bds))}
+  .hm-stop a{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:18px;row-gap:4px;padding:0 0 28px}
+  .hm-dot,.hm-stop--start .hm-dot{grid-row:1/4;justify-self:center;margin:6px 0 0}
+  .hm-stop--start .hm-dot{margin:0}
+}
+@media (max-width:900px){
+  .hm-now::after{background:linear-gradient(180deg,#07090cd9 0,#07090c99 55%,#07090c22 80%)}
+  .hm-now figcaption{left:16px;right:16px;max-width:none;bottom:92px;font-size:12px}
+  .hm-hero h1{font-size:clamp(44px,14vw,76px);line-height:1.18}
+  html[lang=en] .hm-hero h1{font-size:clamp(34px,9.6vw,56px)}
+  .hm-hero-foot{grid-template-columns:1fr;gap:18px}
+  .hm-cta{gap:8px}
+  .hm-cta .po-btn{padding-block:10px}
+  .hm-tag{font-size:16px}
+  .hm-kicker{font-size:12px;letter-spacing:.16em;gap:10px}
+  .hm-kicker i{width:32px}
+  .hm-cap strong{font-size:23px}
+  .hm-cap p{font-size:16px}
+  .hm-sky-hints li{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){
+  .hm-hero h1,.hm-kicker i,.hm-hero-foot,.hm-hero-foot::before,.hm-now{animation:none}
+}
+
+/* The shared section-head styles align left; these two heads are centred. */
+.hm .hm-sky-head,.hm .hm-next{display:flex;flex-direction:column;align-items:center;text-align:center}
+.hm .hm-sky-head>*,.hm .hm-next>p,.hm .hm-next>h2{margin-left:auto;margin-right:auto;text-align:center}
+.hm .hm-next>.hm-route{align-self:stretch;width:100%}
+.hm-hero h1 .hm-l{display:inline-block}
+.hm-key{display:inline-flex;align-items:center;gap:6px}
+.hm-key i{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.hm-now canvas{opacity:.92}
+/* Phones: only the data source line stays, so it never runs into the buttons. */
+@media (max-width:900px){.hm-now figcaption .hm-key,.hm-now figcaption #hm-real-count{display:none}.hm-now figcaption{bottom:88px;font-size:11px;color:#8ea6c0}}

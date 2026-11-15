@@ -7,6 +7,16 @@
   if (!canvas || !window.d3 || !window.topojson || !window.GnssOrbit) return;
   const ctx = canvas.getContext('2d');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The home page reuses this view as its hero: data-* on the canvas set where the data lives, how fast the clock
+  // runs (1 = real time), where the Earth sits across the width, its size, how many satellites to show, and an
+  // element that takes the visible count instead of the corner text.
+  const opt = canvas.dataset;
+  const DATA_BASE = opt.data || '../data/';
+  const SPEED = opt.speed ? +opt.speed : 120;
+  const CX = opt.cx ? +opt.cx : 0.5;
+  const SCALE = opt.scale ? +opt.scale : 1;
+  const MAX = opt.max ? +opt.max : 9;
+  const labelEl = opt.label ? document.getElementById(opt.label) : null;
   const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';
   const RE = 6378137, K = 0.231, D2R = Math.PI / 180;
   const LAT0 = 22.75843215402263, LON0 = 120.33823886027615; // NKUST
@@ -29,7 +39,7 @@
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = r.width; H = r.height;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    R = Math.min(W * 0.46, H * 0.56); cx = W / 2; cy = H + R * 0.18;
+    R = Math.min(W * 0.46, H * 0.56) * SCALE; cx = W * CX; cy = H + R * 0.18;
   }
   function project(p) {
     const r = Math.hypot(p[0], p[1], p[2]), u = p.map(v => v / r), s = R * (1 + (r / RE - 1) * K);
@@ -75,12 +85,13 @@
     ctx.clearRect(0, 0, W, H);
     if (earth && earth.width && earth.height) ctx.drawImage(earth, 0, 0, W, H);
     const nk = project(SITE);
-    // Real satellites above NKUST now (simulated clock runs 120× on the ephemeris day).
-    const t = data ? GnssOrbit.wrap(data, t0 + (reduced ? 0 : (now / 1000) * 120)) : 0;
-    const seen = sats.map(s => {
+    // Real satellites above NKUST now (the clock runs SPEED× on the ephemeris day; 1 is real time).
+    const t = data ? GnssOrbit.wrap(data, t0 + (reduced ? 0 : (now / 1000) * SPEED)) : 0;
+    const above = sats.map(s => {
       const p = positionAt(s, t);
       return { s, p, el: lookEl(p), q: project(p) };
-    }).filter(o => o.el > 12 && o.q.y > 14 && o.q.x > 14 && o.q.x < W - 14).sort((a, b) => b.el - a.el).slice(0, 9);
+    }).filter(o => o.el > 12);
+    const seen = above.filter(o => o.q.y > 14 && o.q.x > 14 && o.q.x < W - 14).sort((a, b) => b.el - a.el).slice(0, MAX);
     seen.forEach(({ s, q }, i) => {
       const col = s.sys === 'G' ? '#70b7ff' : '#f6c775';
       ctx.setLineDash([3, 5]); ctx.lineDashOffset = -(now / 60) % 8;
@@ -99,9 +110,17 @@
     ctx.font = "700 11px 'Noto Sans TC',sans-serif"; ctx.textAlign = 'left'; ctx.fillStyle = '#e6fff8';
     ctx.fillText('NKUST', nk.x + 9, nk.y + 4);
     if (sats.length) {
-      ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(200,220,240,.75)'; ctx.font = "600 10px Orbitron,sans-serif";
       const g = seen.filter(o => o.s.sys === 'G').length, c = seen.length - g;
-      ctx.fillText(`${day} · GPS ${g} · BDS ${c}`, W - 6, H - 8);
+      if (labelEl) {
+        // The count covers every satellite above 12°, including any that fall outside the drawing.
+        const ag = above.filter(o => o.s.sys === 'G').length, ac = above.length - ag;
+        const en = document.documentElement.lang === 'en';
+        const text = en ? `Ephemeris ${day} · above 12° at NKUST now: GPS ${ag} · BeiDou MEO/IGSO ${ac}` : `${day} 廣播星曆 · NKUST 此刻仰角 12° 以上：GPS ${ag} 顆 · 北斗（MEO、IGSO）${ac} 顆`;
+        if (labelEl.textContent !== text) labelEl.textContent = text;
+      } else {
+        ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(200,220,240,.75)'; ctx.font = "600 10px Orbitron,sans-serif";
+        ctx.fillText(`${day} · GPS ${g} · BDS ${c}`, W - 6, H - 8);
+      }
     }
   }
   let last = 0;
@@ -128,7 +147,7 @@
     paintEarth();
   }).catch(() => {});
   let day = '';
-  GnssOrbit.latest('../data/').then(json => {
+  GnssOrbit.latest(DATA_BASE).then(json => {
     data = json;
     day = data.date;
     sats = Object.entries(data.sats).map(([prn, list]) => {

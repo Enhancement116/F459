@@ -360,7 +360,8 @@
   let lastWheel = 0;
   let steppedAt = -Infinity;
   addEventListener('wheel', e => {
-    if (!motion() || e.ctrlKey || !e.deltaY || paused()) return;
+    // A widget that used the wheel itself (the home page globe zooming) keeps it.
+    if (!motion() || e.ctrlKey || !e.deltaY || paused() || e.defaultPrevented) return;
     setAuto(false);
     const now = performance.now();
     const quiet = now - lastWheel;

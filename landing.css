@@ -373,3 +373,5 @@ p,li,em,figcaption{text-wrap:pretty}
   .sc-hero .ht .t-b{font-size:min(14.5vw,24vh,300px);white-space:nowrap}
   .glow-title b{white-space:nowrap}
 }
+/* Keyboard users see where they are. */
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #8affdd;outline-offset:4px;border-radius:8px}

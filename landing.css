@@ -358,3 +358,18 @@ p,li,em,figcaption{text-wrap:pretty}
 .sc-sky .orbit-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 @media (max-width:600px){.sc-sky .orbit-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 
+/* One type family for every heading below the opening (Noto Sans TC, heavy); the serif is kept for the
+   opening title alone, as on the original home page. */
+.rt-list b,.sky-head h2,.next-h{font-family:'Noto Sans TC',sans-serif;font-weight:900}
+.sc-hero .ht .t-m{line-height:1.12}
+/* Very wide screens: content keeps a readable column (about 1640px) centred, instead of spreading thin. */
+@media (min-width:1800px){
+  .sc-every,.sc-weak,.sc-build,.sc-next{padding-inline:calc((100vw - 1640px) / 2)}
+  .sc-sky{padding-inline:calc((100vw - 1800px) / 2)}
+  .sc-hero .hero-copy{left:calc((100vw - 1640px) / 2);width:1640px}
+  .rig-cap{right:calc((100vw - 1640px) / 2)}
+}
+@media (min-width:1800px){
+  .sc-hero .ht .t-b{font-size:min(14.5vw,24vh,300px);white-space:nowrap}
+  .glow-title b{white-space:nowrap}
+}

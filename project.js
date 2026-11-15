@@ -713,7 +713,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       ['① 導航電文：衛星要說的內容', '軌道、時鐘與時間資訊，以 +1／−1 表示，每秒 50 個位元；每個位元持續 20 ms，變化很慢。',
        '① Navigation data: what the satellite says', 'Orbit, clock and time information as +1 / −1 at 50 bits a second; each bit lasts 20 ms and changes slowly.'],
       ['② PRN 碼：每顆衛星專屬的碼', '一串快速跳動的 ±1，每 1 ms 重複一次。每顆衛星的碼都不同，接收機靠它分辨是哪一顆：GPS 每 1 ms 有 1023 個碼片，北斗有 2046 個。',
-       '② PRN code: each satellite’s own code', 'A fast ±1 sequence that repeats every 1 ms. Every satellite’s code is different, which is how a receiver tells them apart: 1023 chips per 1 ms for GPS, 2046 for BeiDou.'],
+       '② PRN code: each satellite\'s own code', 'A fast ±1 sequence that repeats every 1 ms. Every satellite\'s code is different, which is how a receiver tells them apart: 1023 chips per 1 ms for GPS, 2046 for BeiDou.'],
       ['③ 相乘：電文決定碼要不要翻轉', '電文是 +1 時，碼維持原樣；電文是 −1 時，整段碼上下翻轉。',
        '③ Multiply: the data decides whether the code flips', 'Where the data is +1 the code passes unchanged; where it is −1 the whole stretch flips upside down.'],
       ['④ 放上載波：這就是發出去的波形', '載波頻率由系統規定、固定不變：GPS 1575.42 MHz、北斗 1561.098 MHz。相乘結果每翻轉一次，載波相位就跳 180°（BPSK）。GeoTrust 在基頻只計算偏離中心的部分，再由 SDR 搬回 1.5 GHz。',
@@ -721,7 +721,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
       ['⑤ 寫進飛行時間：碼要晚 τ 才到', '接收機是用「碼晚到多久」來量距離。所以接收端此刻收到的，必須正好是衛星 τ 之前送出的那一段碼：τ 決定碼從哪一個碼片開始。',
        '⑤ Write in the flight time: the code arrives τ late', 'A receiver measures distance by how late the code arrives. So what reaches it now must be exactly the stretch of code the satellite sent τ earlier: τ decides which chip the code starts on.'],
       ['⑥ 接收機：用對的碼，找出延遲', '接收機自己會產生每顆衛星的碼複本，一格一格往後挪，每挪一次就和收到的訊號逐項相乘再加總。剛好對齊時，總和突然變大（尖峰）；挪了多少就是晚到多久，乘上光速就是距離。換成別顆衛星的碼，怎麼挪都對不齊，就沒有尖峰。',
-       '⑥ The receiver: the right code finds the delay', 'A receiver makes its own copy of each satellite’s code, slides it along one step at a time, and each time multiplies it with what arrived and adds it all up. When they line up the sum jumps (a peak); how far it slid is how late the signal is, and times the speed of light that is the distance. Another satellite’s code never lines up, so there is no peak.'],
+       '⑥ The receiver: the right code finds the delay', 'A receiver makes its own copy of each satellite\'s code, slides it along one step at a time, and each time multiplies it with what arrived and adds it all up. When they line up the sum jumps (a peak); how far it slid is how late the signal is, and times the speed of light that is the distance. Another satellite\'s code never lines up, so there is no peak.'],
     ];
     const N = CAPS.length, DATA = [1, -1, -1, 1, -1, 1, 1, -1], FLIP = '#ff8f7a', DUR = 6.5;
     const chip = (seed, k) => (Math.sin(k * 12.9898 + seed * 78.233) * 43758.5453 % 1 + 1) % 1 > 0.5 ? 1 : -1;
@@ -764,7 +764,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         if (!n) windows.forEach(({ a, b, d }) => { if (b - a > 34) g.txt(d > 0 ? '+1' : '−1', (a + b) / 2, rows[0] - amp - 8, { size: 11.5, color: C.pur, align: 'center', weight: 700, mono: true }); });
         if (beat >= 1) {
           ctx.globalAlpha = beat === 1 ? rv : 1;
-          label(rows[1], '這顆衛星的碼', 'This satellite’s code', '1.023 Mcps', C.gps);
+          label(rows[1], '這顆衛星的碼', 'This satellite\'s code', '1.023 Mcps', C.gps);
           trace(rows[1], x => code(x), C.gps);
           if (beat === 1) {
             const w = windows.find(w => w.b - w.a >= BIT - 1);
@@ -817,7 +817,7 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
         label(yr, '收到的訊號', 'What arrives', en ? 'under the noise' : '埋在雜訊下', '#9fb4c8');
         trace(yr, recv, '#9fb4c8aa', 1, amp * 1.1);
         const sweepP = Math.min(1, local / (DUR * 0.62)), maxOff = D * 1.7, off = sweepP * maxOff;
-        label(yl, '接收機的碼複本', 'Receiver’s copy', en ? `slid ${off.toFixed(0)}` : `往後挪 ${off.toFixed(0)}`, C.acc);
+        label(yl, '接收機的碼複本', 'Receiver\'s copy', en ? `slid ${off.toFixed(0)}` : `往後挪 ${off.toFixed(0)}`, C.acc);
         trace(yl, x => code(x - off), C.acc, 1.6, amp, Math.min(x1, x0 + off), x1);
         // The sum at each offset tried so far.
         const py0 = n ? 236 : 162, py1 = SH - (n ? 30 : 26), px0 = x0, px1 = x1, PX = o => px0 + o / maxOff * (px1 - px0);
@@ -830,8 +830,8 @@ document.querySelectorAll('details.po-deep[open]').forEach(d => { d.open = false
           ctx.strokeStyle = col; ctx.lineWidth = own ? 2 : 1.2; ctx.setLineDash(own ? [] : [4, 3]); ctx.stroke(); ctx.setLineDash([]);
         });
         const lgx = n ? px0 : px1, lgy = n ? py0 - 46 : py0 + 8, lga = n ? 'left' : 'right';
-        g.txt(en ? 'solid: this satellite’s code' : '實線：這顆衛星的碼', lgx, lgy, { size: 11.5, color: C.acc, align: lga, weight: 700 });
-        g.txt(en ? 'dashed: another satellite’s code, no peak' : '虛線：別顆衛星的碼，沒有尖峰', lgx, lgy + (n ? 17 : 20), { size: 11.5, color: RED, align: lga, weight: 700 });
+        g.txt(en ? 'solid: this satellite\'s code' : '實線：這顆衛星的碼', lgx, lgy, { size: 11.5, color: C.acc, align: lga, weight: 700 });
+        g.txt(en ? 'dashed: another satellite\'s code, no peak' : '虛線：別顆衛星的碼，沒有尖峰', lgx, lgy + (n ? 17 : 20), { size: 11.5, color: RED, align: lga, weight: 700 });
         if (off >= D) {
           const x = PX(D), y = py1 - (py1 - py0 - 18);
           g.dot(x, y, 5, '#fff', 12);

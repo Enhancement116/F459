@@ -160,7 +160,7 @@
   // The third loops: Kaohsiung, then a swing across the globe, then the Arc de Triomphe in Paris.
   const phones = $$('.ph-screen');
   let land = null;
-  if (window.d3 && window.topojson) fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json').then(r => r.json()).then(topo => {
+  if (window.d3 && window.topojson && window.GnssOrbit) GnssOrbit.json('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json').then(topo => {
     land = topojson.feature(topo, topo.objects.land);
   }).catch(() => {});
   const HOME = [120.3382, 22.7584], PARIS = [2.2950, 48.8738];
@@ -381,11 +381,21 @@
   addEventListener('load', size);
   size();
 
+  // ---- Frame loop, kept light: positions are measured only when the page moves or resizes, and each
+  // canvas is drawn only while its block is on screen (the phones at about 30 frames a second).
+  const onScreen = new Set();
+  const watch = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? onScreen.add(e.target) : onScreen.delete(e.target)), { rootMargin: '120px 0px' });
+  const flow3 = $('.flow3'), dualEl = $('.dual');
+  [flow3, dualEl].forEach(el => el && watch.observe(el));
+  let dirty = true, lastPhones = 0;
+  addEventListener('scroll', () => { dirty = true; }, { passive: true });
+  addEventListener('resize', () => { dirty = true; });
   const frame = t => {
-    measure();
-    drawPhones(t);
-    drawPos(t);
-    drawTime();
+    if (dirty) { dirty = false; measure(); }
+    if (!document.hidden) {
+      if (onScreen.has(flow3) && t - lastPhones > 33) { lastPhones = t; drawPhones(t); }
+      if (onScreen.has(dualEl)) { drawPos(t); drawTime(); }
+    }
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

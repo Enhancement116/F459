@@ -220,3 +220,11 @@ html.sys-motion .sys-scene--tk-specs .po-bridge-p{font-size:14.5px;line-height:1
 .tk-deep-h i{font:700 .8em Orbitron,sans-serif;font-style:normal;color:#f6c775}
 dialog.tk-deep{scrollbar-width:thin;scrollbar-color:#2c5278 transparent}
 .tk-deep .po-table-wrap{margin-bottom:20px}.tk-deep-h{margin-bottom:6px}
+
+/* Phones: the spec table scrolls inside its box instead of widening the stage. */
+@media (max-width:700px){
+  html.sys-motion .sys-scene--tk-specs>.sys-stage{min-width:0}
+  html.sys-motion .sys-scene--tk-specs .po-feat-head,html.sys-motion .sys-scene--tk-specs .po-feat-sub{max-width:100%;min-width:0}
+  html.sys-motion .sys-scene--tk-specs .po-table-wrap{overflow-x:auto;max-width:100%}
+  html.sys-motion .sys-scene--tk-specs .po-table td,html.sys-motion .sys-scene--tk-specs .po-table th{padding:4px 8px;font-size:12.5px}
+}

@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="fx.css?v=17">
 <link rel="stylesheet" href="globe.css?v=45">
 <link rel="stylesheet" href="chrome.css?v=1">
-<link rel="stylesheet" href="landing.css?v=1">
+<link rel="stylesheet" href="landing.css?v=10">
 </head>
 <body>
 <header><a class="brand" href="./"><img class="brand-logo" src="logo-96.png" alt="" width="36" height="36">GeoTrust<span>BY F459 LAB</span></a><nav id="site-nav" aria-label="Main navigation"><a href="./" aria-current="page" data-zh="首頁" data-en="Home">首頁</a><a href="project/" data-zh="專案總覽" data-en="Project">專案總覽</a><a href="project/system/" data-zh="核心設計" data-en="Design">核心設計</a><a href="project/features/" data-zh="系統功能" data-en="Features">系統功能</a><a href="project/tech/" data-zh="技術細節" data-en="Tech details">技術細節</a><a href="gnss/" data-zh="GNSS 訊號原理" data-en="GNSS Signals">GNSS 訊號原理</a><a href="team/" data-zh="研究團隊" data-en="Team">研究團隊</a><a href="test/" data-zh="測試" data-en="Test">測試</a></nav><button type="button" class="sys-mode sys-mode--head t-mode" aria-pressed="false">一般閱讀</button><button type="button" class="lang" id="language">EN ↗</button></header>
@@ -133,7 +133,7 @@
 </details>
 <footer class="gp-foot">
 
-<details class="globe-frame"><summary data-zh="為什麼地球不會自轉？" data-en="Why doesn’t the Earth spin?">為什麼地球不會自轉？</summary><p id="globe-frame-text"></p></details>
+<details class="globe-frame"><summary data-zh="為什麼地球不會自轉？" data-en="Why doesn't the Earth spin?">為什麼地球不會自轉？</summary><p id="globe-frame-text"></p></details>
 <details class="globe-frame"><summary data-zh="資料與顯示說明" data-en="About the data">資料與顯示說明</summary><p class="orbit-note" id="globe-note"></p><p class="map-credits" data-zh="地面地圖圖資：衛星影像與標註 © Esri、Maxar、Earthstar Geographics；地形 © OpenTopoMap（CC-BY-SA）、SRTM；街道與地圖資料 © OpenStreetMap 貢獻者；地圖套件 Leaflet；自訂點位地名查詢 Nominatim（© OpenStreetMap 貢獻者）。" data-en="Ground map: imagery and labels © Esri, Maxar, Earthstar Geographics; terrain © OpenTopoMap (CC-BY-SA), SRTM; streets and map data © OpenStreetMap contributors; built with Leaflet; custom-site place names via Nominatim (© OpenStreetMap contributors).">地面地圖圖資：衛星影像與標註 © Esri、Maxar、Earthstar Geographics；地形 © OpenTopoMap（CC-BY-SA）、SRTM；街道與地圖資料 © OpenStreetMap 貢獻者；地圖套件 Leaflet；自訂點位地名查詢 Nominatim（© OpenStreetMap 貢獻者）。</p></details>
 <a class="gnss-entry" href="gnss/" data-zh="全球 GNSS：哪些國家使用哪些軌道？ ↗" data-en="Global GNSS: who uses which orbits? ↗">全球 GNSS：哪些國家使用哪些軌道？ ↗</a>
 </footer>
@@ -145,24 +145,17 @@
   <!-- 5 · Next -->
   <section class="sc sc-next" data-bg="#04060c">
     <div class="home-head"><p class="kicker"><span class="kn">05</span><span data-zh="接著看" data-en="Where next">接著看</span></p><h2 class="next-h" data-zh="想知道更多，從這裡出發" data-en="Want more? Start here">想知道更多，從這裡出發</h2></div>
-    <ol class="next-list">
-      <li><a href="project/"><span>01</span><b data-zh="專案總覽" data-en="Project overview">專案總覽</b><em data-zh="為什麼需要 GeoTrust" data-en="Why GeoTrust is needed">為什麼需要 GeoTrust</em></a></li>
-      <li><a href="project/system/"><span>02</span><b data-zh="核心設計" data-en="Design">核心設計</b><em data-zh="五個關鍵選擇" data-en="Five key choices">五個關鍵選擇</em></a></li>
-      <li><a href="project/features/"><span>03</span><b data-zh="系統功能" data-en="Features">系統功能</b><em data-zh="跟著一次測試走" data-en="Follow one test">跟著一次測試走</em></a></li>
-      <li><a href="project/tech/"><span>04</span><b data-zh="技術細節" data-en="Tech details">技術細節</b><em data-zh="每 1 毫秒算一次天空" data-en="The sky every millisecond">每 1 毫秒算一次天空</em></a></li>
-      <li><a href="gnss.html"><span>05</span><b data-zh="GNSS 訊號原理" data-en="GNSS signals">GNSS 訊號原理</b><em data-zh="衛星訊號怎麼組成" data-en="How the signals are built">衛星訊號怎麼組成</em></a></li>
-      <li><a href="team.html"><span>06</span><b data-zh="研究團隊" data-en="Team">研究團隊</b><em data-zh="誰在做這個專案" data-en="Who is behind it">誰在做這個專案</em></a></li>
-    </ol>
+    <div class="route"><i class="rt-line" aria-hidden="true"><i class="rt-pulse"></i></i><ol class="next-list rt-list"><li><a href="project/"><span class="rt-k" data-zh="了解專案" data-en="UNDERSTAND">了解專案</span><i class="rt-dot" aria-hidden="true"></i><b data-zh="專案總覽" data-en="Project overview">專案總覽</b><em data-zh="為什麼需要 GeoTrust" data-en="Why GeoTrust is needed">為什麼需要 GeoTrust</em></a></li><li><a href="project/system/"><span class="rt-k" data-zh="深入設計" data-en="GO DEEPER">深入設計</span><i class="rt-dot" aria-hidden="true"></i><b data-zh="核心設計" data-en="Design">核心設計</b><em data-zh="五個關鍵選擇" data-en="Five key choices">五個關鍵選擇</em></a></li><li><a href="project/features/"><span class="rt-k" data-zh="查看操作" data-en="SEE IT USED">查看操作</span><i class="rt-dot" aria-hidden="true"></i><b data-zh="系統功能" data-en="Features">系統功能</b><em data-zh="跟著一次測試走" data-en="Follow one test">跟著一次測試走</em></a></li><li><a href="project/tech/"><span class="rt-k" data-zh="深入技術" data-en="GO DEEPER">深入技術</span><i class="rt-dot" aria-hidden="true"></i><b data-zh="技術細節" data-en="Tech details">技術細節</b><em data-zh="每 1 毫秒算一次天空" data-en="The sky every millisecond">每 1 毫秒算一次天空</em></a></li><li><a href="gnss/"><span class="rt-k" data-zh="補充基礎" data-en="BASICS">補充基礎</span><i class="rt-dot" aria-hidden="true"></i><b data-zh="GNSS 訊號原理" data-en="GNSS signals">GNSS 訊號原理</b><em data-zh="衛星訊號怎麼組成" data-en="How the signals are built">衛星訊號怎麼組成</em></a></li><li><a href="team/"><span class="rt-k" data-zh="認識團隊" data-en="MEET US">認識團隊</span><i class="rt-dot" aria-hidden="true"></i><b data-zh="研究團隊" data-en="Team">研究團隊</b><em data-zh="誰在做這個專案" data-en="Who is behind it">誰在做這個專案</em></a></li></ol></div>
   </section>
 </main>
 <footer><a class="brand" href="./"><img class="brand-logo" loading="lazy" decoding="async" src="logo-96.png" alt="" width="36" height="36">GeoTrust<span>BY F459 LAB</span></a><span class="gt-motto" data-zh="讓每一個定位，都經得起假訊號。" data-en="Every position fix, built to withstand fake signals.">讓每一個定位，都經得起假訊號。</span><a href="gnss/" data-zh="GNSS 訊號原理 →" data-en="GNSS signals →">GNSS 訊號原理 →</a></footer>
-<script src="gnss-orbit.js"></script>
+<script src="gnss-orbit.js?v=6"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js" integrity="sha384-VpKMdU+TlpggHFip46tJ/xkFUs8NFBwLqUMo3+3uiu411lU6eUQYsHVU+JFpA5ja" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js" integrity="sha384-VNiKRUXp0MmglFfqDwkfuk+Y78C3WTJShdKSaFwOacLR3UmamxHIJLBTD3BadIXD" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
-<script src="po-hero.js?v=8"></script>
-<script src="globe.js?v=32"></script>
-<script src="landing.js?v=1"></script>
+<script src="po-hero.js?v=9"></script>
+<script src="globe.js?v=34"></script>
+<script src="landing.js?v=3"></script>
 <script src="fx.js?v=18"></script>
 </body>
 </html>

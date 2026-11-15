@@ -105,22 +105,22 @@
         all: {
           title: 'Three orbit classes, one positioning geometry',
           lead: 'A GNSS fix needs at least four satellites to solve 3-D position and receiver clock bias. The more spread out they are in the sky, the lower the dilution of precision (DOP). BeiDou mixes GEO, IGSO and MEO to strengthen Asia-Pacific coverage; GPS uses MEO only.',
-          rows: [['Today’s data', 'data:source'], ['Visible from NKUST', 'live:classes']],
-          points: ['GEO gives steady, continuous signals; IGSO adds high elevations over Asia-Pacific; MEO delivers global coverage and fast-changing geometry.', 'Select a card above to inspect one class’s 24-hour tracks and specifications.']
+          rows: [['Today\'s data', 'data:source'], ['Visible from NKUST', 'live:classes']],
+          points: ['GEO gives steady, continuous signals; IGSO adds high elevations over Asia-Pacific; MEO delivers global coverage and fast-changing geometry.', 'Select a card above to inspect one class\'s 24-hour tracks and specifications.']
         },
         GEO: {
           title: 'GEO | Geostationary orbit',
-          rows: [['Altitude', '35,786 km'], ['Inclination', '≈ 0° (above the equator)'], ['Period', '23 h 56 m, synchronous with Earth'], ['Today’s data', 'real:BeiDou C01–C04 at about 140°E, 80°E, 110.5°E, 160°E'], ['Visible from NKUST', 'live:GEO']],
+          rows: [['Altitude', '35,786 km'], ['Inclination', '≈ 0° (above the equator)'], ['Period', '23 h 56 m, synchronous with Earth'], ['Today\'s data', 'real:BeiDou C01–C04 at about 140°E, 80°E, 110.5°E, 160°E'], ['Visible from NKUST', 'live:GEO']],
           points: ['Nearly fixed in the sky, so NKUST can receive continuously without tracking wide motion.', 'BeiDou GEO broadcasts the D2 navigation message (500 bps) with wide-area differential and integrity data.', 'Limits: only above the equator, so elevation drops at high latitudes; geometry barely changes, so GEO alone cannot improve DOP.']
         },
         IGSO: {
           title: 'IGSO | Inclined geosynchronous orbit',
-          rows: [['Altitude', '35,786 km (semi-major axis 42,164 km)'], ['Inclination', '≈ 55°'], ['Period', '23 h 56 m'], ['Today’s data', 'real:BeiDou C06–C10 (5 satellites)'], ['Visible from NKUST', 'live:IGSO']],
-          points: ['Figure-eight ground tracks, today spanning roughly 80°E–135°E, dwelling over Asia-Pacific.', 'Long periods at high elevation reinforce GEO geometry at higher latitudes and in urban canyons.', 'A BeiDou regional-enhancement design; Japan’s QZSS uses a similar inclined synchronous orbit.']
+          rows: [['Altitude', '35,786 km (semi-major axis 42,164 km)'], ['Inclination', '≈ 55°'], ['Period', '23 h 56 m'], ['Today\'s data', 'real:BeiDou C06–C10 (5 satellites)'], ['Visible from NKUST', 'live:IGSO']],
+          points: ['Figure-eight ground tracks, today spanning roughly 80°E–135°E, dwelling over Asia-Pacific.', 'Long periods at high elevation reinforce GEO geometry at higher latitudes and in urban canyons.', 'A BeiDou regional-enhancement design; Japan\'s QZSS uses a similar inclined synchronous orbit.']
         },
         MEO: {
           title: 'MEO | Medium Earth orbit',
-          rows: [['Altitude', 'GPS 20,200 km · BeiDou 21,528 km'], ['Inclination', '55°'], ['Period', 'GPS 11 h 58 m · BeiDou 12 h 53 m'], ['Planes', 'GPS 6 · BeiDou 3'], ['Today’s data', 'data:meo'], ['Visible from NKUST', 'live:MEO']],
+          rows: [['Altitude', 'GPS 20,200 km · BeiDou 21,528 km'], ['Inclination', '55°'], ['Period', 'GPS 11 h 58 m · BeiDou 12 h 53 m'], ['Planes', 'GPS 6 · BeiDou 3'], ['Today\'s data', 'data:meo'], ['Visible from NKUST', 'live:MEO']],
           points: ['The backbone of global coverage: satellites move quickly across the sky, continuously reshaping geometry and improving DOP.', 'Fast motion also means large Doppler shifts (about ±5 kHz for a static receiver), so acquisition must search a wider frequency range.', 'The GPS L1 C/A and BeiDou B1I (D1 message, 50 bps) signals GeoTrust simulates come mainly from this class.']
         }
       },
@@ -136,7 +136,7 @@
       sourceTeach: 'Idealized constellation · GPS + BeiDou',
       noteReal: 'Earth: Natural Earth borders, land and ocean. Satellites: each moment uses the broadcast ephemeris with the nearest reference time (GPS every 2 h, BeiDou hourly); directions follow the ephemeris, altitude is compressed. Night side follows the Sun.',
       noteTeach: 'Teaching model: planes, counts and speeds are idealized, not live ephemerides; altitude is compressed.',
-      frameReal: 'Why doesn’t the Earth spin? The view uses the Earth-fixed frame (ECEF): the camera rotates with the Earth, so the globe stays still and satellites show their motion relative to the ground — GEO stays put, IGSO traces a figure-eight. The moving night side reflects the real rotation.',
+      frameReal: 'Why doesn\'t the Earth spin? The view uses the Earth-fixed frame (ECEF): the camera rotates with the Earth, so the globe stays still and satellites show their motion relative to the ground — GEO stays put, IGSO traces a figure-eight. The moving night side reflects the real rotation.',
       frameTeach: 'In the teaching model the Earth is held still and its rotation is not shown; only motion along each orbital plane is illustrated. The real Earth turns once every 23 h 56 min.',
       frameTag: 'Earth-fixed frame (ECEF) · rotation not shown', frameTagTeach: 'Earth held still · rotation not shown',
       clockTeach: 'Teaching model · accelerated time', taiwan: 'Taiwan',
@@ -897,7 +897,8 @@
   });
 
   // ---------- Data ----------
-  fetch(MANIFEST_URL, { cache: 'no-cache' }).then(r => r.json()).then(m => fetch(DATA_DIR + m.file + (m.built ? '?v=' + m.built : ''))).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
+  // The day's ephemeris comes through gnss-orbit.js, so a page that also shows po-hero loads it only once.
+  (window.GnssOrbit && GnssOrbit.latest ? GnssOrbit.latest(DATA_DIR) : fetch(MANIFEST_URL, { cache: 'no-cache' }).then(r => r.json()).then(m => fetch(DATA_DIR + m.file + (m.built ? '?v=' + m.built : ''))).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })).then(data => {
     EPH.date = data.date; EPH.doy = data.doy;
     state.sats = Object.entries(data.sats).map(([prn, list]) => {
       const sys = prn[0], prnNum = Number(prn.slice(1));
@@ -915,7 +916,7 @@
   }).catch(() => { state.error = true; state.mode = 'teach'; updateUi(); });
 
   if (window.d3 && window.topojson) {
-    fetch(WORLD_URL).then(r => r.json()).then(topo => {
+    (window.GnssOrbit && GnssOrbit.json ? GnssOrbit.json(WORLD_URL) : fetch(WORLD_URL).then(r => r.json())).then(topo => {
       const obj = topo.objects.countries;
       state.world = {
         countries: topojson.feature(topo, obj).features,

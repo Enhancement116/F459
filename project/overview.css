@@ -344,3 +344,6 @@ html.sys-motion .ov-pt b{font-size:clamp(17px,calc(1.7 * var(--u)),30px)}
 html.sys-motion [data-step="0"] .ov-pt:nth-child(1) b,html.sys-motion [data-step="1"] .ov-pt:nth-child(2) b,html.sys-motion [data-step="2"] .ov-pt:nth-child(3) b{font-size:clamp(19px,calc(2.2 * var(--u)),40px)}
 html.sys-motion .po .ov-cheap .ov-cheap-n{font-size:clamp(22px,calc(2.6 * var(--u)),46px)}
 html.sys-motion .po .ov-cheap .ov-cheap-n.ov-cheap-n--text,.po .ov-cheap .ov-cheap-n.ov-cheap-n--text{font:700 clamp(17px,calc(1.7 * var(--u)),30px)/1.4 'Noto Sans TC',sans-serif}
+
+/* The text figure (a sentence, not a number) wraps; long English otherwise ran off the screen. */
+.ov-cheap-n--text{white-space:normal;overflow-wrap:anywhere}

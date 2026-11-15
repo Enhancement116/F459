@@ -139,7 +139,7 @@
   document.addEventListener('visibilitychange', wake);
   new ResizeObserver(() => { layout(); paintEarth(); draw(performance.now()); }).observe(canvas);
   layout(); paintEarth();
-  fetch(WORLD_URL).then(r => r.json()).then(topo => {
+  (GnssOrbit.json ? GnssOrbit.json(WORLD_URL) : fetch(WORLD_URL).then(r => r.json())).then(topo => {
     const obj = topo.objects.countries;
     world = {
       land: topojson.merge(topo, obj.geometries),

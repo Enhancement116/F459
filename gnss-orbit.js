@@ -112,7 +112,10 @@
   };
   // Folds any time of day into the covered part, so clocks that run on keep landing inside it.
   const wrap = (data, t) => { const s = span(data); return s.from + ((((t - s.from) % s.len) + s.len) % s.len); };
-  const api = { parseRinex, position, toRecord, fromRecord, FIELDS, latest, span, wrap };
+  // Any JSON file, fetched and parsed once per page however many scripts ask (the world map, for one).
+  const jsonCache = {};
+  const json = url => jsonCache[url] || (jsonCache[url] = fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+  const api = { parseRinex, position, toRecord, fromRecord, FIELDS, latest, span, wrap, json };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GnssOrbit = api;
 })(this);

@@ -33,3 +33,8 @@ header .brand .brand-logo,footer .brand .brand-logo{grid-row:1/3;margin-right:0}
 header .brand span,footer .brand span{grid-column:2;margin-top:0;align-self:start;white-space:nowrap}
 @media(max-width:360px){header .brand span{display:block}}
 
+
+/* The hero globe canvas sizes from its box, never from its drawing buffer (no layout shift when it starts drawing). */
+.po-hero-real canvas{contain:size}
+/* The background sky never moves the layout as it repaints. */
+.fx-skywrap,.fx-skyrot,.fx-sky{contain:strict}

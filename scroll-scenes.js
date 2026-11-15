@@ -53,7 +53,7 @@
   const pairs = wrapAll('.sys-pair', 'sys-scene--pair', 4);
   wrapAll('.sys-duo--side', 'sys-scene--route', 2);
   wrapAll('.sys-nmea', 'sys-scene--nmea', 4);
-  wrapAll('.sys-duo--plot', 'sys-scene--ant', 2);
+  wrapAll('.sys-duo--plot', 'sys-scene--ant', 1);
 
   // Other pages mark their stages in the markup: data-scene names the scene, data-steps counts its stops.
   $$('[data-scene]').forEach(el => {
@@ -323,7 +323,12 @@
       const top = scene.getBoundingClientRect().top + scrollY;
       const travel = scene.offsetHeight - scene.stage.offsetHeight;
       return Array.from({ length: scene.steps }, (_, i) => Math.round(top + (scene.steps > 1 ? travel * i / (scene.steps - 1) : 0)));
-    }).sort((a, b) => a - b);
+    });
+    // Blocks too tall to pin (the home page globe) still get stops: data-stop marks where the view rests,
+    // just under the header and chapter bar.
+    const barTop = parseFloat(root.style.getPropertyValue('--sys-top')) || 0;
+    $$('[data-stop]').forEach(el => stops.push(Math.round(el.getBoundingClientRect().top + scrollY - barTop)));
+    stops.sort((a, b) => a - b);
     // The hero starts just under the header, so the very top of the page is its stop.
     if (stops[0] < innerHeight * 0.3) stops[0] = 0;
   };

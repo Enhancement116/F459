@@ -326,3 +326,21 @@ html.sys-motion .ov-cheap .ov-cheap-col--old .ov-cheap-n{font-size:clamp(20px,ca
 .ov-cheap-col--new .ov-cheap-n{font-size:clamp(30px,calc(4.4 * var(--u)),84px)}
 html.sys-motion .ov-cheap .ov-cheap-col--new .ov-cheap-n{font-size:clamp(34px,calc(5.6 * var(--u)),108px)}
 .ov-cheap-row{align-items:end}
+
+/* 03: the GeoTrust card makes two points side by side, low cost and easy maintenance; numbers wrap instead of overflowing. */
+.ov-cheap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(14px,calc(2.4 * var(--u)),44px)}
+.ov-cheap-block{display:grid;gap:10px;align-content:start;padding-top:12px;border-top:1px solid #8affdd33}
+.po .ov-cheap-h{margin:0;font-size:clamp(18px,calc(1.8 * var(--u)),32px);font-weight:700;color:#fff}
+.ov-cheap-block .ov-cheap-row{grid-template-columns:minmax(0,1fr);gap:8px}
+.ov-cheap-n,html.sys-motion .ov-cheap .ov-cheap-n{font-size:clamp(22px,calc(2.6 * var(--u)),46px);overflow-wrap:anywhere}
+.ov-cheap-n--text,html.sys-motion .ov-cheap .ov-cheap-n--text{font:700 clamp(17px,calc(1.7 * var(--u)),30px)/1.4 'Noto Sans TC',sans-serif}
+.ov-cheap-col--old .ov-cheap-n--text{text-decoration-thickness:2px}
+@media(max-width:700px){.ov-cheap-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* 02 and 04: the list shows every title, but only the current point opens its sentence. */
+html.sys-motion .ov-pt p{display:none}
+html.sys-motion [data-step="0"] .ov-pt:nth-child(1) p,html.sys-motion [data-step="1"] .ov-pt:nth-child(2) p,html.sys-motion [data-step="2"] .ov-pt:nth-child(3) p{display:block}
+html.sys-motion .ov-pt b{font-size:clamp(17px,calc(1.7 * var(--u)),30px)}
+html.sys-motion [data-step="0"] .ov-pt:nth-child(1) b,html.sys-motion [data-step="1"] .ov-pt:nth-child(2) b,html.sys-motion [data-step="2"] .ov-pt:nth-child(3) b{font-size:clamp(19px,calc(2.2 * var(--u)),40px)}
+html.sys-motion .po .ov-cheap .ov-cheap-n{font-size:clamp(22px,calc(2.6 * var(--u)),46px)}
+html.sys-motion .po .ov-cheap .ov-cheap-n.ov-cheap-n--text,.po .ov-cheap .ov-cheap-n.ov-cheap-n--text{font:700 clamp(17px,calc(1.7 * var(--u)),30px)/1.4 'Noto Sans TC',sans-serif}

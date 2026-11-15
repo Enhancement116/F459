@@ -83,28 +83,19 @@ html.sys-motion .sys-scene--hm-every.is-here[data-step="1"] .hm-hand{animation:h
 .hm .hm-more{display:inline-block;margin-top:22px;padding:10px 18px;border:1px solid #8affdd66;border-radius:999px;color:#cfeee4;font-size:clamp(15px,1.1vw,18px);text-decoration:none;background:#8affdd0d;transition:background .2s,border-color .2s}
 .hm .hm-more:hover,.hm .hm-more:focus-visible{background:#8affdd22;border-color:var(--hm-acc)}
 
-/* 03 the lab */
-.hm-node rect,.hm-node path{fill:var(--hm-panel);stroke:var(--hm-line);stroke-width:1.8}
-.hm-node>text{font-size:20px!important;font-weight:700}
-.hm-mini-sky circle:not(.hm-ms){fill:none;stroke:#1f3a56}
-.hm-ms--gps{fill:var(--hm-gps)}.hm-ms--bds{fill:var(--hm-bds)}
-.hm-cable{fill:none;stroke:#3a5c7d;stroke-width:3}
-.hm-pulse{fill:var(--hm-acc);filter:drop-shadow(0 0 8px #8affdd)}
-.hm-fix{font-size:28px!important;font-weight:700;fill:var(--hm-acc)!important}
-.hm-loop path{fill:none;stroke:var(--hm-acc);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.hm-node--sdr text:not(.hm-sm){fill:var(--hm-ink)}
-/* Step 0 lights the laptop, step 1 the cable and SDR, step 2 the receiver and the replay loop. */
-html.sys-motion .sys-scene--hm-lab .hm-pulse,html.sys-motion .sys-scene--hm-lab .hm-fix,html.sys-motion .sys-scene--hm-lab .hm-fix-sub,html.sys-motion .sys-scene--hm-lab .hm-loop{opacity:0}
-html.sys-motion .sys-scene--hm-lab .hm-node--sdr,html.sys-motion .sys-scene--hm-lab .hm-node--rx,html.sys-motion .sys-scene--hm-lab .hm-cable{opacity:.35}
-html.sys-motion .sys-scene--hm-lab[data-step="0"] .hm-node--pc rect{stroke:var(--hm-acc)}
-html.sys-motion .sys-scene--hm-lab.is-here[data-step="0"] .hm-ms{animation:hmBlink 1.6s ease-in-out infinite}
-html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(4){animation-delay:.25s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(5){animation-delay:.5s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(6){animation-delay:.75s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(7){animation-delay:1s}html.sys-motion .sys-scene--hm-lab .hm-ms:nth-child(8){animation-delay:1.25s}
-html.sys-motion .sys-scene--hm-lab:not([data-step="0"]) .hm-node--sdr,html.sys-motion .sys-scene--hm-lab:not([data-step="0"]) .hm-cable,html.sys-motion .sys-scene--hm-lab:not([data-step="0"]) .hm-pulse{opacity:1}
-html.sys-motion .sys-scene--hm-lab[data-step="1"] .hm-node--sdr rect{stroke:var(--hm-acc)}
-html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-node--rx,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-fix,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-fix-sub,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-loop{opacity:1}
-html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-node--rx rect{stroke:var(--hm-acc)}
-html.sys-motion .sys-scene--hm-lab.is-here[data-step="2"] .hm-loop{animation:hmTurn 2.4s linear infinite;transform-box:fill-box;transform-origin:center}
-@keyframes hmBlink{50%{opacity:.25}}
+/* 03 the lab: the real screen and hardware (the same photo as the design page); each step lights one part. */
+.hm-photo{position:relative;margin:0 auto;width:min(100%,1100px);max-height:none;border-radius:14px;overflow:hidden;background:#fff}
+html.sys-motion .sys-scene--hm-lab .hm-photo{width:min(100%,calc((var(--sys-h) - var(--sys-top,170px) - var(--sys-bottom,80px) - 250px) * 1.947))}
+.hm-photo img{display:block;width:100%;height:auto}
+.hm-photo figcaption{position:absolute;right:10px;bottom:8px;font-size:12px;color:#55606c}
+.hm-hl{position:absolute;border:2px solid var(--hm-acc);border-radius:10px;opacity:0;transition:opacity .45s ease;pointer-events:none}
+.hm-hl b{position:absolute;left:-2px;top:-2px;transform:translateY(-100%);padding:4px 10px;border-radius:8px 8px 8px 0;background:var(--hm-acc);color:#04211a;font-size:14px;white-space:nowrap}
+.hm-hl--1 b{left:auto;right:-2px;border-radius:8px 8px 0 8px}
+html.sys-motion .sys-scene--hm-lab .hm-hl{box-shadow:0 0 0 9999px #07101ecc}
+html.sys-motion .sys-scene--hm-lab[data-step="0"] .hm-hl--0,html.sys-motion .sys-scene--hm-lab[data-step="1"] .hm-hl--1,html.sys-motion .sys-scene--hm-lab[data-step="2"] .hm-hl--2{opacity:1}
+html.sys-motion .sys-scene--hm-lab .hm-hl b{top:6px;left:6px;transform:none;border-radius:8px}
+html.sys-motion .sys-scene--hm-lab .hm-hl--1 b{left:auto;right:6px}
+
 
 /* ---------- The real sky: centred heading, the console framed and as wide as the page ---------- */
 .hm-sky{padding-top:clamp(50px,9vh,100px)}
@@ -202,4 +193,35 @@ html.sys-motion .sys-scene--hm-lab.is-here[data-step="2"] .hm-loop{animation:hmT
   .hm-spec{gap:6px}.hm-spec span{font-size:12px;padding:3px 8px}
   .hm-now figcaption{display:none}
   .hm-tag{font-size:15px}
+}
+
+/* Route: six stops built the same way (purpose, page, one line, link), in equal columns. */
+.hm-route{grid-template-columns:repeat(6,minmax(0,1fr))}
+.hm-route::before{left:11px;right:11px;top:17px}
+.hm-stop a{gap:6px;padding-right:16px}
+.hm-dot,.hm-stop--start .hm-dot{width:24px;height:24px;margin:6px 0 16px 0}
+.hm-stop--start .hm-dot{box-shadow:0 0 0 5px #8affdd22,0 0 18px var(--hm-acc)}
+.hm-stop-k{font-size:12px;letter-spacing:.16em}
+.hm-stop strong,.hm-stop--start strong{font-size:clamp(19px,1.5vw,23px);line-height:1.35}
+.hm-stop-d{font-size:15px;line-height:1.6;color:#a9bdd2}
+.hm-stop em{margin-top:6px}
+@media (max-width:1000px){
+  .hm-route{grid-template-columns:1fr}
+  .hm-route::before{left:11px;top:18px}
+  .hm-stop a{grid-template-columns:24px minmax(0,1fr)}
+  .hm-dot,.hm-stop--start .hm-dot{grid-row:1/5;margin:6px 0 0}
+}
+
+/* Globe panel: the visible satellites across the full width (figures left, sky plot right),
+   then the notes in one row, then the advanced settings. */
+@media (min-width:901px){
+  .hm .globe-panel{grid-template-columns:minmax(0,1fr);grid-template-areas:"visible" "teach" "foot" "adv";grid-template-rows:auto}
+  .hm .gp-visible{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);column-gap:40px;align-content:start}
+  .hm .gp-visible .gp-vis-grid{display:contents}
+  .hm .gp-visible>.gp-head,.hm .gp-visible>.gp-site,.hm .gp-vis-main,.hm .gp-visible>.gp-prns{grid-column:1}
+  .hm .gp-sky{grid-column:2;grid-row:1/span 4;align-self:center;margin:0}
+  .hm .gp-foot{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 32px;border-left:0;border-top:1px solid #1e3a55}
+  .hm .gp-foot>details{flex:1 1 260px}
+  .hm .gp-foot>.gnss-entry{flex:0 0 auto;align-self:center}
+  .hm .gp-teach{border-left:0}
 }

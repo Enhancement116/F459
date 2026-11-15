@@ -264,7 +264,7 @@
 
   // The scene's step decides whether the pattern is out.
   const follow = () => {
-    lobeGoal = !scene || scene.dataset.step === '1' || !root.classList.contains('sys-motion') ? 1 : 0;
+    lobeGoal = cv.dataset.pattern === 'off' ? 0 : !scene || scene.dataset.step === '1' || !root.classList.contains('sys-motion') ? 1 : 0;
     // The pattern opens at the same angle as the HFSS plot: beam to the right, seen slightly from above.
     if (lobeGoal && spin) {
       spin = false;

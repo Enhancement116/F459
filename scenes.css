@@ -945,3 +945,87 @@ html.sys-motion .sys-scene--rt .sys-rt-art{max-height:calc(var(--sys-avail,70vh)
 html:not(.sys-motion) .sys-rt-cap{grid-area:auto}
 @media(max-width:899px){.po .sys-rt-cap{font-size:19px}.sys-rt-dot{font-size:13px}.sys-rt-dot i{width:22px;height:22px;font-size:11px}
   html.sys-motion .sys-scene--rt .sys-rt-art{max-height:calc(var(--sys-avail,70vh) * .6)}}
+
+/* Design 03: each command-line line appears at its moment; the generation step holds most of the cycle. */
+html.sys-motion .sys-scene--dl.is-here .sys-dl-line{animation:none}
+html.sys-motion .sys-scene--dl .sys-dl-line{opacity:0}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l0{animation:sysDlL0 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l1{animation:sysDlL1 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l2{animation:sysDlL2 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l3{animation:sysDlL3 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l4{animation:sysDlL4 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l5{animation:sysDlL5 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-l6{animation:sysDlL6 14s linear infinite}
+@keyframes sysDlL0{0%{opacity:1}96%{opacity:1}97%,100%{opacity:0}}
+@keyframes sysDlL1{0%,3%{opacity:0}3.1%,96%{opacity:1}97%,100%{opacity:0}}
+@keyframes sysDlL2{0%,7%{opacity:0}7.1%,96%{opacity:1}97%,100%{opacity:0}}
+@keyframes sysDlL3{0%,11%{opacity:0}11.1%,96%{opacity:1}97%,100%{opacity:0}}
+@keyframes sysDlL4{0%,15%{opacity:0}15.1%,96%{opacity:1}97%,100%{opacity:0}}
+@keyframes sysDlL5{0%,80%{opacity:0}80.1%,96%{opacity:1}97%,100%{opacity:0}}
+@keyframes sysDlL6{0%,86%{opacity:0}86.1%,96%{opacity:1}97%,100%{opacity:0}}
+.sys-dl-progline{display:flex;align-items:center;gap:10px}
+.sys-dl-prog{flex:1;max-width:60%;height:8px;border-radius:4px;background:#ffffff14;overflow:hidden}
+.sys-dl-prog i{display:block;height:100%;width:100%;background:#ff9a9a}
+.sys-dl-elapsed{counter-reset:m var(--dl-m);color:#ff9a9a}
+.sys-dl-elapsed::after{content:"已等 " counter(m) " 分鐘"}
+html[lang=en] .sys-dl-elapsed::after{content:counter(m) " min elapsed"}
+.sys-dl-elapsed{--dl-m:30}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-prog i{animation:sysDlProg 14s linear infinite}
+html.sys-motion .sys-scene--dl.is-here .sys-dl-elapsed{animation:sysDlWait 14s linear infinite}
+@keyframes sysDlProg{0%,15%{width:0}78%,100%{width:100%}}
+@keyframes sysDlWait{0%,15%{--dl-m:0}78%,100%{--dl-m:30}}
+/* The time under each side: a fixed comparison on one scale. */
+.sys-dl-time{display:grid;gap:6px;align-items:start}
+.po .sys-dl-t{font:700 clamp(24px,2.4vw,40px)/1.1 Orbitron,'Noto Sans TC',sans-serif;opacity:1}
+.sys-dl-side--cli .sys-dl-t{color:#ff9a9a}.sys-dl-side--gt .sys-dl-t{color:#8affdd}
+.sys-dl-bar{display:block;height:8px;border-radius:4px;background:#ffffff12;overflow:hidden}
+.sys-dl-bar i{display:block;height:100%;min-width:4px;border-radius:4px}
+.sys-dl-side--cli .sys-dl-bar i{background:#ff9a9a}.sys-dl-side--gt .sys-dl-bar i{background:#8affdd}
+.po .sys-dl-sub{font-size:clamp(13px,1vw,16px);color:#b5c6da}
+
+/* Comparison: what each approach is, in its head; then rows that all compare with a mark. */
+.po-cmp--marks .cmp-hd .cmp-cell{display:grid;gap:4px;align-content:start}
+.po-cmp--marks .cmp-sub{font-size:13px;line-height:1.5;color:#9fb4c8}
+.po-cmp--marks .cmp-row:not(.cmp-hd) .cmp-cell{display:flex;align-items:center;gap:10px;padding-block:16px}
+.po-cmp--marks .cmp-crit{font-weight:700;color:#e6f0fb}
+.po-cmp--marks .cmp-row:not(.cmp-hd):hover{background:#ffffff06}
+.po-cmp--marks .cmp-gt{background:#8affdd0d}
+.po-cmp--marks .cmp-row:not(.cmp-hd) .cmp-gt span{color:#eafff7;font-weight:600}
+html.sys-motion .po .sys-scene--cmp .po-cmp--marks .cmp-sub{display:block}
+.po-cmp--marks .cmp-hd .cmp-cell{justify-content:start;justify-items:start;text-align:left}
+/* Design 05: with the 3D view gone, the model and the gain pattern sit side by side, both visible, the note below. */
+html.sys-motion .po .sys-scene--ant .sys-stage.sys-duo--plot{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto;align-content:center;justify-items:stretch}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-area:auto;grid-row:1;opacity:1!important;transform:none!important;align-items:flex-start}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz>img{display:block;width:100%;max-height:calc(var(--sys-h) * .42);object-fit:contain}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-column:1/-1;grid-row:2}
+@media (max-width:900px){
+  html.sys-motion .po .sys-scene--ant .sys-stage.sys-duo--plot{grid-template-columns:minmax(0,1fr)}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-row:auto}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz>img{max-height:calc(var(--sys-h) * .2)}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-row:auto}
+}
+/* Design 05: the 3D antenna geometry on the left, the two HFSS images stacked on the right, the note below. */
+html.sys-motion .po .sys-scene--ant .sys-stage.sys-duo--plot{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-rows:auto auto auto}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-ant3d{grid-column:1;grid-row:1/3;min-height:0;aspect-ratio:auto;height:calc(var(--sys-h) * .5)}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-column:2;grid-row:auto}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz>img{max-height:calc(var(--sys-h) * .18)}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-row:3}
+@media (max-width:900px){
+  html.sys-motion .po .sys-scene--ant .sys-stage.sys-duo--plot{grid-template-columns:minmax(0,1fr)}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-ant3d{grid-row:auto;height:calc(var(--sys-h) * .28)}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-column:1}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz>img{max-height:calc(var(--sys-h) * .12)}
+}
+html.sys-motion .po .sys-scene--ant .sys-stage.sys-duo--plot{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;align-items:center}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-ant3d{grid-column:1;grid-row:1;height:calc(var(--sys-h) * .46)}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-column:auto;grid-row:1;align-self:center}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz>img{width:100%;height:auto;max-height:none}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot .po-viz-bar span{font-size:clamp(18px,1.6vw,26px)}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot .svx-cap .d{font-size:clamp(14px,1.05vw,17px)}
+html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-column:1/-1;grid-row:2}
+@media (max-width:900px){
+  html.sys-motion .po .sys-scene--ant .sys-stage.sys-duo--plot{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-ant3d{grid-column:1/-1;height:calc(var(--sys-h) * .26)}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.po-viz{grid-row:2}
+  html.sys-motion .po .sys-scene--ant .sys-duo--plot>.sys-note{grid-row:3}
+}

@@ -421,3 +421,14 @@ html:lang(en) .sc-hero[data-hero="3"] .ht .t-m{letter-spacing:.02em}
 /* 01: taller demos, so the positioning map has room for its four labelled satellites. */
 .demo{height:clamp(300px,44vh,460px)}
 @media (max-width:600px){.demo{height:min(46vh,360px)}}
+
+/* ---------- 04 taller (2026-11-16) ---------- */
+/* The globe block fills the screen below the header on its own (the section title scrolls above it), so the
+   outer satellites are no longer cut off at the top and bottom of the globe. The side column sets the floor. */
+@media (min-width:1101px){
+  .sc-sky{height:auto!important;min-height:0!important;padding-bottom:3vh}
+  .sc-sky .globe-console{flex:none;min-height:calc(100svh - 96px)}
+  .sc-sky .globe-body{flex:1 1 auto!important}
+  .sc-sky .globe-stage{height:auto!important;min-height:480px!important}
+  .sc-sky .globe-panel{height:auto!important;overflow:visible!important}
+}

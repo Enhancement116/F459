@@ -38,11 +38,14 @@
   // ---- Inertial wheel scrolling (mouse and trackpad); touch keeps the native scroll.
   let target = scrollY, y = scrollY, running = false, holdUntil = 0;
   const consoleEl = document.querySelector('.sc-sky .globe-console');
+  // Where the page settles for the live globe: on wide screens the console sits just under the header and fills
+  // the rest of the screen; on narrower ones, the top of the section.
+  const skyTop = () => { const sky = $('.sc-sky'); if (!consoleEl || innerWidth <= 1100) return sky.offsetTop; return Math.round(consoleEl.getBoundingClientRect().top + scrollY - 88); };
   if (consoleEl) {
     // Working the globe brings the whole block to fill the screen first. The page itself is never held:
     // the globe takes the wheel only for zooming (globe.js), and hands it back once the reader stops.
     consoleEl.addEventListener('pointerdown', () => {
-      const top = consoleEl.closest('.sc-sky').offsetTop;
+      const top = skyTop();
       if (Math.abs(scrollY - top) > 2) {
         if (calm || touch) { scrollTo({ top, behavior: calm ? 'auto' : 'smooth' }); return; }
         if (!running) y = scrollY;
@@ -76,7 +79,7 @@
       // so a fast scroll cannot skip past it; the next scroll carries on.
       const sky = $('.sc-sky');
       if (sky) {
-        const top = sky.offsetTop;
+        const top = skyTop();
         const stop = (before < top - 2 && target > top - vh * 0.15) || (before > top + 2 && target < top + vh * 0.15 && before <= top + sky.offsetHeight);
         if (stop) { target = top; holdUntil = performance.now() + 700; }
       }

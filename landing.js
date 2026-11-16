@@ -237,35 +237,84 @@
   const demoK = now => { if (!dual.classList.contains('show')) return 0; dual.t0 ||= now; const c = (now - dual.t0) % 7400; return clamp((c - 600) / 2400); };
   // Positioning: three satellites, each with a range circle that grows to its true distance; where they meet is the receiver.
   const pos = $('.demo--pos'), pc = pos.getContext('2d');
+  // Positioning: real imagery of Kaohsiung; four satellites send signals whose travel time × the speed of
+  // light gives each range. As each arrives the brackets close in; with the fourth, the fix and the receiver
+  // clock error are solved together and the view settles on NKUST.
+  const SATS4 = [
+    { az: -112, col: '#ff9f7a', name: 'G08', ms: 67.35, at: 900 },
+    { az: -42, col: '#70e3ed', name: 'C21', ms: 72.2, at: 1300 },
+    { az: 38, col: '#ff9f7a', name: 'G27', ms: 76.29, at: 1700 },
+    { az: 96, col: '#70e3ed', name: 'C06', ms: 121.48, at: 2100 },
+  ];
+  const posMask = document.createElement('canvas');
   const drawPos = t => {
-    const W = pos.width, H = pos.height, k = demoK(t);
+    const W = pos.width, H = pos.height;
+    const c = dual.classList.contains('show') ? (t - (dual.t0 ||= t)) % 7400 : 0;
     pc.clearRect(0, 0, W, H);
-    const rx = W * 0.56, ry = H * 0.6;                               // the receiver
-    const sats = [[0.12, 0.16, '#ff9f7a'], [0.38, 0.04, '#70e3ed'], [0.7, 0.07, '#ff9f7a'], [0.94, 0.24, '#70e3ed']]; // four: position plus the receiver clock
-    // Faint satellite-to-receiver lines: the circles are ranges, not orbits.
-    pc.font = `${11 * dpr}px "Noto Sans TC", sans-serif`;
-    sats.forEach(([sx, sy, col], i) => {
-      const x = sx * W, y = sy * H;
-      pc.strokeStyle = col + '40'; pc.lineWidth = 1 * dpr;
-      pc.beginPath(); pc.moveTo(x, y); pc.lineTo(x + (rx - x) * k, y + (ry - y) * k); pc.stroke();
-      if (i === 1 && k > 0.5) { const mx = x + (rx - x) * 0.42, my = y + (ry - y) * 0.42; pc.fillStyle = '#9fb3cc'; pc.textAlign = 'left'; pc.fillText(L('距離示意', 'range'), mx + 8 * dpr, my); }
-    });
-    sats.forEach(([sx, sy, col], i) => {
-      const x = sx * W, y = sy * H, r = Math.hypot(rx - x, ry - y);
-      pc.strokeStyle = col + '88'; pc.lineWidth = 1.5 * dpr; pc.setLineDash([5 * dpr, 6 * dpr]);
-      pc.beginPath(); pc.arc(x, y, r * k, 0, Math.PI * 2); pc.stroke(); pc.setLineDash([]);
-      pc.fillStyle = col; pc.fillRect(x - 9 * dpr, y - 3 * dpr, 18 * dpr, 6 * dpr); pc.fillStyle = '#e8eef8'; pc.fillRect(x - 3 * dpr, y - 4 * dpr, 6 * dpr, 8 * dpr);
-    });
-    if (k >= 1) {
-      const pulse = (t / 1400) % 1;
-      pc.strokeStyle = `rgba(94,242,196,${1 - pulse})`; pc.lineWidth = 2 * dpr;
-      pc.beginPath(); pc.arc(rx, ry, (8 + pulse * 26) * dpr, 0, Math.PI * 2); pc.stroke();
-      pc.fillStyle = '#5ef2c4'; pc.beginPath(); pc.arc(rx, ry, 6 * dpr, 0, Math.PI * 2); pc.fill();
-      pc.font = `700 ${14 * dpr}px "Noto Sans TC", sans-serif`; pc.textAlign = 'center'; pc.textBaseline = 'top';
-      pc.fillText(L('你在這裡', 'You are here'), rx, ry + 30 * dpr);
-      pc.font = `${12 * dpr}px "Archivo Black", sans-serif`; pc.fillText('22.76°N  120.34°E', rx, ry + 50 * dpr);
-      pc.textBaseline = 'alphabetic';
+    const rx = W * 0.5, ry = H * 0.6;
+    const lockK = clamp((c - 2100) / 900), zk = lockK * lockK * (3 - 2 * lockK);
+    // The imagery, faded at its edges into the night sky.
+    const zf = 12.4 + 2.8 * zk;
+    pc.fillStyle = '#05080f'; pc.fillRect(0, 0, W, H);
+    drawImagery(pc, HOME, zf, rx - W, ry - H, W * 2, H * 2, dpr);
+    pc.fillStyle = 'rgba(4,8,16,.5)'; pc.fillRect(0, 0, W, H);
+    if (posMask.width !== W || posMask.height !== H) {
+      posMask.width = W; posMask.height = H;
+      const m = posMask.getContext('2d'), cx = W / 2, cy = H / 2, gr = m.createRadialGradient(cx, cy, 0, cx, cy, W * 0.5);
+      gr.addColorStop(0, '#000'); gr.addColorStop(0.5, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      m.save(); m.translate(cx, cy); m.scale(1, H / W); m.translate(-cx, -cy); m.fillStyle = gr; m.fillRect(-W, -H * 4, W * 3, H * 9); m.restore();
     }
+    pc.globalCompositeOperation = 'destination-in'; pc.drawImage(posMask, 0, 0); pc.globalCompositeOperation = 'source-over';
+    // Satellites around the edge, in the direction of their azimuth; a signal front travels in to the receiver.
+    const reach = H * 0.5;
+    let arrived = 0;
+    const compact = W / dpr < 520, AZ_NARROW = [-64, -24, 24, 64];
+    SATS4.forEach((s, i) => {
+      const a = ((compact ? AZ_NARROW[i] : s.az) - 90) * Math.PI / 180, x = clamp(rx + Math.cos(a) * reach * Math.max(1, W / H * 0.95), 24 * dpr, W - 24 * dpr), y = ry + Math.sin(a) * reach * 1.04;
+      const d = Math.hypot(rx - x, ry - y), dir = Math.atan2(ry - y, rx - x);
+      const f = clamp((c - (s.at - 700)) / 700, 0, 1.4), hit = c >= s.at;
+      if (hit) arrived++;
+      const gr = pc.createLinearGradient(x, y, rx, ry); gr.addColorStop(0, s.col + '22'); gr.addColorStop(1, s.col + (hit ? 'ff' : '66'));
+      pc.strokeStyle = gr; pc.lineWidth = (hit ? 2.4 : 1.2) * dpr; pc.beginPath(); pc.moveTo(x, y); pc.lineTo(rx, ry); pc.stroke();
+      // Signal fronts: short arcs centred on the satellite, moving along the line (not orbits).
+      if (f > 0 && f < 1.2) for (let k = 0; k < 3; k++) {
+        const r = d * (f - k * 0.09); if (r <= 0 || r > d) continue;
+        pc.strokeStyle = s.col + Math.round(220 - k * 70).toString(16).padStart(2, '0'); pc.lineWidth = (2.4 - k * 0.6) * dpr;
+        pc.beginPath(); pc.arc(x, y, r, dir - 0.22, dir + 0.22); pc.stroke();
+      }
+      pc.fillStyle = s.col; pc.fillRect(x - 10 * dpr, y - 3 * dpr, 20 * dpr, 6 * dpr); pc.fillStyle = '#e8eef8'; pc.fillRect(x - 3 * dpr, y - 5 * dpr, 6 * dpr, 10 * dpr);
+      // Label: name, travel time × the speed of light, range (on a narrow screen: name and range, under the satellite).
+      if (compact) {
+        const cx2 = clamp(x, 46 * dpr, W - 46 * dpr);
+        pc.textAlign = 'center'; pc.textBaseline = 'alphabetic';
+        pc.font = `${11 * dpr}px "Archivo Black", sans-serif`; pc.fillStyle = s.col; pc.fillText(s.name, cx2, y + 22 * dpr);
+        pc.font = `${11 * dpr}px "Archivo Black", sans-serif`; pc.fillStyle = hit ? '#ffffff' : '#ffffff88';
+        pc.fillText(`≈ ${Math.round(s.ms * 299.792).toLocaleString('en-US')} km`, cx2, y + 38 * dpr);
+        return;
+      }
+      const left = x < rx, lx = clamp(x + (left ? 16 : -16) * dpr, 4 * dpr, W - 4 * dpr), ly = clamp(y + (y < ry ? 20 : -50) * dpr, 14 * dpr, H - 46 * dpr);
+      pc.textAlign = left ? 'left' : 'right'; pc.textBaseline = 'alphabetic';
+      pc.font = `${12 * dpr}px "Archivo Black", sans-serif`; pc.fillStyle = s.col; pc.fillText(s.name, lx, ly);
+      pc.font = `700 ${12 * dpr}px "Noto Sans TC", sans-serif`; pc.fillStyle = '#c9d6e8'; pc.fillText(`${s.ms.toFixed(2)} ms × ${L('光速', 'c')}`, lx, ly + 17 * dpr);
+      pc.font = `${13 * dpr}px "Archivo Black", sans-serif`; pc.fillStyle = hit ? '#ffffff' : '#ffffff88';
+      pc.fillText(`${L('距離', 'range')} ≈ ${Math.round(s.ms * 299.792).toLocaleString('en-US')} km`, lx, ly + 36 * dpr);
+    });
+    // Brackets close in as the ranges arrive; with the fourth the fix locks.
+    const locked = lockK >= 1, sz = (64 - arrived * 9 - 12 * zk) * dpr, L1 = 13 * dpr;
+    pc.strokeStyle = locked ? '#5ef2c4' : '#ffffffcc'; pc.lineWidth = 2.2 * dpr;
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([dx, dy]) => { pc.beginPath(); pc.moveTo(rx + dx * sz, ry + dy * sz - dy * L1); pc.lineTo(rx + dx * sz, ry + dy * sz); pc.lineTo(rx + dx * sz - dx * L1, ry + dy * sz); pc.stroke(); });
+    const pulse = (t / 1400) % 1;
+    if (locked) { pc.strokeStyle = `rgba(94,242,196,${1 - pulse})`; pc.lineWidth = 2 * dpr; pc.beginPath(); pc.arc(rx, ry, (8 + pulse * 24) * dpr, 0, 7); pc.stroke(); }
+    pc.fillStyle = locked ? '#5ef2c4' : '#ffffff'; pc.beginPath(); pc.arc(rx, ry, (locked ? 6 : 3.5) * dpr, 0, 7); pc.fill();
+    const jit = locked ? 0 : 0.06 * (1 - arrived / 4) + 0.004;
+    const lat = (22.7584 + Math.sin(t / 70) * jit).toFixed(4), lon = (120.3382 + Math.cos(t / 90) * jit).toFixed(4);
+    pc.textAlign = 'center'; pc.textBaseline = 'top';
+    pc.font = `700 ${14 * dpr}px "Noto Sans TC", sans-serif`; pc.fillStyle = locked ? '#5ef2c4' : '#ffffff';
+    pc.fillText(locked ? L('你在這裡', 'You are here') : L(`解算中 · ${arrived}/4 顆`, `Solving · ${arrived}/4`), rx, ry + (Math.max(sz / dpr, 30) + 10) * dpr);
+    pc.font = `${12 * dpr}px "Archivo Black", sans-serif`; pc.fillText(`${lat}°N  ${lon}°E`, rx, ry + (Math.max(sz / dpr, 30) + 30) * dpr);
+    if (locked) { pc.font = `700 ${12 * dpr}px "Noto Sans TC", sans-serif`; pc.fillStyle = '#f6c775'; pc.fillText(L('接收機時鐘誤差 +0.41 ms 已一併解出', 'Receiver clock error +0.41 ms solved too'), rx, ry + (Math.max(sz / dpr, 30) + 50) * dpr); }
+    pc.textBaseline = 'alphabetic'; pc.textAlign = 'right'; pc.font = `${10 * dpr}px "Noto Sans TC", sans-serif`; pc.fillStyle = '#ffffff70';
+    pc.fillText(compact ? L('數字為衛星距離（示意）· 影像 Esri', 'Numbers are satellite ranges (illustrative) · Esri') : L('影像 Esri World Imagery · 時間與距離為示意', 'Imagery Esri World Imagery · times and ranges illustrative'), W - 4 * dpr, H - 4 * dpr);
   };
   // Timing: three clocks that each run their own way, until the satellite time arrives and they agree.
   const tim = $('.demo--time'), tc = tim.getContext('2d');

@@ -418,3 +418,6 @@ html:lang(en) .use li{padding:4px 10px;font-size:13px}
 .sc-hero[data-hero="3"] .ht .t-m{font-size:clamp(20px,2.7vw,48px);letter-spacing:.1em;font-weight:700}
 html:lang(en) .sc-hero[data-hero="3"] .ht .t-m{letter-spacing:.02em}
 @media (max-width:600px){.sc-hero[data-hero="3"] .ht .t-m{font-size:clamp(17px,5vw,24px);letter-spacing:.04em}}
+/* 01: taller demos, so the positioning map has room for its four labelled satellites. */
+.demo{height:clamp(300px,44vh,460px)}
+@media (max-width:600px){.demo{height:min(46vh,360px)}}

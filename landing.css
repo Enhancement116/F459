@@ -409,3 +409,8 @@ html:lang(en) .sc-sky .orbit-card::after{content:'Details ›'}
 @media (max-width:600px){.use b{font-size:clamp(22px,7cqi,32px)}}
 html:lang(en) .use ul{gap:6px}
 html:lang(en) .use li{padding:4px 10px;font-size:13px}
+/* Header, 861–1200px: the centred menu ran into the brand name; it now sits after the brand, next to the language button. */
+@media (min-width:861px) and (max-width:1200px){
+  html body header nav{position:relative!important;left:auto!important;top:auto!important;translate:none!important;margin-left:auto!important}
+  html body header .lang{margin-left:clamp(8px,1vw,16px)}
+}

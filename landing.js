@@ -53,15 +53,11 @@
     });
     consoleEl.addEventListener('pointerleave', () => { globeBusy = false; });
   }
-  // 一般閱讀 (reading mode), as on the home page: native scrolling and no motion; the choice is remembered.
-  const MODE_KEY = 'f459-reading';
-  let plain = false;
-  try { plain = localStorage.getItem(MODE_KEY) === 'plain'; } catch (e) {}
-  const modeBtn = document.querySelector('.t-mode');
-  const setPlain = v => { plain = v; root.classList.toggle('t-plain', v); modeBtn?.setAttribute('aria-pressed', v); if (modeBtn) modeBtn.textContent = v ? L('導覽模式', 'Guided') : L('一般閱讀', 'Plain reading'); try { localStorage.setItem(MODE_KEY, v ? 'plain' : 'guided'); } catch (e) {} };
-  modeBtn?.addEventListener('click', () => setPlain(!plain));
-  setPlain(plain);
-  document.addEventListener('languagechange', () => setPlain(plain));
+  // The home page has one presentation, so it has no reading-mode switch. A reader whose system asks for
+  // reduced motion still gets native scrolling and no motion. The site-wide reading choice (f459-reading) is
+  // left as it is, for the guided pages.
+  const plain = calm;
+  root.classList.toggle('t-plain', plain);
   const ease = () => {
     y += (target - y) * 0.08;
     if (Math.abs(target - y) < 0.4) { y = target; running = false; }

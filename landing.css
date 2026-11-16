@@ -375,3 +375,37 @@ p,li,em,figcaption{text-wrap:pretty}
 }
 /* Keyboard users see where they are. */
 a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #8affdd;outline-offset:4px;border-radius:8px}
+
+/* ---------- Alignment fixes (2026-11-16) ---------- */
+/* 03 use cards: title, text and tags share rows across the cards (subgrid), so a two-line title does not push one card's text and tags out of line with the others. */
+.use-cards{grid-auto-rows:auto}
+.use{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:0}
+.use b{align-self:start}
+.use p{margin:14px 0 22px}
+.use ul{align-self:start}
+/* 04 side panel: the open <details> wraps its content in ::details-content, which sat between the flex column and the orbit section, so the cards never stretched (blank space under them) or overflowed. The wrapper now joins the column. */
+.sc-sky .gp-adv::details-content{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.sc-sky .gp-adv>.gp-orbit{min-height:0}
+.sc-sky .orbit-cards{min-height:0}
+/* Short screens: a smaller sky plot and tighter cards, so the column fits without scrolling. */
+@media (min-width:1101px) and (max-height:900px){
+  .sc-sky .gp-sky canvas{height:min(12vh,110px)!important}
+  .sc-sky .globe-panel>*{padding:12px 16px!important}
+  .sc-sky .orbit-card{padding:8px 10px}
+}
+/* The card hint follows the page language. */
+html:lang(en) .sc-sky .orbit-card::after{content:'Details ›'}
+/* Short screens: the side column takes the height its content needs and the globe matches it, instead of hiding the second row of orbit cards behind a scroll. */
+@media (min-width:1101px) and (max-height:900px){
+  .sc-sky{height:auto;min-height:100vh;min-height:100svh}
+  .sc-sky .globe-body{flex:none}
+  .sc-sky .globe-panel{height:auto!important;overflow:visible!important}
+  .sc-sky .globe-stage{height:auto!important;min-height:max(440px,calc(100svh - 300px))!important}
+}
+/* Use-card titles size to the row of cards (the container is the row, not the card: a contained card would stop sharing rows), so a Chinese title stays on one line instead of breaking mid-word. */
+.use-cards{container-type:inline-size}
+.use b{font-size:clamp(18px,calc(2.6cqi - 7px),34px)}
+@media (max-width:1100px){.use b{font-size:clamp(20px,4.2cqi,34px)}}
+@media (max-width:600px){.use b{font-size:clamp(22px,7cqi,32px)}}
+html:lang(en) .use ul{gap:6px}
+html:lang(en) .use li{padding:4px 10px;font-size:13px}

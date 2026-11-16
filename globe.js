@@ -848,10 +848,16 @@
     clearTimeout(hintTimer);
     hintTimer = setTimeout(() => scrollHint.classList.remove('is-on'), 1600);
   }
+  // Zoom mode lasts only while the reader keeps using it: after a short pause the wheel scrolls the page
+  // again, so a reader who clicked the globe once is never stuck on it.
+  let wheelIdle = 0;
   function setWheelActive(v) {
     wheelActive = v;
+    clearTimeout(wheelIdle);
+    if (v) wheelIdle = setTimeout(() => setWheelActive(false), 2500);
     if (ground) ground.map.scrollWheelZoom[v ? 'enable' : 'disable']();
   }
+  root.addEventListener('wheel', () => { if (wheelActive) setWheelActive(true); }, { capture: true, passive: true });
   root.addEventListener('mouseleave', () => setWheelActive(false));
   $('globe-ground').addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') setWheelActive(true); });
 
@@ -884,6 +890,8 @@
   canvas.addEventListener('pointercancel', endPointer);
   canvas.addEventListener('wheel', e => {
     if (!wheelActive && !e.ctrlKey && !e.metaKey) { showScrollHint(false); return; }
+    // Fully zoomed out, scrolling on down moves the page instead.
+    if (e.deltaY > 0 && state.zoom <= 0.61 && !e.ctrlKey && !e.metaKey) { setWheelActive(false); return; }
     e.preventDefault();
     setZoom(state.zoom * Math.exp(-e.deltaY * 0.0015));
   }, { passive: false });

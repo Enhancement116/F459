@@ -37,12 +37,11 @@
 
   // ---- Inertial wheel scrolling (mouse and trackpad); touch keeps the native scroll.
   let target = scrollY, y = scrollY, running = false, holdUntil = 0;
-  let globeBusy = false;
   const consoleEl = document.querySelector('.sc-sky .globe-console');
   if (consoleEl) {
-    // Working the globe brings the whole block to fill the screen first, then the page holds still.
+    // Working the globe brings the whole block to fill the screen first. The page itself is never held:
+    // the globe takes the wheel only for zooming (globe.js), and hands it back once the reader stops.
     consoleEl.addEventListener('pointerdown', () => {
-      globeBusy = true;
       const top = consoleEl.closest('.sc-sky').offsetTop;
       if (Math.abs(scrollY - top) > 2) {
         if (calm || touch) { scrollTo({ top, behavior: calm ? 'auto' : 'smooth' }); return; }
@@ -51,7 +50,6 @@
         if (!running) { running = true; requestAnimationFrame(ease); }
       }
     });
-    consoleEl.addEventListener('pointerleave', () => { globeBusy = false; });
   }
   // The home page has one presentation, so it has no reading-mode switch. A reader whose system asks for
   // reduced motion still gets native scrolling and no motion. The site-wide reading choice (f459-reading) is
@@ -68,8 +66,6 @@
     addEventListener('wheel', e => {
       // The globe's side panel scrolls by itself.
       if (plain || e.ctrlKey || e.defaultPrevented || e.target.closest?.('.globe-panel')) return;
-      // While the reader is working the live globe (clicked into it and still over it), the page holds still.
-      if (globeBusy && e.target.closest?.('.globe-console')) { e.preventDefault(); return; }
       e.preventDefault();
       // Just after stopping on the globe, the rest of that same flick is ignored.
       if (performance.now() < holdUntil) return;
@@ -245,7 +241,15 @@
     const W = pos.width, H = pos.height, k = demoK(t);
     pc.clearRect(0, 0, W, H);
     const rx = W * 0.56, ry = H * 0.6;                               // the receiver
-    const sats = [[0.16, 0.12, '#ff9f7a'], [0.52, 0.05, '#70e3ed'], [0.92, 0.2, '#ff9f7a']];
+    const sats = [[0.12, 0.16, '#ff9f7a'], [0.38, 0.04, '#70e3ed'], [0.7, 0.07, '#ff9f7a'], [0.94, 0.24, '#70e3ed']]; // four: position plus the receiver clock
+    // Faint satellite-to-receiver lines: the circles are ranges, not orbits.
+    pc.font = `${11 * dpr}px "Noto Sans TC", sans-serif`;
+    sats.forEach(([sx, sy, col], i) => {
+      const x = sx * W, y = sy * H;
+      pc.strokeStyle = col + '40'; pc.lineWidth = 1 * dpr;
+      pc.beginPath(); pc.moveTo(x, y); pc.lineTo(x + (rx - x) * k, y + (ry - y) * k); pc.stroke();
+      if (i === 1 && k > 0.5) { const mx = x + (rx - x) * 0.42, my = y + (ry - y) * 0.42; pc.fillStyle = '#9fb3cc'; pc.textAlign = 'left'; pc.fillText(L('距離示意', 'range'), mx + 8 * dpr, my); }
+    });
     sats.forEach(([sx, sy, col], i) => {
       const x = sx * W, y = sy * H, r = Math.hypot(rx - x, ry - y);
       pc.strokeStyle = col + '88'; pc.lineWidth = 1.5 * dpr; pc.setLineDash([5 * dpr, 6 * dpr]);
@@ -296,7 +300,7 @@
   const HEROES = {
     1: [['把整片', '天空', '搬進實驗室'], ['The whole', 'sky', 'in the lab']],
     2: [['把', '整片天空', '搬進實驗室'], ['Bring', 'the whole sky', 'into the lab']],
-    3: [['在實驗室裡', '造一片天空', 'GPS 與北斗 一次到位'], ['In the lab', 'we build a sky', 'GPS and BeiDou, both at once']],
+    3: [['在實驗室裡', '造一片天空', 'GPS／北斗衛星訊號模擬平台'], ['In the lab', 'we build a sky', 'A GPS / BeiDou signal simulation platform']],
     4: [['在實驗室裡重現', '天空', 'GPS・北斗・可控・可重播'], ['Recreated in the lab', 'the sky', 'GPS · BeiDou · controlled · repeatable']],
   };
   const ht = $('.ht');

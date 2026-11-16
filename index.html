@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="fx.css?v=17">
 <link rel="stylesheet" href="globe.css?v=45">
 <link rel="stylesheet" href="chrome.css?v=1">
-<link rel="stylesheet" href="landing.css?v=23">
+<link rel="stylesheet" href="landing.css?v=24">
 </head>
 <body>
 <header><a class="brand" href="./"><img class="brand-logo" src="logo-96.png" alt="" width="36" height="36">GeoTrust<span>BY F459 LAB</span></a><nav id="site-nav" aria-label="Main navigation"><a href="./" aria-current="page" data-zh="首頁" data-en="Home">首頁</a><a href="project/" data-zh="專案總覽" data-en="Project">專案總覽</a><a href="project/system/" data-zh="核心設計" data-en="Design">核心設計</a><a href="project/features/" data-zh="系統功能" data-en="Features">系統功能</a><a href="project/tech/" data-zh="技術細節" data-en="Tech details">技術細節</a><a href="gnss/" data-zh="GNSS 訊號原理" data-en="GNSS Signals">GNSS 訊號原理</a><a href="team/" data-zh="研究團隊" data-en="Team">研究團隊</a><a href="test/" data-zh="測試" data-en="Test">測試</a></nav><button type="button" class="lang" id="language">EN ↗</button></header>
@@ -34,7 +34,7 @@
       <figure class="earth-bg"><canvas id="po-hero-cv" data-data="data/" data-speed="1" data-cx="0.7" data-scale="1" data-max="99" data-palette="orbit" data-label="t-real-count" role="img" aria-label="The real Earth and the GPS and BeiDou satellites above NKUST now" data-zh-label="真實地球與此刻高科大上空可見的 GPS 與北斗衛星" data-en-label="The real Earth and the GPS and BeiDou satellites above NKUST now"></canvas></figure>
       <div class="hero-copy">
         <p class="kicker hero-kicker"><i aria-hidden="true"></i><span data-zh="GEOTRUST · 國立高雄科技大學 F459 實驗室" data-en="GEOTRUST · NKUST F459 LAB">GEOTRUST · 國立高雄科技大學 F459 實驗室</span></p>
-        <h1 class="ht"><span class="t-s">把整片</span><span class="t-b">天空</span><span class="t-m">搬進實驗室</span></h1>
+        <h1 class="ht"><span class="t-s">在實驗室裡</span><span class="t-b">造一片天空</span><span class="t-m">GPS／北斗衛星訊號模擬平台</span></h1>
         <p class="hero-sub home-lead" data-zh="一台筆電、一台 SDR，在實驗室裡重現 GPS 與北斗衛星訊號。" data-en="One laptop and one SDR recreate GPS and BeiDou signals in the lab.">一台筆電、一台 SDR，在實驗室裡重現 GPS 與北斗衛星訊號。</p>
       </div>
       <p class="rig-cap"><span class="rig-keys" data-zh="&lt;i class=&quot;k g&quot;&gt;&lt;/i&gt;GPS &lt;i class=&quot;k m&quot;&gt;&lt;/i&gt;北斗 MEO &lt;i class=&quot;k i&quot;&gt;&lt;/i&gt;北斗 IGSO" data-en="&lt;i class=&quot;k g&quot;&gt;&lt;/i&gt;GPS &lt;i class=&quot;k m&quot;&gt;&lt;/i&gt;BeiDou MEO &lt;i class=&quot;k i&quot;&gt;&lt;/i&gt;BeiDou IGSO"><i class="k g"></i>GPS <i class="k m"></i>北斗 MEO <i class="k i"></i>北斗 IGSO</span><span id="t-real-count">2026-11-10 廣播星曆 · NKUST 此刻仰角 12° 以上</span><span class="rig-src" data-zh="地圖 Natural Earth" data-en="Map: Natural Earth">地圖 Natural Earth</span></p>
@@ -49,7 +49,7 @@
         <h2 class="vt" data-zh="&lt;span&gt;定位與對時，&lt;/span&gt;&lt;span&gt;都靠&lt;em&gt;衛星訊號&lt;/em&gt;。&lt;/span&gt;" data-en="&lt;span&gt;Position and time&lt;/span&gt;&lt;span&gt;come from &lt;em&gt;satellites&lt;/em&gt;&lt;/span&gt;"><span>定位與對時，</span><span>都靠<em>衛星訊號</em>。</span></h2>
               </div>
       <div class="dual wh-uses reveal">
-        <div class="dual-side dual-side--l po-card"><canvas class="demo demo--pos" aria-label="三顆衛星的距離圈交會在一點，就是接收機的位置"></canvas><b data-zh="定位" data-en="Position">定位</b><p data-zh="三顆以上衛星的距離交會，就是你的位置。&lt;br&gt;&lt;span&gt;手機・車輛・無人機&lt;/span&gt;" data-en="Where the ranges to three or more satellites meet is where you are.&lt;br&gt;&lt;span&gt;Phones · cars · drones&lt;/span&gt;">三顆以上衛星的距離交會，就是你的位置。<br><span>手機・車輛・無人機</span></p></div>
+        <div class="dual-side dual-side--l po-card"><canvas class="demo demo--pos" aria-label="四顆衛星的距離圈交會在接收機的位置" data-zh-label="四顆衛星的距離圈交會在接收機的位置" data-en-label="Range circles from four satellites meet at the receiver"></canvas><b data-zh="定位" data-en="Position">定位</b><p data-zh="量出至少四顆衛星的距離，&lt;br&gt;解出位置與接收機的時鐘誤差。&lt;br&gt;&lt;span&gt;手機・車輛・無人機&lt;/span&gt;" data-en="Measure the ranges to four or more satellites, &lt;br&gt;and solve for position and the receiver clock error.&lt;br&gt;&lt;span&gt;Phones · cars · drones&lt;/span&gt;">量出至少四顆衛星的距離，<br>解出位置與接收機的時鐘誤差。<br><span>手機・車輛・無人機</span></p></div>
         <i class="dual-line" aria-hidden="true"></i>
         <div class="dual-side dual-side--r po-card"><canvas class="demo demo--time" aria-label="三台設備的時鐘原本各走各的，收到衛星時間後對齊"></canvas><b data-zh="對時" data-en="Time">對時</b><p data-zh="各地設備收同一個衛星時間，時鐘就對齊了。&lt;br&gt;&lt;span&gt;電網・基地台・金融交易&lt;/span&gt;" data-en="Devices everywhere take the same satellite time, so their clocks agree.&lt;br&gt;&lt;span&gt;Power grids · cell towers · trading&lt;/span&gt;">各地設備收同一個衛星時間，時鐘就對齊了。<br><span>電網・基地台・金融交易</span></p></div>
       </div>
@@ -83,7 +83,7 @@
     </article>
     <article class="build-step build-step--flip reveal">
       <figure class="shot shot--bare po-viz"><img src="project/system/img/system.webp?v=3" width="1209" height="621" alt="實際設備：筆電、USRP 軟體無線電與天線" loading="lazy"><figcaption data-zh="實機：筆電、USRP 軟體無線電與天線" data-en="The real rig: laptop, USRP software radio and antenna">實機：筆電、USRP 軟體無線電與天線</figcaption></figure>
-      <div class="slot-copy po-point"><p class="step-no" data-zh="&lt;b&gt;2&lt;/b&gt;送出" data-en="&lt;b&gt;2&lt;/b&gt;Transmit"><b>2</b>送出</p><h3 data-zh="SDR 變成真的無線電" data-en="The SDR makes it real radio">SDR 變成真的無線電</h3><p data-zh="筆電算好的數位訊號，經 SDR 轉成真的無線電訊號送出。" data-en="The SDR turns the samples the laptop computed into real radio signals.">筆電算好的數位訊號，經 SDR 轉成真的無線電訊號送出。</p></div>
+      <div class="slot-copy po-point"><p class="step-no" data-zh="&lt;b&gt;2&lt;/b&gt;送出" data-en="&lt;b&gt;2&lt;/b&gt;Transmit"><b>2</b>送出</p><h3 data-zh="SDR 將數位訊號轉為射頻訊號" data-en="The SDR turns digital samples into RF">SDR 將數位訊號轉為射頻訊號</h3><p data-zh="筆電算好的基頻樣本，由 SDR 升頻到 GPS／北斗頻段送出。" data-en="The SDR up-converts the laptop's baseband samples to the GPS and BeiDou bands.">筆電算好的基頻樣本，由 SDR 升頻到 GPS／北斗頻段送出。</p></div>
     </article>
     <div class="build-uses reveal">
       <p class="kicker" data-zh="同一片天空，可以重播無數次" data-en="The same sky, replayed as often as you like">同一片天空，可以重播無數次</p>
@@ -154,8 +154,8 @@
 <script src="https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js" integrity="sha384-VNiKRUXp0MmglFfqDwkfuk+Y78C3WTJShdKSaFwOacLR3UmamxHIJLBTD3BadIXD" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
 <script src="po-hero.js?v=9"></script>
-<script src="globe.js?v=34"></script>
-<script src="landing.js?v=5"></script>
+<script src="globe.js?v=35"></script>
+<script src="landing.js?v=8"></script>
 <script src="fx.js?v=19"></script>
 </body>
 </html>

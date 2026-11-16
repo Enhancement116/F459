@@ -414,3 +414,7 @@ html:lang(en) .use li{padding:4px 10px;font-size:13px}
   html body header nav{position:relative!important;left:auto!important;top:auto!important;translate:none!important;margin-left:auto!important}
   html body header .lang{margin-left:clamp(8px,1vw,16px)}
 }
+/* Hero: the third line names the platform (GPS／北斗衛星訊號模擬平台), a label under the main title rather than a second headline. */
+.sc-hero[data-hero="3"] .ht .t-m{font-size:clamp(20px,2.7vw,48px);letter-spacing:.1em;font-weight:700}
+html:lang(en) .sc-hero[data-hero="3"] .ht .t-m{letter-spacing:.02em}
+@media (max-width:600px){.sc-hero[data-hero="3"] .ht .t-m{font-size:clamp(17px,5vw,24px);letter-spacing:.04em}}

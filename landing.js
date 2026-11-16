@@ -318,30 +318,65 @@
   };
   // Timing: three clocks that each run their own way, until the satellite time arrives and they agree.
   const tim = $('.demo--time'), tc = tim.getContext('2d');
-  const OFFSETS = [0.4127, -0.2388, 0.0915];
-  const NAMES = [['電網', 'Grid'], ['基地台', 'Cell tower'], ['交易所', 'Exchange']];
+  // Timing: the same language as positioning. Real imagery of Taiwan; a satellite's time signal reaches three
+  // real sites in turn, and each clock, off by a few hundred milliseconds, falls into step as it arrives.
+  const SITES3 = [
+    { name: ['交易所', 'Exchange'], place: ['台北・臺灣證券交易所', 'Taipei · TWSE'], p: [121.5645, 25.0340], off: 0.2388, side: 1 },
+    { name: ['電網', 'Grid'], place: ['台中・台中發電廠', 'Taichung power plant'], p: [120.4815, 24.2130], off: -0.4127, side: -1 },
+    { name: ['基地台', 'Cell tower'], place: ['高雄・楠梓', 'Nanzih, Kaohsiung'], p: [120.3382, 22.7584], off: 0.0915, side: 1 },
+  ];
+  const TAIWAN = [120.95, 23.75];
+  const timMask = document.createElement('canvas');
   const fmt = sec => { const d = new Date(sec * 1000); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}.${String(d.getMilliseconds()).padStart(3, '0')}`; };
   const drawTime = () => {
-    const W = tim.width, H = tim.height, k = demoK(performance.now());
-    const now = Date.now() / 1000;
+    const W = tim.width, H = tim.height, t = performance.now(), now = Date.now() / 1000;
+    const c = dual.classList.contains('show') ? (t - (dual.t0 ||= t)) % 7400 : 0;
+    const compact = W / dpr < 520;
     tc.clearRect(0, 0, W, H);
-    const rowH = H / 4;
-    tc.textBaseline = 'middle';
-    // The satellite time on top.
-    tc.font = `700 ${12 * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = '#f6c775'; tc.textAlign = 'left';
-    tc.fillText(L('衛星時間', 'Satellite time'), 0, rowH * 0.5);
-    tc.font = `${Math.round(22 * dpr)}px "Archivo Black", sans-serif`; tc.fillText(fmt(now), W * 0.3, rowH * 0.5);
-    OFFSETS.forEach((off, i) => {
-      const y = rowH * (i + 1.5);
-      const shown = now + off * (1 - k);
-      const agreed = k >= 1;
-      tc.font = `700 ${14 * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = '#c9d6e8'; tc.fillText(L(...NAMES[i]), 0, y);
-      tc.font = `${Math.round(22 * dpr)}px "Archivo Black", sans-serif`; tc.fillStyle = agreed ? '#5ef2c4' : '#ffffff';
-      tc.fillText(fmt(shown), W * 0.3, y);
-      tc.font = `700 ${12 * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = agreed ? '#5ef2c4' : '#ff8a90';
-      const ms = Math.round(off * (1 - k) * 1000);
-      tc.fillText(agreed ? L('已對齊', 'in sync') : `${L('差', 'off')} ${ms > 0 ? '+' : ''}${ms} ms`, W * 0.82, y);
+    // Taiwan fills the height of the canvas.
+    const zf = 7.25 + Math.log2(H / dpr / 560);
+    tc.fillStyle = '#05080f'; tc.fillRect(0, 0, W, H);
+    drawImagery(tc, TAIWAN, zf, 0, 0, W, H, dpr);
+    tc.fillStyle = 'rgba(4,8,16,.5)'; tc.fillRect(0, 0, W, H);
+    if (timMask.width !== W || timMask.height !== H) {
+      timMask.width = W; timMask.height = H;
+      const m = timMask.getContext('2d'), cx = W / 2, cy = H / 2, gr = m.createRadialGradient(cx, cy, 0, cx, cy, W * 0.5);
+      gr.addColorStop(0, '#000'); gr.addColorStop(0.55, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      m.translate(cx, cy); m.scale(1, H / W); m.translate(-cx, -cy); m.fillStyle = gr; m.fillRect(-W, -H * 4, W * 3, H * 9);
+    }
+    tc.globalCompositeOperation = 'destination-in'; tc.drawImage(timMask, 0, 0); tc.globalCompositeOperation = 'source-over';
+    const sx = W * (compact ? 0.3 : 0.34), sy = H * 0.1;
+    SITES3.forEach((s, i) => {
+      const [x, y] = onView(s.p, TAIWAN, zf, 0, 0, W, H, dpr), at = 1300 + i * 380;
+      const f = clamp((c - (at - 800)) / 800, 0, 1.3), hit = c >= at;
+      const d = Math.hypot(x - sx, y - sy), dir = Math.atan2(y - sy, x - sx);
+      const gr = tc.createLinearGradient(sx, sy, x, y); gr.addColorStop(0, '#f6c77522'); gr.addColorStop(1, hit ? '#f6c775ff' : '#f6c77555');
+      tc.strokeStyle = gr; tc.lineWidth = (hit ? 2.2 : 1.2) * dpr; tc.beginPath(); tc.moveTo(sx, sy); tc.lineTo(x, y); tc.stroke();
+      // Signal fronts along the line.
+      if (f > 0 && f < 1.15) for (let k = 0; k < 3; k++) { const r = d * (f - k * 0.08); if (r <= 0 || r > d) continue; tc.strokeStyle = '#f6c775' + Math.round(220 - k * 70).toString(16).padStart(2, '0'); tc.lineWidth = (2.4 - k * 0.6) * dpr; tc.beginPath(); tc.arc(sx, sy, r, dir - 0.18, dir + 0.18); tc.stroke(); }
+      const k2 = clamp((c - at) / 500), sync = k2 * k2 * (3 - 2 * k2), shown = now + s.off * (1 - sync), agreed = sync >= 1;
+      const p = (t / 1200 + i * 0.3) % 1;
+      if (hit) { tc.strokeStyle = `rgba(94,242,196,${1 - p})`; tc.lineWidth = 2 * dpr; tc.beginPath(); tc.arc(x, y, (7 + p * 18) * dpr, 0, 7); tc.stroke(); }
+      tc.fillStyle = hit ? '#5ef2c4' : '#ffffff'; tc.beginPath(); tc.arc(x, y, 5 * dpr, 0, 7); tc.fill();
+      // The site's clock: name and place, its time, and how far off it is.
+      const side = compact ? (i === 1 ? -1 : 1) : s.side, lx = clamp(x + side * 14 * dpr, 4 * dpr, W - 4 * dpr);
+      tc.textAlign = side > 0 ? 'left' : 'right'; tc.textBaseline = 'alphabetic';
+      tc.font = `700 ${(compact ? 11 : 13) * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = '#e6edf7';
+      tc.fillText(compact ? L(...s.name) : `${L(...s.name)}　${L(...s.place)}`, lx, y - 8 * dpr);
+      tc.font = `${(compact ? 14 : 18) * dpr}px "Archivo Black", sans-serif`; tc.fillStyle = agreed ? '#5ef2c4' : '#ffffff';
+      tc.fillText(fmt(shown), lx, y + (compact ? 10 : 14) * dpr);
+      const ms = Math.round(s.off * (1 - sync) * 1000);
+      tc.font = `700 ${(compact ? 11 : 12) * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = agreed ? '#5ef2c4' : '#ff8a90';
+      tc.fillText(agreed ? L('已對齊', 'in sync') : `${L('差', 'off')} ${ms > 0 ? '+' : ''}${ms} ms`, lx, y + (compact ? 26 : 32) * dpr);
     });
+    // The satellite and its time.
+    tc.fillStyle = '#70e3ed'; tc.fillRect(sx - 11 * dpr, sy - 3.5 * dpr, 22 * dpr, 7 * dpr); tc.fillStyle = '#e8eef8'; tc.fillRect(sx - 3.5 * dpr, sy - 5.5 * dpr, 7 * dpr, 11 * dpr);
+    // Beside the satellite; on a narrow screen, in the top-left corner so it is never cut off.
+    const tx = compact ? 4 * dpr : sx - 20 * dpr, ty = compact ? sy + 22 * dpr : sy - 2 * dpr; tc.textAlign = compact ? 'left' : 'right';
+    tc.font = `700 ${12 * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = '#f6c775'; tc.fillText(L('衛星時間', 'Satellite time'), tx, ty);
+    tc.font = `${(compact ? 15 : 20) * dpr}px "Archivo Black", sans-serif`; tc.fillText(fmt(now), tx, ty + (compact ? 18 : 26) * dpr);
+    tc.textAlign = 'right'; tc.font = `${10 * dpr}px "Noto Sans TC", sans-serif`; tc.fillStyle = '#ffffff70';
+    tc.fillText(L('影像 Esri World Imagery · 時間差為示意', 'Imagery Esri World Imagery · offsets illustrative'), W - 4 * dpr, H - 4 * dpr);
   };
 
   // ---- Opening style switcher (test page only); the choice is kept in the address.
